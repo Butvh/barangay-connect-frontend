@@ -126,6 +126,33 @@ test('two stores use one persisted demo epoch', async () => {
   const delta = Math.abs(Date.parse(a.now()) - Date.parse(b.now())); ok(delta < 1000); ok(Date.parse(b.now()) >= Date.parse(Config.demo_time) + 59000);
 });
 
+test('residents list only their latest verification; officials retain the queue', async () => {
+  const f = fixture(); await f.login(f.authA, 'maria.santos');
+  equal((await f.apiA.verification.list()).map(v => v.user_id), [4]);
+  equal(await f.apiA.verification.list({ status: 'Pending' }), []);
+  await f.login(f.authA, 'jose.dela.cruz');
+  equal((await f.apiA.verification.list({ status: 'Pending' })).map(v => v.user_id), [5]);
+  await f.login(f.authB, 'ana.reyes'); equal((await f.apiB.verification.list()).length, 2);
+  await f.login(f.authB, 'carlo.mendoza'); await rejects(() => f.apiB.verification.list(), 'FORBIDDEN');
+});
+
+test('no-op expiry does not emit or cause a live verification refresh loop', async () => {
+  const f = fixture(); await f.login(f.authA, 'jose.dela.cruz');
+  let same = 0, cross = 0; f.apiA.subscribe('verification', () => same++); f.apiB.subscribe('verification', () => cross++);
+  const before = f.storeA.read(); equal(await f.apiA.verification.expireOverdue(), 0);
+  equal(f.storeA.read(), before); equal(same, 0); equal(cross, 0);
+  f.setTime('2026-10-12T10:00:00+08:00'); equal(await f.apiA.verification.expireOverdue(), 1);
+  equal(same, 1); equal(cross, 1); equal(await f.apiA.verification.expireOverdue(), 0); equal(same, 1); equal(cross, 1);
+});
+
+test('feedback notification links use the existing resident feedback page', async () => {
+  const f = fixture(); await f.login(f.authA, 'maria.santos');
+  const feedback = await f.apiA.feedback.create('complaint', { category: 'Drainage', description: 'Blocked drain', location: 'Riverside Street' });
+  await f.login(f.authB, 'ana.reyes'); await f.apiB.feedback.assignTanod(feedback.id, 6);
+  const note = (await f.apiA.notifications.list()).find(n => n.kind === 'feedback_update');
+  equal(note.link, `resident-feedback.html?id=${feedback.id}`);
+});
+
 export async function runSuite(onResult = () => {}) {
   const results = [];
   for (const test of tests) { let error = ''; try { await test.run(); } catch (e) { error = e.stack || e.message; } const result = { name: test.name, passed: !error, error }; results.push(result); onResult(result); }

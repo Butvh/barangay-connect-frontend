@@ -131,10 +131,10 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
         notifyOfficials(db, user.barangay_id, 'verification', `${user.full_name} submitted a verification document.`, `official-verification.html?id=${row.id}`, at); return row;
       }),
       list: (options = {}) => read((db, user) => {
-        assertRole(user, ['secretary']);
+        assertRole(user, ['secretary', 'resident']);
         return recent(db.verify_residency.filter(row => {
           const resident = db.users.find(u => u.id === row.user_id);
-          return resident?.barangay_id === user.barangay_id && latestVerification(db, resident.id)?.id === row.id && (!options.status || row.review_status === options.status);
+          return resident?.barangay_id === user.barangay_id && (roleOf(user) !== 'resident' || row.user_id === user.id) && latestVerification(db, resident.id)?.id === row.id && (!options.status || row.review_status === options.status);
         })).map(row => { const resident = db.users.find(u => u.id === row.user_id); return { ...row, resident: publicUser(resident), household: db.households.find(h => h.id === resident.household_id) || null }; });
       }),
       get: id => read((db, user) => { const row = get(db.verify_residency, id, 'Verification'); if (roleOf(user) === 'resident') { if (row.user_id !== user.id) throw new ApiError('FORBIDDEN', 'View your own verification.'); } else { assertRole(user, ['secretary']); within(db, user, row); } const resident = db.users.find(u => u.id === row.user_id); return { ...row, resident: publicUser(resident), household: db.households.find(h => h.id === resident.household_id) || null }; }),
@@ -229,12 +229,12 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
         assertRole(user, ['secretary']); const row = get(db.community_feedback, id, 'Feedback'); assertBarangay(user, row);
         if (row.type === 'general' || row.status !== 'Pending') throw new ApiError('INVALID_STATE', 'Only pending complaints and suggestions can be assigned.');
         const tanod = get(db.users, tanod_id, 'Tanod'); if (!tanod.is_tanod || tanod.barangay_id !== user.barangay_id) throw new ApiError('VALIDATION', 'Choose a Tanod in this barangay.');
-        row.assigned_tanod_id = tanod.id; row.status = 'Assigned'; notification(db, row.resident_id, 'feedback_update', `Your ${row.type} was assigned to Tanod ${tanod.full_name}.`, `resident-my-feedback.html?id=${row.id}`, at); return row;
+        row.assigned_tanod_id = tanod.id; row.status = 'Assigned'; notification(db, row.resident_id, 'feedback_update', `Your ${row.type} was assigned to Tanod ${tanod.full_name}.`, `resident-feedback.html?id=${row.id}`, at); return row;
       }),
       resolve: id => write(['feedback', 'notifications'], (db, user, at) => {
         assertRole(user, ['secretary']); const row = get(db.community_feedback, id, 'Feedback'); assertBarangay(user, row);
         if (row.type === 'general' || row.status === 'Resolved') throw new ApiError('INVALID_STATE', 'This feedback cannot be marked resolved.');
-        row.status = 'Resolved'; notification(db, row.resident_id, 'feedback_update', `Your ${row.type} was resolved.`, `resident-my-feedback.html?id=${row.id}`, at); return row;
+        row.status = 'Resolved'; notification(db, row.resident_id, 'feedback_update', `Your ${row.type} was resolved.`, `resident-feedback.html?id=${row.id}`, at); return row;
       }),
     },
     notifications: {
