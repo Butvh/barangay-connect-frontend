@@ -43,3 +43,42 @@ dependency-injected factories for the shared browser/Node tests.
 - Map metadata uses P2's `assets/img/maps/sampaguita.png`. The other two
   barangays have `map_image: null` until their artwork exists.
 
+## P1 navigation and login implementation
+
+Canonical visual ownership remains P2's tokens.css, base.css, components.css,
+UI, Icons, Fmt and BCMap, with the provided Figma frames as the visual reference.
+P1's official.css contains official layout and the P1-owned Profile layout;
+it does not introduce a second color/font token system. The shared auth layout
+is reused from resident.css. No separate DESIGN/UX document is created outside
+P1's allowed files; this contract and the supplied implementation brief are the
+maintained behavior/design-context equivalents for this hand-off.
+
+- Login has app-owned validation, field errors, password visibility, busy state,
+  and the four demo accounts. It routes through Auth.homeFor. Index redirects
+  to the current role's home or the official login. Sign out remains per tab.
+- The official shell has the 280 px sidebar, 72 px rail, mobile modal drawer,
+  aligned header controls, and live recipient-scoped notifications. It uses
+  UI.openDialog/closeDialog/confirm for focus, Escape and confirmation behavior.
+- Incremental release: only implemented official destinations are enabled in
+  official-shared.js. Remaining destinations have disabled controls with a
+  reason until their route is built. They must be enabled with that route.
+- Role dashboards derive all counts/statuses/names from Api. The Rescuer map
+  contains facility/incident markers only, as the brief forbids routing. No
+  priority labels, age breakdown, distances or extra response states are added
+  from later Figma illustration details that have no agreed data model.
+- Profile consumes Shell.resident and users.get/update. Email/barangay are
+  read-only. Save preserves validation context; unsaved navigation asks before
+  discarding. Saved state, household map and resident sign out are implemented.
+- Global feedback uses UI.toast; field problems stay inline. Document titles
+  identify the page. Shell controls remain available when page data fails.
+
+P2's UI foundation is merged in PR #6. Remaining shared dependencies are
+tracked in Issue #2: menu, layout-dashboard and clipboard-check icons; the circle-check asset's white
+stroke; the shared disaster icon mapping; and 44 px header-brand hit areas.
+The P1 disaster fallback is explicitly TODO(contract) until P2 supplies the
+canonical mapping. Icons.disaster(type), when supplied, should return the
+sprite name (such as waves), which Icons.svg renders.
+
+The test launcher supports Node 20–24: it omits the removed experimental
+default-module flag on Node 24 and newer. Application pages never need Node.
+
