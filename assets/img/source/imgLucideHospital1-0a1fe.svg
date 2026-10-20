@@ -1,0 +1,15 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Lucide / hospital" clip-path="url(#clip0_0_1051)">
+<path id="Vector" d="M10 5V8.33333" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" stroke="#1E5AA8"/>
+<path id="Vector_2" d="M11.6667 11.6667H8.33333" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" stroke="#1E5AA8"/>
+<path id="Vector_3" d="M11.6667 15H8.33333" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" stroke="#1E5AA8"/>
+<path id="Vector_4" d="M11.6667 6.66667H8.33333" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" stroke="#1E5AA8"/>
+<path id="Vector_5" d="M15 10H16.6667C17.1087 10 17.5326 10.1756 17.8452 10.4882C18.1577 10.8007 18.3333 11.2246 18.3333 11.6667V16.6667C18.3333 17.1087 18.1577 17.5326 17.8452 17.8452C17.5326 18.1577 17.1087 18.3333 16.6667 18.3333H3.33333C2.89131 18.3333 2.46738 18.1577 2.15482 17.8452C1.84226 17.5326 1.66667 17.1087 1.66667 16.6667V9.16667C1.66667 8.72464 1.84226 8.30072 2.15482 7.98816C2.46738 7.6756 2.89131 7.5 3.33333 7.5H5" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" stroke="#1E5AA8"/>
+<path id="Vector_6" d="M15 18.3333V3.33333C15 2.89131 14.8244 2.46738 14.5118 2.15482C14.1993 1.84226 13.7754 1.66667 13.3333 1.66667H6.66667C6.22464 1.66667 5.80072 1.84226 5.48816 2.15482C5.17559 2.46738 5 2.89131 5 3.33333V18.3333" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" stroke="#1E5AA8"/>
+</g>
+<defs>
+<clipPath id="clip0_0_1051">
+<rect width="20" height="20" fill="white"/>
+</clipPath>
+</defs>
+</svg>
