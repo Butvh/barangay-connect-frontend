@@ -16,4 +16,5 @@ Entries start with [P1] or [P2].
 - [P1] ERD: resident_id and household_id may be null for legacy alerts without a reporter; do not invent residents for A-1038/A-1031.
 - [P2] Notification links are allowlisted relative resident routes. The legacy resident-my-feedback route is normalized to resident-feedback; a small compatibility redirect preserves external deep links.
 - [P2] Countdown formatting accepts an optional reference date. Verification passes Store.now() so its countdown follows P1's shared October demo clock instead of the machine calendar.
+- [P2] The shell resolves the resident's barangay through Api.barangays.list. BCMap shows a coverage empty state for barangays without artwork instead of presenting Sampaguita as their geography.
 
