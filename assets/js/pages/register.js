@@ -1,4 +1,5 @@
 import {Auth,Api,UI,e,icon,heading,field,tile,link,busy,dialog} from './resident-shared.js';
+Auth.requireRole([]);
 const app=document.querySelector('#app');
 app.innerHTML='<header class="public-header"><div><a class="brand" href="resident-login.html"><img src="assets/img/logo.png" width="36" height="36" alt=""><span>Barangay Connect</span></a>'+link('resident-login.html','Sign in')+'</div></header><main class="public-main" id="main"></main>';
 const main=document.querySelector('#main'),resubmit=new URLSearchParams(location.search).has('resubmit');let step=1,barangays=[],draft={},idFile=null,proofFile=null,createdUser=null;
