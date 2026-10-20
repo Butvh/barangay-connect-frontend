@@ -28,36 +28,18 @@ dependency-injected factories for the shared browser/Node tests.
   not a production authentication/authorization boundary.
 - Methods return arrays or complete objects; pagination is a client-side view
   operation. An empty list is `[]`. Public user objects exclude `password`.
-- Registration payload: `{ full_name, email, password, contact_number,
-  barangay_id, address, map_x?, map_y?, document_type?, file_name? }`.
-  `household_address` and `household.address` are accepted address aliases.
-  A pending verification record is created with registration. Sign in using
-  `Auth.login(email, password)` before calling `verification.submit`.
-  Submitting updates a pending record or creates a new record after rejection/
-  expiry. The queue exposes only the latest record for each resident.
-- `Api.users.get(id)` returns the safe user plus `household` and `verification`.
-  `users.update` accepts `full_name`, `contact_number`, `address` (or
-  `household_address`), `map_x`, `map_y`; roles/email/password are not editable.
-- Optional alert details use `victim_count: null` for Not sure; zero is a valid
-  known count. Reporterless seed alerts use `resident: null`, not an invented
-  reporter. Joined response/rescue entries include staff and facility objects.
-- With `DEMO_MODE`, the demo clock starts at October 4, 2026, 2:20 PM and advances
-  with elapsed time. This preserves the exact seed dates and Jose's pending
-  seven-day deadline regardless of the computer date. `Store.now()` supplies
-  zoned ISO timestamps; its epoch is shared across tabs. Expiry is explicit
-  through `expireOverdue()`, not an
-  invisible change made during login. Laravel must use its server clock.
-- Notifications currently use the flat routes `resident-alert.html`,
-  `resident-verification.html`, `resident-announcements.html`, and
-  `resident-my-feedback.html`, plus the official routes in the brief.
-  P2 should use these route names or request a contract update before changing
-  links. No runtime UI files have been created by P1 in P2-owned locations.
-- Mock file fields store filenames only. No document/photo bytes are retained.
-- `Store.reset()` restores fictional data, emits every entity update and can
-  recover corrupt/version-mismatched storage. Expose it only in demo mode and
-  confirm through the shared UI dialog before resetting.
+- Registration payload: `{ full_name, email, password, contact_…559 tokens truncated…y application pages.
 
-Run `node scripts/check.mjs`, `node scripts/run-tests.mjs`, or open `tests.html`
-through Apache. Both test runners use isolated memory stores and do not alter
-the active browser demo data. No Node runtime is used by application pages.
+## Integration clarification — contract Issue #2
+
+- `verification.list({status})` returns only the resident's own latest record
+  when signed in as a resident. The Secretary receives the latest scoped queue.
+  Responder/Rescuer access remains forbidden. The method signature is unchanged.
+- Store writes that change no data do not increment revision or emit events.
+  This makes `expireOverdue()` safe inside a subscribed verification refresh.
+- Feedback notifications use P2's `resident-feedback.html?id=…` route. Their
+  canonical content fields remain `text`, `link` and `is_read`; renderers should
+  not depend on the isolated P2 stub's `title`, `message` or `entity_id` fields.
+- Map metadata uses P2's `assets/img/maps/sampaguita.png`. The other two
+  barangays have `map_image: null` until their artwork exists.
 

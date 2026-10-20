@@ -40,8 +40,11 @@ export function createStore({ storage = browserStorage(), eventTarget = globalTh
   async function transact(entities, update) {
     const run = () => {
       const db = read();
+      const before = JSON.stringify(db);
       const result = update(db); // No await between fresh read and commit.
       if (result && typeof result.then === 'function') throw new Error('Store updates must be synchronous.');
+      // A no-op expiry/read marker must not retrigger a subscribed page forever.
+      if (JSON.stringify(db) === before) return copy(result ?? null);
       db.revision += 1; db.updated_at = currentTime(); persist(db); emit(entities);
       return copy(result ?? null);
     };

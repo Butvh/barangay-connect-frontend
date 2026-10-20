@@ -71,7 +71,8 @@ sample records coherent; they are fictional, not individual victim records.
 
 ## Current dependency status
 
-The initial scaffold had only README/CONTRACT/DECISIONS. P2 still supplies UI,
-tokens, fonts, icon sprite, maps and resident pages. Expected map metadata names
-are assets/img/map-sampaguita.svg, map-dalisay.svg and map-pag-asa.svg. Confirm
-these names with P2 before connecting BCMap. The core can be tested without UI.
+The initial scaffold had only README/CONTRACT/DECISIONS. P2's resident-ui branch
+now contains shared UI and screens, awaiting its own pull request. The actual
+Sampaguita map is assets/img/maps/sampaguita.png. Dalisay and Pag-asa artwork is
+not supplied, so their map_image values are null. The core can be tested without
+UI. Contract Issue #2 tracks the initial screen integration differences.
