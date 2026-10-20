@@ -11,7 +11,7 @@ const update=()=>{const u=Auth.current()||user;host.querySelector('.identity-nam
 update();const offUsers=Api.subscribe('users',update);
 const unread=async()=>{try{const rows=await Api.notifications.list();const count=rows.filter(n=>!n.read_at&&!n.is_read).length;const el=host.querySelector('.unread-dot');if(el)el.hidden=!count;}catch{}};
 unread();const offNotifications=Api.subscribe('notifications',unread);
-window.addEventListener('pagehide',()=>{offUsers();offNotifications();},{once:true});
+window.addEventListener('pagehide',event=>{if(event.persisted)return;offUsers();offNotifications();},{once:true});
 return host.querySelector('main');
 }};
 

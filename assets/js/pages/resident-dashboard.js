@@ -12,6 +12,6 @@ maps.push(BCMap.mount(main.querySelector('#dashboard-map'),{barangay_id:user.bar
 main.querySelector('#history').addEventListener('click',()=>dialog('My SOS history','<div class="stack-sm">'+(alerts.length?alerts.map(a=>'<a class="card spread" href="resident-alert.html?id='+a.id+'"><span><strong>'+e(alertLabel(a))+'</strong><p>'+e(Fmt.short(a.created_at))+'</p></span>'+UI.badge(a.status)+'</a>').join(''):UI.empty({icon:'clock',title:'No SOS history',text:'Your previous SOS alerts will appear here.'}))+'</div>'));
 main.querySelector('#contacts').addEventListener('click',()=>dialog('Emergency contacts','<div class="stack"><p>Contact the barangay office or a nearby facility for assistance.</p>'+facilities.map(f=>'<div class="card stack-sm"><h3>'+e(f.name)+'</h3><p>'+e(f.address)+'</p>'+(f.contact?'<a href="tel:'+e(f.contact.replace(/[^+0-9]/g,''))+'">'+e(f.contact)+'</a>':'<p class="muted">Contact number not provided</p>')+'</div>').join('')+link('resident-map.html','View facilities on map')+'</div>'));
 }catch(err){errorView(main,err,render);}}
-const update=live(['alerts','verification','announcements','users'],render);update();window.addEventListener('pagehide',()=>maps.forEach(m=>m.destroy()),{once:true});
+const update=live(['alerts','verification','announcements','users'],render);update();window.addEventListener('pagehide',event=>{if(event.persisted)return;maps.forEach(m=>m.destroy());},{once:true});
 }
 

@@ -20,5 +20,5 @@ async function render(){try{const [resident,facilities,alerts]=await Promise.all
 bindLayers(main);main.querySelector('#filters').addEventListener('click',()=>{const d=dialog('Map layers','<div class="stack">'+layers()+'</div>',{sheet:true});bindLayers(d);});main.querySelector('[data-facilities]')?.addEventListener('click',facilityDialog);
 const requested=Number(new URLSearchParams(location.search).get('facility')),first=markers().find(m=>m.id===(requested?'facility-'+requested:selected?.id))||markers().find(m=>m.kind==='alert')||markers()[0];if(first)show(first);updateMarkers();
 }catch(err){errorView(main,err,render);}}
-live(['alerts','users'],render)();window.addEventListener('pagehide',()=>map?.destroy(),{once:true});}
+live(['alerts','users'],render)();window.addEventListener('pagehide',event=>{if(event.persisted)return;map?.destroy();},{once:true});}
 

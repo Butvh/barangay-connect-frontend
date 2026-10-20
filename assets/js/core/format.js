@@ -7,7 +7,7 @@ date(iso){const d=valid(iso);return d?dateFormat.format(d):'—';},
 dateTime(iso){const d=valid(iso);return d?dateFormat.format(d)+' · '+timeFormat.format(d):'—';},
 short(iso){const d=valid(iso);return d?shortDate.format(d)+' · '+timeFormat.format(d):'—';},
 alertId(n){return 'A-'+String(n);},
-countdown(iso){const d=valid(iso);if(!d)return '—';const days=Math.ceil((d.getTime()-Date.now())/86400000);return days>0?days+' day'+(days===1?'':'s')+' remaining':'Expired';},
+countdown(iso,reference=Date.now()){const d=valid(iso),base=new Date(reference);if(!d||Number.isNaN(base.getTime()))return '—';const days=Math.ceil((d.getTime()-base.getTime())/86400000);return days>0?days+' day'+(days===1?'':'s')+' remaining':'Expired';},
 initials(name){const parts=String(name??'').trim().split(/\s+/u).filter(Boolean);return parts.length?Array.from(parts[0])[0].toLocaleUpperCase()+(parts.length>1?Array.from(parts.at(-1))[0].toLocaleUpperCase():''):'?';}
 };
 
