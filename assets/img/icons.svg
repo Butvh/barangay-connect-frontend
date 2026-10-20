@@ -37,11 +37,9 @@
 <path id="triangle-alert-Lucide-triangle-alert-VECTOR_2" d="M10 7.5V10.8333" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor"/>
 <path id="triangle-alert-Lucide-triangle-alert-VECTOR_3" d="M10 14.1667H10.0083" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor"/>
 </g>
-</symbol><symbol id="circle-check" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-<g id="circle-check-Lucide - circle-check">
-<path id="circle-check-Vector" opacity="0" d="M18.3333 10C18.3333 14.6024 14.6024 18.3333 10 18.3333C5.39763 18.3333 1.66667 14.6024 1.66667 10C1.66667 5.39763 5.39763 1.66667 10 1.66667C14.6024 1.66667 18.3333 5.39763 18.3333 10Z" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" stroke="white"/>
-<path id="circle-check-Vector_2" d="M13.3333 7.5L8.75 12.0833L6.66667 10" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" stroke="white"/>
-</g>
+</symbol><symbol id="circle-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <circle cx="12" cy="12" r="10" />
+  <path d="m16 9-5.5 5.5L8 12" />
 </symbol><symbol id="clock" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 <g id="clock-Lucide-clock" clip-path="url(#clock-clip0_0_1144)">
 <path id="clock-Lucide-clock-VECTOR" d="M18.3333 10C18.3333 14.6024 14.6024 18.3333 10 18.3333C5.39763 18.3333 1.66667 14.6024 1.66667 10C1.66667 5.39763 5.39763 1.66667 10 1.66667C14.6024 1.66667 18.3333 5.39763 18.3333 10Z" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor"/>
@@ -159,6 +157,10 @@
   <path d="m6 9 6 6 6-6" />
 </symbol><symbol id="chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
   <path d="m15 18-6-6 6-6" />
+</symbol><symbol id="clipboard-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <rect width="8" height="4" x="8" y="2" rx="1" ry="1" />
+  <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+  <path d="m9 14 2 2 4-4" />
 </symbol><symbol id="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
   <path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" />
   <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" />
@@ -173,6 +175,11 @@
   <circle cx="12" cy="12" r="10" />
   <path d="M12 16v-4" />
   <path d="M12 8h.01" />
+</symbol><symbol id="layout-dashboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <rect width="7" height="9" x="3" y="3" rx="1" />
+  <rect width="7" height="5" x="14" y="3" rx="1" />
+  <rect width="7" height="9" x="14" y="12" rx="1" />
+  <rect width="7" height="5" x="3" y="16" rx="1" />
 </symbol><symbol id="loader-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
   <path d="M21 12a9 9 0 1 1-6.219-8.56" />
 </symbol><symbol id="lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -182,6 +189,10 @@
   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
   <polyline points="16 17 21 12 16 7" />
   <line x1="21" x2="9" y1="12" y2="12" />
+</symbol><symbol id="menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M4 5h16" />
+  <path d="M4 12h16" />
+  <path d="M4 19h16" />
 </symbol><symbol id="minus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
   <path d="M5 12h14" />
 </symbol><symbol id="mountain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
