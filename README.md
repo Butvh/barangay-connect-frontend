@@ -47,6 +47,8 @@ The Profile link points to P1's resident-profile.html. Initials come from the cu
 
 [components.html](components.html) demonstrates the shared components. [CONTRACT.md](docs/CONTRACT.md) defines UI, Icons, Fmt, BCMap and shell exports. Local Inter and Lucide assets include their licenses.
 
+`Icons.svg(name)` includes `menu`, `layout-dashboard`, and `clipboard-check` for the official shell. `Icons.disaster(type)` returns the canonical sprite name for Fire, Flood, Typhoon/Storm, Landslide, Earthquake, or Other; unknown values use `triangle-alert`. Render it with `Icons.svg(Icons.disaster(type))`. The resident SOS selector uses this same mapping. The shared `circle-check` inherits the surrounding text color, and the resident header brand has a 44px minimum clickable area without enlarging its logo.
+
 BCMap uses the Figma base at assets/img/maps/sampaguita.png. Markers use percentage coordinates and real buttons. Drag, focused wheel, +/− and arrow keys control the map. In the SOS picker, position the crosshair with zoom/pan and press Enter or Space to set the point. Marker touch targets remain 44 pixels.
 
 Only Sampaguita has artwork; other barangays show a coverage empty state. This is approximate demo geography, not routing, tiles or real geolocation.
