@@ -1,0 +1,15 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Lucide / school" clip-path="url(#clip0_0_969)">
+<path id="Vector" d="M11.6667 18.3333V15C11.6667 14.558 11.4911 14.134 11.1785 13.8215C10.8659 13.5089 10.442 13.3333 10 13.3333C9.55797 13.3333 9.13405 13.5089 8.82149 13.8215C8.50893 14.134 8.33333 14.558 8.33333 15V18.3333" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" stroke="#1E5AA8"/>
+<path id="Vector_2" d="M15 8.33333L17.8725 9.77C18.0109 9.83916 18.1273 9.94548 18.2087 10.0771C18.2901 10.2086 18.3333 10.3603 18.3333 10.515V16.6667C18.3333 17.1087 18.1577 17.5326 17.8452 17.8452C17.5326 18.1577 17.1087 18.3333 16.6667 18.3333H3.33333C2.89131 18.3333 2.46738 18.1577 2.15482 17.8452C1.84226 17.5326 1.66667 17.1087 1.66667 16.6667V10.515C1.66675 10.3603 1.7099 10.2086 1.79129 10.0771C1.87268 9.94548 1.9891 9.83916 2.1275 9.77L5 8.33333" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" stroke="#1E5AA8"/>
+<path id="Vector_3" d="M15 4.16667V18.3333" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" stroke="#1E5AA8"/>
+<path id="Vector_4" d="M3.33333 5L9.255 2.03917C9.48633 1.92357 9.74139 1.86339 10 1.86339C10.2586 1.86339 10.5137 1.92357 10.745 2.03917L16.6667 5" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" stroke="#1E5AA8"/>
+<path id="Vector_5" d="M5 4.16667V18.3333" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" stroke="#1E5AA8"/>
+<path id="Vector_6" d="M11.6667 7.5C11.6667 8.42047 10.9205 9.16667 10 9.16667C9.07953 9.16667 8.33333 8.42047 8.33333 7.5C8.33333 6.57953 9.07953 5.83333 10 5.83333C10.9205 5.83333 11.6667 6.57953 11.6667 7.5Z" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" stroke="#1E5AA8"/>
+</g>
+<defs>
+<clipPath id="clip0_0_969">
+<rect width="20" height="20" fill="white"/>
+</clipPath>
+</defs>
+</svg>
