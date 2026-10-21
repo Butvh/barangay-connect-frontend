@@ -9,6 +9,7 @@ import { verificationPage, verificationStats, reviewable } from '../assets/js/pa
 import { feedbackPage, feedbackCounts, feedbackRequestId } from '../assets/js/pages/official-feedback-model.js';
 import { Icons } from '../assets/js/core/icons.js';
 import { reportRequest, reportScreen, initialReportLocation } from '../assets/js/pages/resident-report-model.js';
+import { latestHomeAnnouncement } from '../assets/js/pages/resident-dashboard-model.js';
 
 const tests = [];
 const test = (name, run) => tests.push({ name, run });
@@ -16,6 +17,74 @@ const equal = (a, b, label = 'values differ') => { if (JSON.stringify(a) !== JSO
 const ok = (value, label = 'assertion failed') => { if (!value) throw new Error(label); };
 async function rejects(run, code) { let found; try { await run(); } catch (error) { found = error; } ok(found, `expected ${code}`); equal(found.code, code); }
 const noDelay = () => Promise.resolve();
+
+test('Home selects one announcement by publication instant without reordering the API records', () => {
+  const rows = [
+    { id: 99, created_at: '2026-10-04T10:00:00+08:00' },
+    { id: 3, created_at: '2026-10-04T05:00:00Z' },
+    { id: 4, created_at: '2026-10-04T12:00:00+08:00' },
+  ];
+  equal(latestHomeAnnouncement(rows, Date.parse('2026-10-04T14:00:00+08:00'))?.id, 3);
+  equal(rows.map(row => row.id), [99, 3, 4]);
+});
+
+test('Home uses explicit publication time rather than a draft creation time', () => {
+  const rows = [
+    { id: 1, created_at: '2026-10-01T12:00:00+08:00', published_at: '2026-10-04T13:00:00+08:00', status: 'Published' },
+    { id: 2, created_at: '2026-10-04T12:00:00+08:00', status: 'Active' },
+  ];
+  equal(latestHomeAnnouncement(rows, Date.parse('2026-10-04T14:00:00+08:00'))?.id, 1);
+});
+
+test('Home excludes inactive, unpublished, future and malformed announcement records', () => {
+  const now = Date.parse('2026-10-04T14:00:00+08:00');
+  const valid = { id: 1, created_at: '2026-10-04T10:00:00+08:00' };
+  const excluded = [
+    ...['Draft', 'Unpublished', 'Retracted', 'Archived', 'Expired'].map(status => ({ status })),
+    { is_published: false }, { archived_at: '2026-10-04T13:00:00+08:00' },
+    { retracted_at: '2026-10-04T13:00:00+08:00' },
+    { published_at: null }, { published_at: '' }, { published_at: 'invalid' },
+    { published_at: '2026-10-04T14:00:01+08:00' }, { created_at: 'invalid' },
+    { expires_at: 'invalid' }, { expires_at: '2026-10-04T14:00:00+08:00' },
+  ];
+  for (const patch of excluded) {
+    equal(latestHomeAnnouncement([valid, { id: 2, created_at: '2026-10-04T13:00:00+08:00', ...patch }], now)?.id, 1);
+  }
+});
+
+test('Home falls back at the exact expiry boundary and returns no record when none remain', () => {
+  const rows = [
+    { id: 1, created_at: '2026-10-04T10:00:00+08:00', expires_at: '2026-10-04T15:00:00+08:00' },
+    { id: 2, created_at: '2026-10-04T12:00:00+08:00', expires_at: '2026-10-04T14:00:00+08:00' },
+  ];
+  equal(latestHomeAnnouncement(rows, Date.parse('2026-10-04T13:59:59.999+08:00'))?.id, 2);
+  equal(latestHomeAnnouncement(rows, Date.parse('2026-10-04T14:00:00+08:00'))?.id, 1);
+  equal(latestHomeAnnouncement(rows, Date.parse('2026-10-04T15:00:00+08:00')), null);
+  equal(latestHomeAnnouncement([], Date.parse('2026-10-04T14:00:00+08:00')), null);
+});
+
+test('Home resolves equal publication times consistently independent of list order', () => {
+  const rows = [{ id: 1, created_at: '2026-10-04T10:00:00+08:00' }, { id: 2, created_at: '2026-10-04T10:00:00+08:00' }];
+  const now = Date.parse('2026-10-04T14:00:00+08:00');
+  equal(latestHomeAnnouncement(rows, now)?.id, 2);
+  equal(latestHomeAnnouncement([...rows].reverse(), now)?.id, 2);
+});
+
+test('Home selection follows real cross-tab publication and lifecycle events without dropping View all records', async () => {
+  const f = fixture(); await f.login(f.authA, 'maria.santos'); await f.login(f.authB, 'ana.reyes');
+  let changes = 0; f.apiA.subscribe('announcements', () => changes++);
+  const before = await f.apiA.announcements.list();
+  equal(latestHomeAnnouncement(before, Date.parse(f.storeA.now()))?.id, 1);
+  const published = await f.apiB.announcements.create({ title: 'New advisory', content: 'Fictional test update.' });
+  ok(changes > 0);
+  equal(latestHomeAnnouncement(await f.apiA.announcements.list(), Date.parse(f.storeA.now()))?.id, published.id);
+  for (const patch of [{ status: 'Retracted' }, { status: 'Archived' }, { status: 'Published', expires_at: f.storeA.now() }]) {
+    await f.storeB.transact(['announcements'], db => Object.assign(db.announcements.find(row => row.id === published.id), patch));
+    const rows = await f.apiA.announcements.list();
+    equal(rows.length, before.length + 1);
+    equal(latestHomeAnnouncement(rows, Date.parse(f.storeA.now()))?.id, 1);
+  }
+});
 test('shared disaster icons use the agreed Lucide symbols, including Earthquake and Other', () => {
   for (const [type, name] of [['Fire', 'flame'], ['Flood', 'waves'], ['Typhoon/Storm', 'cloud-rain'], ['Landslide', 'mountain'], ['Earthquake', 'triangle-alert'], ['Other', 'triangle-alert']]) { equal(Icons.disaster(type), name); ok(Icons.svg(Icons.disaster(type)).includes(`#${name}`)); }
 });
