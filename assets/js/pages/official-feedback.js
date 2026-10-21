@@ -1,6 +1,7 @@
-import { Auth, Api, UI, Icons, Fmt, e, dialog, pagination, live } from './official-shared.js';
+import { Auth, Api, Store, UI, Fmt, e, dialog, pagination, live } from './official-shared.js';
+import { Icons } from '../core/icons.js?v=feedback-summary-1';
 import { Shell } from '../core/shell-official.js';
-import { FEEDBACK_TYPES, FEEDBACK_STATUSES, feedbackText, feedbackPage, feedbackCounts, feedbackRequestId } from './official-feedback-model.js';
+import { FEEDBACK_TYPES, FEEDBACK_STATUSES, feedbackText, feedbackPage, feedbackStats, feedbackRequestId } from './official-feedback-model.js?v=feedback-summary-1';
 
 let user;
 try { Auth.requireRole(['secretary']); user = Auth.current(); }
@@ -12,25 +13,33 @@ if (user) {
   Object.assign(states[type], { q: (params.get('q') || '').slice(0, 200), status: type !== 'general' && FEEDBACK_STATUSES.includes(params.get('status')) ? params.get('status') : '', sort: params.get('sort') === 'oldest' ? 'oldest' : 'newest', page: Math.max(1, Math.trunc(Number(params.get('page'))) || 1) });
   main.innerHTML = `<header class="official-heading"><h1>Feedback</h1><p>Review concerns, suggestions, and resident feedback submissions.</p></header><div class="tabs official-feedback-tabs" role="tablist" aria-label="Feedback type">${Object.entries(FEEDBACK_TYPES).map(([key, label]) => `<button type="button" class="tab" role="tab" id="tab-${key}" data-value="${key}" aria-controls="feedback-${key}" aria-selected="${key === type}" tabindex="${key === type ? 0 : -1}">${label}</button>`).join('')}</div><div class="banner banner-error" role="alert" data-load-error hidden><span class="grow"></span><button type="button" class="btn" data-retry>Try again</button></div><div class="banner banner-error" role="alert" data-link-error hidden><span class="grow">The requested feedback is unavailable or no longer matches these filters. Select a visible submission to continue.</span><button type="button" class="icon-btn" aria-label="Dismiss unavailable feedback">${Icons.svg('x')}</button></div>${Object.keys(FEEDBACK_TYPES).map(key => `<section role="tabpanel" id="feedback-${key}" aria-labelledby="tab-${key}"${key !== type ? ' hidden' : ''}></section>`).join('')}`;
   const error = main.querySelector('[data-load-error]'), tabs = main.querySelector('[role="tablist"]');
-  let panel, results, detail, form;
+  let panel, results, detail, form, summaryAt;
   const state = () => states[type];
   function url() { const s = state(), p = new URLSearchParams({ type }); if (s.q) p.set('q', s.q); if (s.status && type !== 'general') p.set('status', s.status); if (s.sort === 'oldest') p.set('sort', s.sort); if (s.page > 1) p.set('page', s.page); if (s.id !== null) p.set('id', s.id); history.replaceState(null, '', `official-feedback.html?${p}`); }
   function rating(row) { return `<span class="official-feedback-rating">${Icons.svg('star', { size: 20 })}<span>${Number(row.rating)} of 5</span></span>`; }
   function summary() {
-    if (type !== 'complaint') return;
-    const counts = feedbackCounts(records);
-    panel.querySelector('[data-stats]').innerHTML = [['Pending', 'Pending complaints', 'Needs action', 'file-text', 'amber'], ['Assigned', 'Assigned complaints', 'Sent to Tanod', 'users', ''], ['Resolved', 'Resolved complaints', 'Marked resolved', 'circle-check', 'green']].map(([key, title, hint, icon, tone]) => `<section class="card official-review-stat"><span class="icon-tile round ${tone}">${Icons.svg(icon, { size: 28 })}</span><div><strong>${counts[key]}</strong><p>${title}</p><small>${hint}</small></div></section>`).join('');
+    if (!loaded) return;
+    try { summaryAt = Store.now(); } catch { /* Use the last known reference while load errors offer recovery. */ }
+    if (!summaryAt) { panel.querySelector('[data-stats]').innerHTML = '<p>Summary unavailable until feedback loads.</p>'; return; }
+    const stats = feedbackStats(records, summaryAt), values = stats[type], general = type === 'general';
+    const cards = type === 'complaint'
+      ? [[values.Pending, 'Pending complaints', 'Needs action', 'file-text', 'amber'], [values.Assigned, 'Assigned complaints', 'Sent to Tanod', 'users', ''], [values.Resolved, 'Resolved complaints', 'Marked resolved', 'circle-check', 'green']]
+      : type === 'suggestion'
+        ? [[values.new, 'New suggestions', 'Submitted this week', 'lightbulb', ''], [values.review, 'Under review', 'Awaiting action', 'clock', 'amber'], [values.implemented, 'Implemented', 'Marked as implemented', 'check', 'green']]
+        : [[values.average === null ? '—' : values.average.toFixed(1), 'Average rating', 'out of 5', 'star', ''], [values.received, 'Feedback received', 'this month', 'message-circle', ''], [values.positive === null ? '—' : `${values.positive}%`, 'Positive responses', 'rated 4–5', 'thumbs-up', 'green']];
+    panel.querySelector('[data-stats]').innerHTML = cards.map(([value, title, hint, icon, tone]) => `<section class="card official-review-stat" aria-label="${title}"><span class="icon-tile round ${tone}${icon === 'star' ? ' official-feedback-stat-star' : ''}">${Icons.svg(icon, { size: 28 }).replace('icons.svg#thumbs-up', 'icons.svg?v=feedback-summary-1#thumbs-up')}</span><div><p>${title}</p><div class="official-feedback-stat-value"><strong>${value}</strong>${general ? `<small>${hint}</small>` : ''}</div>${general ? '' : `<small>${hint}</small>`}</div></section>`).join('');
   }
   function build() {
     panel = main.querySelector(`#feedback-${type}`);
     const general = type === 'general', s = state();
     panel.className = 'official-feedback-panel';
-    panel.innerHTML = `${type === 'complaint' ? '<div class="official-review-stats" data-stats></div>' : ''}<div class="official-feedback-grid"><section class="card official-feedback-list"><form class="official-feedback-filters" novalidate><div class="field official-review-search"><label class="sr-only" for="search-${type}">Search ${FEEDBACK_TYPES[type].toLowerCase()}</label><div>${Icons.svg('search', { size: 20 })}<input class="input" type="search" id="search-${type}" name="q" maxlength="200" value="${e(s.q)}" placeholder="Search ${FEEDBACK_TYPES[type].toLowerCase()}…"><button type="button" class="icon-btn" data-clear-search aria-label="Clear search"${s.q ? '' : ' hidden'}>${Icons.svg('x')}</button></div></div>${!general ? `<div class="field"><label class="sr-only" for="status-${type}">Status</label><select class="select" name="status" id="status-${type}"><option value="">All statuses</option>${FEEDBACK_STATUSES.map(v => `<option${s.status === v ? ' selected' : ''}>${v}</option>`).join('')}</select></div>` : ''}<div class="field"><label class="sr-only" for="sort-${type}">Sort feedback</label><select class="select" name="sort" id="sort-${type}"><option value="newest">Newest first</option><option value="oldest"${s.sort === 'oldest' ? ' selected' : ''}>Oldest first</option></select></div></form><div data-results aria-busy="true">${UI.skeleton(2)}</div></section><aside class="card official-feedback-detail" aria-label="Selected feedback"></aside></div>`;
+    panel.innerHTML = `<div class="official-review-stats official-feedback-stats" data-stats aria-label="${FEEDBACK_TYPES[type]} summary">${Array.from({ length: 3 }, () => '<div class="skeleton" aria-hidden="true"></div>').join('')}</div><div class="official-feedback-grid"><section class="card official-feedback-list"><form class="official-feedback-filters" novalidate><div class="field official-review-search"><label class="sr-only" for="search-${type}">Search ${FEEDBACK_TYPES[type].toLowerCase()}</label><div>${Icons.svg('search', { size: 20 })}<input class="input" type="search" id="search-${type}" name="q" maxlength="200" value="${e(s.q)}" placeholder="Search ${FEEDBACK_TYPES[type].toLowerCase()}…"><button type="button" class="icon-btn" data-clear-search aria-label="Clear search"${s.q ? '' : ' hidden'}>${Icons.svg('x')}</button></div></div>${!general ? `<div class="field"><label class="sr-only" for="status-${type}">Status</label><select class="select" name="status" id="status-${type}"><option value="">All statuses</option>${FEEDBACK_STATUSES.map(v => `<option${s.status === v ? ' selected' : ''}>${v}</option>`).join('')}</select></div>` : ''}<div class="field"><label class="sr-only" for="sort-${type}">Sort feedback</label><select class="select" name="sort" id="sort-${type}"><option value="newest">Newest first</option><option value="oldest"${s.sort === 'oldest' ? ' selected' : ''}>Oldest first</option></select></div></form><div data-results aria-busy="true">${UI.skeleton(2)}</div></section><aside class="card official-feedback-detail" aria-label="Selected feedback"></aside></div>`;
     form = panel.querySelector('form'); results = panel.querySelector('[data-results]'); detail = panel.querySelector('aside');
     function filter(keepSelection = false) { Object.assign(state(), { q: form.elements.q.value.trim(), status: form.elements.status?.value || '', sort: form.elements.sort.value, page: 1, id: keepSelection === true ? state().id : null }); render(); }
     form.addEventListener('submit', event => { event.preventDefault(); filter(); }); form.elements.q.addEventListener('input', event => { if (!event.isComposing) filter(); }); form.elements.q.addEventListener('compositionend', filter);
     form.querySelectorAll('select').forEach(select => select.addEventListener('change', () => filter(select.name === 'sort'))); form.querySelector('[data-clear-search]').addEventListener('click', () => { form.elements.q.value = ''; filter(); form.elements.q.focus(); });
     if (loaded) render();
+    else if (stale) panel.querySelector('[data-stats]').innerHTML = '<p>Summary unavailable until feedback loads.</p>';
   }
   function renderDetail(row) {
     if (!row) { detail.innerHTML = '<p>Select a submission to read its details.</p>'; return; }
@@ -80,10 +89,23 @@ if (user) {
     const request = ++version;
     try { const rows = await Api.feedback.list(); if (request !== version) return; records = rows; loaded = true; stale = false; error.hidden = true;
       if (requested !== null) { const row = rows.find(r => r.id === requested), id = requested; requested = null; if (row) type = row.type; Object.assign(states[type], { id, reveal: true }); tabs.querySelector(`[data-value="${type}"]`).click(); }
-      render();
-    } catch (err) { if (request !== version) return; stale = true; error.querySelector('.grow').textContent = `${loaded ? 'Feedback could not refresh. Displayed records may be out of date.' : 'Unable to load feedback.'} ${err.message}`; error.hidden = false; if (loaded) render(); else { results.removeAttribute('aria-busy'); results.innerHTML = UI.empty({ icon: 'message-square', title: 'Feedback unavailable', text: 'Use Try again to reload submissions.' }); } }
+      render(); refreshSummaryClock();
+    } catch (err) { if (request !== version) return; stale = true; error.querySelector('.grow').textContent = `${loaded ? 'Feedback could not refresh. Displayed records may be out of date.' : 'Unable to load feedback.'} ${err.message}`; error.hidden = false; if (loaded) render(); else { panel.querySelector('[data-stats]').innerHTML = '<p>Summary unavailable until feedback loads.</p>'; results.removeAttribute('aria-busy'); results.innerHTML = UI.empty({ icon: 'message-square', title: 'Feedback unavailable', text: 'Use Try again to reload submissions.' }); } }
   }
   UI.tabs(tabs); tabs.addEventListener('tabchange', event => { type = event.detail; build(); url(); }); build();
   main.querySelector('[data-retry]').addEventListener('click', load); main.querySelector('[data-link-error] button').addEventListener('click', () => { main.querySelector('[data-link-error]').hidden = true; tabs.querySelector('[aria-selected="true"]').focus(); });
+  let summaryTimer;
+  const refreshSummaryClock = () => {
+    clearTimeout(summaryTimer);
+    if (document.hidden) return;
+    summary();
+    let now;
+    try { now = Date.parse(Store.now()); } catch { return; }
+    const day = 86400000;
+    if (Number.isFinite(now)) summaryTimer = setTimeout(refreshSummaryClock, day - ((now + 8 * 3600000) % day) + 25);
+  };
+  document.addEventListener('visibilitychange', refreshSummaryClock);
+  refreshSummaryClock();
+  window.addEventListener('pagehide', () => clearTimeout(summaryTimer), { once: true });
   live(['feedback', 'users'], load)(); window.addEventListener('pagehide', event => { if (!event.persisted) version++; }, { once: true });
 }
