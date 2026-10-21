@@ -286,7 +286,21 @@ at tablet/mobile widths, and the detail panel stacks below the list when the
 desktop two-column layout would compress values. Selection is a native button;
 table rows are not nonsemantic click targets. Published dates use Fmt.
 
-Complaint summaries show current Pending/Assigned/Resolved totals. The frozen
+Each Feedback tab shows the same three-card summary layout, using all scoped
+records rather than the current search/filter/page. Complaint summaries show
+current Pending/Assigned/Resolved totals. Suggestions show Pending submissions
+in the current Monday-start Manila calendar week through Store.now() as New,
+Assigned as Under review, and Resolved as Implemented (summary labels only;
+the existing workflow and table labels are unchanged). General Feedback shows
+the mean of valid numeric integer ratings 1–5, submissions in the current
+Manila calendar month through Store.now(), and the rounded percentage of valid
+ratings that are 4–5. Mean is displayed to one decimal. An empty rated dataset
+shows em dashes for mean/percentage and real zero submission counts. Invalid or
+future dates do not count toward a calendar period. Live subscriptions refresh
+statistics after record updates; visible-tab and Manila midnight refreshes
+also update the period counts. No seed or stored record fields change.
+
+The frozen
 model has no assignment/resolution timestamps, so the later Figma's "today"
 counts are not fabricated. The seeded Tanod Luis Garcia (user 6) is read via
 Api.users.get for the assignment selector; there is no staff-list contract or

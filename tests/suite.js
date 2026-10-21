@@ -11,6 +11,7 @@ import { Icons } from '../assets/js/core/icons.js';
 import { reportRequest, reportScreen, initialReportLocation } from '../assets/js/pages/resident-report-model.js';
 import { latestHomeAnnouncement } from '../assets/js/pages/resident-dashboard-model.js';
 import { registerAnnouncementTests } from './announcements.js';
+import { registerFeedbackSummaryTests } from './feedback-summary.js';
 
 const tests = [];
 const test = (name, run) => tests.push({ name, run });
@@ -19,6 +20,7 @@ const ok = (value, label = 'assertion failed') => { if (!value) throw new Error(
 async function rejects(run, code) { let found; try { await run(); } catch (error) { found = error; } ok(found, `expected ${code}`); equal(found.code, code); }
 const noDelay = () => Promise.resolve();
 registerAnnouncementTests({ test, equal, ok, rejects, fixture });
+registerFeedbackSummaryTests({ test, equal, fixture });
 
 test('Home selects one announcement by publication instant without reordering the API records', () => {
   const rows = [

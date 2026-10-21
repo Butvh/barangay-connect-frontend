@@ -21,3 +21,28 @@ export function feedbackPage(rows, { type = 'complaint', q = '', status = '', so
   return { rows: visible, total: filtered.length, pages, page: current, selected: id === null ? visible[0] || null : index >= 0 ? filtered[index] : null, selectionMissing: id !== null && index < 0, q, status, filtersCleared };
 }
 export const feedbackCounts = rows => Object.fromEntries(FEEDBACK_STATUSES.map(status => [status, rows.filter(row => row.type === 'complaint' && row.status === status).length]));
+
+// Calendar periods use the app's explicit clock in Asia/Manila (UTC+08:00).
+// Summary labels map Assigned/Resolved to review/implementation; workflows stay unchanged.
+export function feedbackStats(rows, at) {
+  const now = Date.parse(at), offset = 8 * 3600000, day = 86400000, local = new Date(now + offset);
+  const midnight = Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate()) - offset;
+  const week = midnight - ((local.getUTCDay() + 6) % 7) * day;
+  const month = Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), 1) - offset;
+  const inPeriod = (row, start) => { const created = Date.parse(row.created_at); return created >= start && created <= now; };
+  const suggestions = rows.filter(row => row.type === 'suggestion'), general = rows.filter(row => row.type === 'general');
+  const ratings = general.map(row => row.rating).filter(value => Number.isInteger(value) && value >= 1 && value <= 5);
+  return {
+    complaint: feedbackCounts(rows),
+    suggestion: {
+      new: suggestions.filter(row => row.status === 'Pending' && inPeriod(row, week)).length,
+      review: suggestions.filter(row => row.status === 'Assigned').length,
+      implemented: suggestions.filter(row => row.status === 'Resolved').length,
+    },
+    general: {
+      average: ratings.length ? Number((ratings.reduce((sum, value) => sum + value, 0) / ratings.length).toFixed(1)) : null,
+      received: general.filter(row => inPeriod(row, month)).length,
+      positive: ratings.length ? Math.round(ratings.filter(value => value >= 4).length / ratings.length * 100) : null,
+    },
+  };
+}
