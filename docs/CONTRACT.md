@@ -403,3 +403,36 @@ were not run in this patch. Earlier feature integration evidence remains.
 The tracked code findings are resolved by this patch; partner final review and
 release-tag publication remain separate steps. No final v1 sign-off is implied.
 
+
+## Authorized SOS reliability patch — contract Issue #16, October 21, 2026
+
+The user authorized this focused P2 follow-up, including the limited P1-owned
+API and regression-suite changes. Other audit findings remain separate.
+
+- `alerts.create(payload)` validates the resident, approval and payload, then
+  reuses the latest own active alert in the same barangay inside the existing
+  transaction. Active means any status other than Resolved. A retry returns
+  the joined alert without applying its payload, changing revision, emitting
+  an event or adding notifications. A new alert is permitted after resolution.
+  Method signatures, DTOs and the status workflow are unchanged. Legacy
+  duplicate records are not deleted. Cross-tab serialization still depends
+  on Web Locks as described above; the fallback is only per tab.
+- Resident report links require one positive safe-integer ID and authorize it
+  through `alerts.get` before showing confirmation or details. Only Pending
+  shows the sent confirmation; progressed and resolved alerts show their real
+  state. Missing, malformed, unknown and foreign IDs use the existing error UI.
+- Details reopen with the saved coordinates, including zero values. Editing
+  descriptive fields retains the pin; selecting My household explicitly moves
+  it home. Shared map zoom controls are non-submit buttons inside forms.
+
+Verification: 128 Node/browser tests pass, the 222-file offline checker passes,
+46 JavaScript modules pass syntax checks and whitespace checks pass. Browser
+walkthroughs covered invalid/foreign/resolved links, pin save/reopen/edit/home,
+zoom controls, the full cross-tab official status workflow and two stale
+resident submission tabs returning the same newly created alert. Twelve report
+state/width checks at 1920, 768 and 390 pixels found no document overflow; map
+zoom controls remain at least 44 by 44. Console warnings/errors were absent.
+A fresh localhost test origin avoided stale modules on the older preview
+origin. All live writes used isolated fictional demo data. No public-site SOS
+was submitted. Real devices, virtual keyboards, forced outages and the full
+200% zoom matrix were not exercised. No final v1 sign-off is implied.

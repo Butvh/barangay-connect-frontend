@@ -8,6 +8,7 @@ import { monitoringMarkers } from '../assets/js/pages/official-map-model.js';
 import { verificationPage, verificationStats, reviewable } from '../assets/js/pages/official-verification-model.js';
 import { feedbackPage, feedbackCounts } from '../assets/js/pages/official-feedback-model.js';
 import { Icons } from '../assets/js/core/icons.js';
+import { reportRequest, reportScreen, initialReportLocation } from '../assets/js/pages/resident-report-model.js';
 
 const tests = [];
 const test = (name, run) => tests.push({ name, run });
@@ -17,6 +18,67 @@ async function rejects(run, code) { let found; try { await run(); } catch (error
 const noDelay = () => Promise.resolve();
 test('shared disaster icons use the agreed Lucide symbols, including Earthquake and Other', () => {
   for (const [type, name] of [['Fire', 'flame'], ['Flood', 'waves'], ['Typhoon/Storm', 'cloud-rain'], ['Landslide', 'mountain'], ['Earthquake', 'triangle-alert'], ['Other', 'triangle-alert']]) { equal(Icons.disaster(type), name); ok(Icons.svg(Icons.disaster(type)).includes(`#${name}`)); }
+});
+
+test('report requests reject missing, malformed and ambiguous alert IDs before displaying success', async () => {
+  equal(reportRequest(''), { id: null, details: false });
+  equal(reportRequest('?id=1042'), { id: 1042, details: false });
+  equal(reportRequest('?step=details&id=1042'), { id: 1042, details: true });
+  for (const query of ['?id=', '?id=0', '?id=-1', '?id=1.5', '?id=NaN', '?id=1e3', '?id=9007199254740992', '?id=1042&id=999', '?step=details']) {
+    await rejects(() => reportRequest(query), 'VALIDATION');
+  }
+});
+
+test('report confirmation is pending-only and resolved alerts never reopen an editable form', async () => {
+  equal(reportScreen({ status: 'Pending' }, false), 'sent');
+  for (const status of ['Acknowledged', 'Responding', 'Rescue in progress']) {
+    equal(reportScreen({ status }, false), 'active');
+    equal(reportScreen({ status }, true), 'details');
+  }
+  equal(reportScreen({ status: 'Resolved' }, false), 'resolved');
+  equal(reportScreen({ status: 'Resolved' }, true), 'resolved');
+  await rejects(() => reportScreen({ status: 'Unknown' }, false), 'INVALID_STATE');
+});
+
+test('report edits preserve the incident pin including map edges when household coordinates differ', () => {
+  const household = { map_x: 67, map_y: 53 };
+  equal(initialReportLocation({ map_x: 20, map_y: 30 }, household), { mode: 'pin', x: 20, y: 30 });
+  equal(initialReportLocation({ map_x: 0, map_y: 100 }, household), { mode: 'pin', x: 0, y: 100 });
+  equal(initialReportLocation({ map_x: 67, map_y: 53 }, household), { mode: 'home', x: 67, y: 53 });
+});
+
+test('SOS retries reuse the own active alert without changing details, revision or notifications', async () => {
+  const f = fixture(); await f.login(f.authA, 'maria.santos');
+  const before = f.storeA.read();
+  const alert = await f.apiA.alerts.create({ alert_type: 'Fire', description: 'Retry must not overwrite', map_x: 0, map_y: 100 });
+  equal(alert.id, 1042); equal(alert.alert_type, 'Flood'); equal(alert.description, before.emergency_alerts.find(a => a.id === 1042).description);
+  equal(f.storeA.read(), before);
+});
+
+test('concurrent resident tabs create one SOS and one set of official notifications', async () => {
+  const f = fixture();
+  await f.storeA.transact(['alerts'], db => { db.emergency_alerts = db.emergency_alerts.filter(a => a.resident_id !== 4); });
+  await f.login(f.authA, 'maria.santos'); await f.login(f.authB, 'maria.santos');
+  const before = f.storeA.read();
+  const [a, b] = await Promise.all([f.apiA.alerts.create({}), f.apiB.alerts.create({})]);
+  equal(a.id, b.id); equal((await f.apiA.alerts.list()).filter(a => a.status !== 'Resolved').length, 1);
+  const after = f.storeA.read(); equal(after.revision, before.revision + 1);
+  equal(after.notifications.length - before.notifications.length, before.users.filter(u => u.barangay_id === 1 && (u.is_secretary || u.is_responder || u.is_rescuer || u.is_tanod || u.is_captain)).length);
+});
+
+test('an active alert belonging to another resident does not block a newly approved resident SOS', async () => {
+  const f = fixture(); await f.login(f.authB, 'ana.reyes'); await f.apiB.verification.review(2, { decision: 'Approved' });
+  await f.login(f.authA, 'jose.dela.cruz'); const alert = await f.apiA.alerts.create({});
+  equal(alert.resident_id, 5); ok(alert.id !== 1042); equal((await f.apiB.alerts.get(1042)).status, 'Pending');
+});
+
+test('a new SOS is allowed after the previous own alert is resolved', async () => {
+  const f = fixture(); await f.login(f.authA, 'ana.reyes'); await f.apiA.alerts.acknowledge(1042);
+  await f.login(f.authA, 'carlo.mendoza'); await f.apiA.alerts.logResponse(1042, { response_type: 'Assessment', response_status: 'Completed' });
+  await f.login(f.authA, 'ramon.bautista'); await f.apiA.alerts.logRescue(1042, { facility_id: 1, rescue_status: 'Completed' });
+  await f.login(f.authA, 'ana.reyes'); await f.apiA.alerts.resolve(1042);
+  await f.login(f.authA, 'maria.santos'); const alert = await f.apiA.alerts.create({});
+  ok(alert.id !== 1042); equal(alert.status, 'Pending'); equal((await f.apiA.alerts.get(1042)).status, 'Resolved');
 });
 test('feedback filtering clamps pagination, searches joined data and preserves records', () => {
   const rows = Array.from({ length: 23 }, (_, i) => ({ id: i + 1, type: 'complaint', description: `Concern ${i}`, location: 'Mabini Street', resident: { full_name: 'Jose Dela Cruz' }, status: i ? 'Resolved' : 'Pending', created_at: Config.demo_time })), before = JSON.stringify(rows);
@@ -103,6 +165,9 @@ test('auth sessions are isolated across resident and official tabs', async () =>
 });
 test('F-X1/F-X2 full workflow, timeline, destination and cross-tab notifications', async () => {
   const f = fixture(); await f.login(f.authA, 'maria.santos'); await f.login(f.authB, 'ana.reyes');
+  // This scenario starts before Maria has an active SOS; retries are covered
+  // separately and must now reuse the existing record instead of creating one.
+  await f.storeA.transact(['alerts'], db => { db.emergency_alerts = db.emergency_alerts.filter(a => a.resident_id !== 4); });
   let sameTab = 0, crossTab = 0; const offA = f.apiA.subscribe('alerts', () => sameTab++), offB = f.apiB.subscribe('alerts', () => crossTab++);
   const alert = await f.apiA.alerts.create({ alert_type: 'Flood', victim_count: null, description: 'Rising water' });
   equal(alert.status, 'Pending'); equal(alert.victim_count, null); equal(alert.resident.full_name, 'Maria Santos');
