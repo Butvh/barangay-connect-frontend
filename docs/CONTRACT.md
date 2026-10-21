@@ -220,3 +220,50 @@ queue template (seven total, six pre-existing). The search-clear/dismiss control
 use addEventListener and were exercised in the browser. No inline event-handler
 attributes were added to work around that heuristic.
 
+## Official announcements
+
+The Secretary-only list and New announcement dialog follow O-09 (Figma
+261:21525 and 261:21623), with canonical shell, buttons, fields, typography,
+colors and centered pagination. Rows stack on mobile. The composer becomes a
+bottom sheet, and published content uses one shared detail dialog from both
+the announcements list and the dashboard. No P2 files or shared tokens changed.
+
+The frozen workflow is list, read and publish only. The API supplies barangay
+scope, author and automatic timestamp, validates the 200-character title and
+5,000-character content limits, and notifies residents in the same barangay.
+No edit/delete, scheduling, category or extra status was introduced. List
+page/deep-link state is reflected in the URL; an unavailable announcement has
+a persistent, dismissible explanation. Background updates refresh the list
+without replacing a draft. Loading, empty, retry and stale-data states are
+implemented. Dynamic content is escaped and line breaks are retained.
+
+Publish validates labelled fields, focuses the first error, prevents repeat
+submission while saving and preserves input after an API error. Cancel, Close,
+Escape and backdrop dismissal share the unsaved-draft confirmation; browser
+unload is also protected. Closing restores focus, and publishing focuses the
+new announcement heading and announces success. API permission is checked
+again at write time, in addition to the page's Secretary guard.
+
+Validation: 116 tests passed in Node and the browser, including blank/length
+validation, unchanged data on rejection, role restrictions and public author
+projection. The offline asset check passed. List, composer and detail passed
+15 view/width combinations at 1920/1440/1366/768/390 px without horizontal
+overflow; enabled tablet/mobile controls were at least 44 px. Browser checks
+covered blank errors, Cancel/Escape keep/discard, focus restoration, valid and
+missing deep links, dashboard detail reuse, Publish and role redirects.
+
+F-X3 passed through actual pages: one Secretary publication appeared in an
+already-open resident announcements list without reload; the resident
+notification's View update opened the matching content, and the resident
+dashboard displayed it after navigation. Consoles were clear, sample data
+restored, sessions signed out and temporary tabs closed. The dashboard and
+notification were opened after publication, so only the resident list was
+verified live without reload in this block. Forced service outage, no-record
+and multiple-page list states were not forced in the browser; their paths
+were reviewed in code.
+
+The premium static audit reports eight actionless-button heuristic findings
+(seven pre-existing). The new list Read button is wired with addEventListener
+and was exercised above. Inline event handlers were not introduced to satisfy
+that heuristic; the static audit therefore still exits with those findings.
+
