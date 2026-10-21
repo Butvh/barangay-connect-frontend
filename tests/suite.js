@@ -10,6 +10,7 @@ import { feedbackPage, feedbackCounts, feedbackRequestId } from '../assets/js/pa
 import { Icons } from '../assets/js/core/icons.js';
 import { reportRequest, reportScreen, initialReportLocation } from '../assets/js/pages/resident-report-model.js';
 import { latestHomeAnnouncement } from '../assets/js/pages/resident-dashboard-model.js';
+import { registerAnnouncementTests } from './announcements.js';
 
 const tests = [];
 const test = (name, run) => tests.push({ name, run });
@@ -17,6 +18,7 @@ const equal = (a, b, label = 'values differ') => { if (JSON.stringify(a) !== JSO
 const ok = (value, label = 'assertion failed') => { if (!value) throw new Error(label); };
 async function rejects(run, code) { let found; try { await run(); } catch (error) { found = error; } ok(found, `expected ${code}`); equal(found.code, code); }
 const noDelay = () => Promise.resolve();
+registerAnnouncementTests({ test, equal, ok, rejects, fixture });
 
 test('Home selects one announcement by publication instant without reordering the API records', () => {
   const rows = [
@@ -70,7 +72,7 @@ test('Home resolves equal publication times consistently independent of list ord
   equal(latestHomeAnnouncement([...rows].reverse(), now)?.id, 2);
 });
 
-test('Home selection follows real cross-tab publication and lifecycle events without dropping View all records', async () => {
+test('Home selection follows real cross-tab publication and preserves withdrawn records for Secretary reads', async () => {
   const f = fixture(); await f.login(f.authA, 'maria.santos'); await f.login(f.authB, 'ana.reyes');
   let changes = 0; f.apiA.subscribe('announcements', () => changes++);
   const before = await f.apiA.announcements.list();
@@ -81,7 +83,8 @@ test('Home selection follows real cross-tab publication and lifecycle events wit
   for (const patch of [{ status: 'Retracted' }, { status: 'Archived' }, { status: 'Published', expires_at: f.storeA.now() }]) {
     await f.storeB.transact(['announcements'], db => Object.assign(db.announcements.find(row => row.id === published.id), patch));
     const rows = await f.apiA.announcements.list();
-    equal(rows.length, before.length + 1);
+    equal(rows.length, before.length);
+    equal((await f.apiB.announcements.list()).length, before.length + 1);
     equal(latestHomeAnnouncement(rows, Date.parse(f.storeA.now()))?.id, 1);
   }
 });

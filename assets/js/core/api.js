@@ -3,6 +3,7 @@ import { Store } from './store.js';
 import { Auth, publicUser } from './auth.js';
 import { assertRole, assertBarangay, assertOwner, assertReadAlert, requireUser, roleOf, isOfficial } from './permissions.js';
 import { transition, ALERT_TYPES, ALERT_STATUSES, RESPONSE_TYPES } from './alertMachine.js';
+import { announcementStatus, announcementPublishedAt } from './announcements.js';
 
 export { ApiError };
 const staff = ['secretary', 'responder', 'rescuer'];
@@ -58,6 +59,27 @@ function alertDetails(input, household, partial = false) {
   for (const key of ['map_x', 'map_y']) if (!partial || input[key] !== undefined) patch[key] = coordinate(input[key], key, household?.[key] ?? 50);
   return patch;
 }
+function announcementExpiry(value, at) {
+  if (value == null || value === '') return null;
+  const expires = Date.parse(value);
+  if (typeof value !== 'string' || !/(Z|[+-]\d{2}:\d{2})$/.test(value) || !Number.isFinite(expires) || expires <= Date.parse(at)) throw new ApiError('VALIDATION', 'Choose a future expiration date and time.', { expires_at: 'Choose a future date and time, or leave this empty.' });
+  return zonedISO(expires);
+}
+function announcementHistory(row, action, user, at, reason) {
+  row.published_at = announcementPublishedAt(row);
+  row.expires_at ??= null;
+  const snapshot = (action, by, at) => ({ action, by, at, title: row.title, content: row.content, expires_at: row.expires_at });
+  if (!row.history) row.history = [snapshot('Published', row.posted_by, row.published_at)];
+  row.history.push({ ...snapshot(action, user?.id ?? null, at), ...(reason ? { reason } : {}) });
+  row.updated_at = at; row.revision = (row.revision || 0) + 1;
+}
+function announcementProjection(db, row, user, at) {
+  const result = { ...row, published_at: announcementPublishedAt(row), expires_at: row.expires_at ?? null, status: announcementStatus(row, at), revision: row.revision || 0, author: publicUser(db.users.find(u => u.id === row.posted_by)) };
+  if (roleOf(user) === 'secretary') {
+    result.history = (row.history || [{ action: 'Published', by: row.posted_by, at: result.published_at, title: row.title, content: row.content, expires_at: result.expires_at }]).map(h => ({ ...h, by_name: db.users.find(u => u.id === h.by)?.full_name || null }));
+  } else { for (const field of ['history', 'retraction_reason', 'retracted_by', 'archived_by']) delete result[field]; }
+  return result;
+}
 
 /** Contract adapter: browser store today, authenticated Laravel endpoints later. */
 export function createApi({ store = Store, auth = Auth, wait = delay, clock = store.now } = {}) {
@@ -75,6 +97,11 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
     const next = transition(alert, action, user, at); Object.assign(alert, next);
     if (alert.resident_id) notification(db, alert.resident_id, 'alert_status', `A-${alert.id} · ${alert.status}`, `resident-alert.html?id=${alert.id}`, at);
     return alert;
+  }
+  function managedAnnouncement(db, user, id, at, patch) {
+    assertRole(user, ['secretary']); const row = get(db.announcements, id, 'Announcement'); assertBarangay(user, row);
+    if (patch?.expected_revision !== undefined && patch.expected_revision !== (row.revision || 0)) throw new ApiError('CONFLICT', 'This announcement changed. Close this form and review the latest version.');
+    return row;
   }
   const api = {
     barangays: { async list() { await wait(); return store.read().barangays; } },
@@ -219,11 +246,38 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
       resolve: id => write(['alerts', 'notifications'], (db, user, at) => joinedAlert(db, transitionAlert(db, user, id, 'resolve', at))),
     },
     announcements: {
-      list: () => read((db, user) => recent(db.announcements.filter(row => row.barangay_id === user.barangay_id)).map(row => ({ ...row, author: publicUser(db.users.find(u => u.id === row.posted_by)) }))),
-      get: id => read((db, user) => { const row = get(db.announcements, id, 'Announcement'); assertBarangay(user, row); return { ...row, author: publicUser(db.users.find(u => u.id === row.posted_by)) }; }),
+      list: () => read((db, user) => { const at = clock(); return recent(db.announcements.filter(row => row.barangay_id === user.barangay_id && (roleOf(user) === 'secretary' || announcementStatus(row, at) === 'Active'))).map(row => announcementProjection(db, row, user, at)); }),
+      get: id => read((db, user) => { const row = get(db.announcements, id, 'Announcement'); assertBarangay(user, row); const at = clock(); if (roleOf(user) !== 'secretary' && announcementStatus(row, at) !== 'Active') throw new ApiError('NOT_FOUND', 'This announcement is no longer available.'); return announcementProjection(db, row, user, at); }),
       create: (input = {}) => write(['announcements', 'notifications'], (db, user, at) => {
-        assertRole(user, ['secretary']); const row = { id: nextId(db.announcements), barangay_id: user.barangay_id, posted_by: user.id, title: text(input.title, 'title', { max: 200 }), content: text(input.content, 'content', { max: 5000 }), created_at: at }; db.announcements.push(row);
-        for (const resident of db.users.filter(u => u.is_resident && u.barangay_id === user.barangay_id)) notification(db, resident.id, 'announcement', row.title, `resident-announcements.html?id=${row.id}`, at); return row;
+        assertRole(user, ['secretary']); const row = { id: nextId(db.announcements), barangay_id: user.barangay_id, posted_by: user.id, title: text(input.title, 'title', { max: 200 }), content: text(input.content, 'content', { max: 5000 }), created_at: at, published_at: at, status: 'Active', expires_at: announcementExpiry(input.expires_at, at), history: [], revision: 0 };
+        announcementHistory(row, 'Published', user, at); db.announcements.push(row);
+        for (const resident of db.users.filter(u => u.is_resident && u.barangay_id === user.barangay_id)) notification(db, resident.id, 'announcement', row.title, `resident-announcements.html?id=${row.id}`, at); return announcementProjection(db, row, user, at);
+      }),
+      update: (id, patch = {}) => write(['announcements'], (db, user, at) => {
+        const row = managedAnnouncement(db, user, id, at, patch);
+        if (announcementStatus(row, at) !== 'Active') throw new ApiError('INVALID_STATE', 'Only active announcements can be edited.');
+        const changes = {};
+        for (const [field, max] of [['title', 200], ['content', 5000]]) if (Object.hasOwn(patch, field)) changes[field] = text(patch[field], field, { max });
+        if (Object.hasOwn(patch, 'expires_at')) changes.expires_at = announcementExpiry(patch.expires_at, at);
+        if (!row.history) row.history = [{ action: 'Published', by: row.posted_by, at: announcementPublishedAt(row), title: row.title, content: row.content, expires_at: row.expires_at ?? null }];
+        Object.assign(row, changes); announcementHistory(row, 'Edited', user, at); return announcementProjection(db, row, user, at);
+      }),
+      archive: (id, input = {}) => write(['announcements'], (db, user, at) => {
+        const row = managedAnnouncement(db, user, id, at, input); if (announcementStatus(row, at) !== 'Active') throw new ApiError('INVALID_STATE', 'Only active announcements can be archived.');
+        announcementHistory(row, 'Archived', user, at); Object.assign(row, { status: 'Archived', archived_at: at, archived_by: user.id }); return announcementProjection(db, row, user, at);
+      }),
+      retract: (id, input = {}) => write(['announcements'], (db, user, at) => {
+        const row = managedAnnouncement(db, user, id, at, input); if (!['Active', 'Archived'].includes(announcementStatus(row, at))) throw new ApiError('INVALID_STATE', 'This announcement cannot be retracted.');
+        const reason = text(input.reason, 'reason', { max: 500 }); announcementHistory(row, 'Retracted', user, at, reason);
+        Object.assign(row, { status: 'Retracted', retracted_at: at, retracted_by: user.id, retraction_reason: reason }); return announcementProjection(db, row, user, at);
+      }),
+      expireOverdue: () => write(['announcements'], (db, user, at) => {
+        assertRole(user, ['secretary']); let changed = 0;
+        for (const row of db.announcements.filter(row => row.barangay_id === user.barangay_id)) {
+          if (row.archived_at || row.retracted_at || !['active', 'published'].includes(String(row.status ?? 'Active').toLowerCase()) || !row.expires_at || announcementStatus(row, at) !== 'Archived') continue;
+          announcementHistory(row, 'Expired', null, row.expires_at); Object.assign(row, { status: 'Archived', archived_at: row.expires_at, archived_by: null }); changed++;
+        }
+        return changed;
       }),
     },
     feedback: {

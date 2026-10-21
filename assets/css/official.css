@@ -352,3 +352,15 @@ html:has(.official-app):has(dialog[open]),html:has(.official-login):has(dialog[o
 .official-announcement-form .error-text:empty{display:none}
 .official-announcement-actions{flex-wrap:nowrap;gap:var(--s4)}.official-announcement-actions>.btn{flex:1;min-width:0}
 @media(max-width:767px){.official-announcements-list{gap:var(--s4)}.official-announcement-row{flex-direction:column;align-items:stretch;gap:var(--s4)}.official-announcement-row>.btn{width:100%}.official-announcement-composer.sheet{margin:auto 0 0;width:100%;max-height:calc(100dvh - 16px);padding:var(--s6)}.official-announcement-actions>.btn{padding-inline:var(--s4)}}
+
+/* Shared announcement detail/status/history, also used from the dashboard. */
+.announcement-status{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;font-size:12px;line-height:16px;white-space:nowrap;background:var(--bg);color:var(--text-secondary)}
+.announcement-status>span{width:8px;height:8px;border-radius:50%;background:currentColor}
+.announcement-status-active{background:var(--green-50);color:var(--green-700)}
+.announcement-status-archived{background:var(--amber-100);color:var(--amber-700)}
+.announcement-status-retracted{background:var(--red-50);color:var(--red-700)}
+.announcement-history{border-top:1px solid var(--divider);padding-top:16px}
+.announcement-history summary{min-height:44px;cursor:pointer;color:var(--blue-700);padding:10px 0}
+.announcement-history ol{padding-left:20px;display:grid;gap:16px}
+.announcement-history li>small{display:block;margin-top:4px}
+.announcement-retraction-note{padding:16px;background:var(--red-50);border-radius:8px}
