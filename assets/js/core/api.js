@@ -105,7 +105,7 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
           return publicUser(user);
         });
       },
-      get: id => read((db, user) => { const person = get(db.users, id, 'Resident'); if (person.id !== user.id) { assertRole(user, staff); assertBarangay(user, person); } return { ...publicUser(person), household: db.households.find(h => h.id === person.household_id) || null, verification: latestVerification(db, person.id) }; }),
+      get: id => read((db, user) => { const person = get(db.users, id, 'Resident'); if (person.id !== user.id) { assertRole(user, staff); assertBarangay(user, person); } return { ...publicUser(person), household: db.households.find(h => h.id === person.household_id) || null, verification: roleOf(user) === 'secretary' || (roleOf(user) === 'resident' && person.id === user.id) ? latestVerification(db, person.id) : null }; }),
       update: (id, patch) => write(['users'], (db, user) => {
         const person = get(db.users, id, 'Resident'); assertOwner(user, person, 'id');
         const allowed = ['full_name', 'contact_number', 'address', 'household_address', 'map_x', 'map_y'];
