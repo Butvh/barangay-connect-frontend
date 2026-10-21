@@ -14,7 +14,7 @@ if (user) {
   const error = main.querySelector('[data-load-error]'), tabs = main.querySelector('[role="tablist"]');
   let panel, results, detail, form;
   const state = () => states[type];
-  function url() { const s = state(), p = new URLSearchParams({ type }); if (s.q) p.set('q', s.q); if (s.status && type !== 'general') p.set('status', s.status); if (s.sort === 'oldest') p.set('sort', s.sort); if (s.page > 1) p.set('page', s.page); if (s.id) p.set('id', s.id); history.replaceState(null, '', `official-feedback.html?${p}`); }
+  function url() { const s = state(), p = new URLSearchParams({ type }); if (s.q) p.set('q', s.q); if (s.status && type !== 'general') p.set('status', s.status); if (s.sort === 'oldest') p.set('sort', s.sort); if (s.page > 1) p.set('page', s.page); if (s.id !== null) p.set('id', s.id); history.replaceState(null, '', `official-feedback.html?${p}`); }
   function rating(row) { return `<span class="official-feedback-rating">${Icons.svg('star', { size: 20 })}<span>${Number(row.rating)} of 5</span></span>`; }
   function summary() {
     if (type !== 'complaint') return;

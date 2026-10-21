@@ -452,7 +452,8 @@ actual category; incompatible search/status filters clear with a visible
 notice. Sorting and live refresh retain that record and recalculate its page.
 If a selected record disappears or no longer matches filters, details/actions
 clear and the page explains unavailability. Invalid, duplicate, unknown and
-inaccessible linked IDs never silently select an actionable substitute. A new
+inaccessible linked IDs never silently select an actionable substitute. Invalid
+selection also persists across reloads. A new
 explicit row/filter/page choice retains the existing browsing behavior.
 Assignment/resolution still use the selected record and existing confirmations.
 No new API signature, schema, endpoint or visual redesign is introduced.
