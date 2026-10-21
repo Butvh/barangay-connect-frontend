@@ -114,6 +114,15 @@ test('F-X4 registration -> reject -> resubmit -> approve -> SOS', async () => {
   const again = await f.apiA.verification.submit(person.id, { document_type: 'Proof of residence', file_name: 'clear-proof.pdf' });
   await f.apiB.verification.review(again.id, { decision: 'Approved' }); equal((await f.apiA.verification.get(again.id)).review_status, 'Approved'); equal((await f.apiA.alerts.create({})).status, 'Pending');
 });
+test('announcement validation is atomic for blank or overlong content', async () => {
+  const f = fixture(); await f.login(f.authA, 'ana.reyes'); const before = f.storeA.read();
+  for (const payload of [{ title: '  ', content: 'Update' }, { title: 'Update', content: '\n  ' }, { title: 'x'.repeat(201), content: 'Update' }, { title: 'Update', content: 'x'.repeat(5001) }]) { await rejects(() => f.apiA.announcements.create(payload), 'VALIDATION'); equal(f.storeA.read(), before); }
+});
+test('only Secretary publishes announcements and author data excludes credentials', async () => {
+  const f = fixture();
+  for (const name of ['maria.santos', 'carlo.mendoza', 'ramon.bautista']) { await f.login(f.authA, name); const before = f.storeA.read(); await rejects(() => f.apiA.announcements.create({ title: 'Update', content: 'Community update.' }), 'FORBIDDEN'); equal(f.storeA.read(), before); }
+  await f.login(f.authA, 'ana.reyes'); const row = await f.apiA.announcements.create({ title: 'Community update', content: 'Follow official barangay advisories.' }); const read = await f.apiA.announcements.get(row.id); equal(read.author.full_name, 'Ana Reyes'); ok(!Object.hasOwn(read.author, 'password'));
+});
 test('verification review rejects other official roles without changing data', async () => {
   const f = fixture();
   for (const name of ['carlo.mendoza', 'ramon.bautista']) { await f.login(f.authA, name); const before = f.storeA.read(); await rejects(() => f.apiA.verification.get(2), 'FORBIDDEN'); await rejects(() => f.apiA.verification.review(2, { decision: 'Approved' }), 'FORBIDDEN'); equal(f.storeA.read(), before); }
