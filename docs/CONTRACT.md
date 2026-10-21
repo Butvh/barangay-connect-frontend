@@ -267,3 +267,53 @@ The premium static audit reports eight actionless-button heuristic findings
 and was exercised above. Inline event handlers were not introduced to satisfy
 that heuristic; the static audit therefore still exits with those findings.
 
+## Official feedback
+
+The Secretary-only O-10 route follows Figma 261:23271, 261:23411, 261:23551
+and 2534:50010. Canonical owners remain Shell.official, UI.tabs, UI.badge,
+UI.confirm, the official dialog/pagination helpers and P2's field/button/icon
+and typography tokens. Native Select/Listbox ownership is intentional: the
+operating system owns the opened popup, as on the other official pages.
+scripts/premium-ui.json records that decision for the static audit; this does
+not change the rendered controls or waive keyboard/focus verification.
+
+Complaints and Suggestions expose Pending/Assigned/Resolved, category,
+location, Tanod assignment and Mark resolved. General Feedback exposes rating
+and comment with no workflow status or action. Search/sort/status/page/selected
+record are kept in the URL; a valid notification ID selects its type and row.
+Tabs keep separate in-page filters. Native tables become labelled card lists
+at tablet/mobile widths, and the detail panel stacks below the list when the
+desktop two-column layout would compress values. Selection is a native button;
+table rows are not nonsemantic click targets. Published dates use Fmt.
+
+Complaint summaries show current Pending/Assigned/Resolved totals. The frozen
+model has no assignment/resolution timestamps, so the later Figma's "today"
+counts are not fabricated. The seeded Tanod Luis Garcia (user 6) is read via
+Api.users.get for the assignment selector; there is no staff-list contract or
+role-management feature. Assignment and resolution use the unchanged API,
+which rechecks role/barangay/status at commit time. Busy actions prevent repeat
+submission. Resolution requires confirmation; completed records are read-only.
+Load/stale/action errors are persistent with retry or recovery. No P2 files,
+shared tokens or frozen record fields were changed.
+
+Validation: 120 tests pass in Node and browser, including filter/page
+immutability, General Feedback isolation and competing assignment/resolution
+commits. The offline checker passes. All three tabs and the assignment dialog
+passed 20 view/width combinations at 1920/1440/1366/768/390 px. Visual review
+identified compressed tablet cells; the final pass confirms no horizontal
+overflow, overflowing badges or enabled controls below 44 px after using cards.
+Search/clear/no-results, status/sort, URL reload restoration, keyboard tabs,
+Cancel/focus, unavailable links and all three forbidden-role redirects passed.
+
+Actual F-X5 passed in two tabs: a resident complaint appeared live in the
+official list and bell; the notification selected that record. Assignment and
+resolution of Maria's suggestion updated the open resident list without reload
+and created both resident notifications. Resolved records have no actions.
+Consoles were clear, fictional records restored and sessions signed out.
+Forced API outage and a multiple-page browser dataset were not simulated.
+
+The configured strict premium audit has 11 button-action heuristic findings
+(eight pre-existing, three in the new feedback templates). These controls use
+addEventListener and were exercised. No unresolved ownership findings remain;
+the static audit exits with the documented action-detection findings.
+
