@@ -12,6 +12,7 @@ import { reportRequest, reportScreen, initialReportLocation } from '../assets/js
 import { latestHomeAnnouncement } from '../assets/js/pages/resident-dashboard-model.js';
 import { registerAnnouncementTests } from './announcements.js';
 import { registerFeedbackSummaryTests } from './feedback-summary.js';
+import { registerSecretaryDashboardTests } from './secretary-dashboard.js';
 import { registerResponderDashboardTests } from './responder-dashboard.js';
 
 const tests = [];
@@ -22,6 +23,7 @@ async function rejects(run, code) { let found; try { await run(); } catch (error
 const noDelay = () => Promise.resolve();
 registerAnnouncementTests({ test, equal, ok, rejects, fixture });
 registerFeedbackSummaryTests({ test, equal, fixture });
+registerSecretaryDashboardTests({ test, equal, ok, rejects, fixture });
 registerResponderDashboardTests({ test, equal, ok, fixture });
 
 test('Home selects one announcement by publication instant without reordering the API records', () => {
