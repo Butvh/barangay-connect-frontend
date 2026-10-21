@@ -317,3 +317,45 @@ The configured strict premium audit has 11 button-action heuristic findings
 addEventListener and were exercised. No unresolved ownership findings remain;
 the static audit exits with the documented action-detection findings.
 
+## Final P1 review and partner handoff — October 21, 2026
+
+All P1 routes are implemented and deployed, including the three official role
+dashboards, alert workflow/dialogs, map, verification, announcements, feedback,
+facilities, login and Resident Profile. The data model and migration guide now
+describe the implemented adapter and all resident/official route equivalents;
+the repository remains a static HTML/CSS/vanilla-JavaScript demo.
+
+The final geometry/asset review covered 95 route/role/width combinations:
+63 P1 checks and 32 P2 checks. P1 coverage comprises nine Secretary routes at
+1920/1440/1366/768/390, Profile at those five widths, Login at five widths and
+Responder/Rescuer Dashboard/Alert Detail at 1920/390. No P1 document overflow,
+missing rendered images or undersized audited controls were found. Browser
+consoles were clear. P2 routes were cross-tested read-only at desktop/mobile;
+registration's initial state was included, without creating another account.
+
+Actual two-tab handoff evidence is recorded per feature, rather than claiming
+a single simultaneous review with the partner: F-X1/F-X2 in the Sync B alert
+walkthrough, F-X3 in Announcements, F-X4 in verification and F-X5 in Feedback.
+The current 120-test suite also exercises the frozen integration contract.
+Each feature's checks preserved/restored fictional data and signed out demo
+sessions. A real device/virtual keyboard, full 200% zoom matrix and forced
+service outage were not exercised; no automated accessibility scanner result
+is claimed. Earlier keyboard/focus/confirmation checks are described above.
+
+Partner-owned remaining findings were added to the existing GitHub issues:
+
+- Issue #2: Earthquake must map to triangle-alert; the shared helper still
+  returns activity. Resident Dashboard links/history, My feedback View details,
+  General Feedback Clear and resident login demo buttons need at least 44 px
+  mobile hit heights. Resident Map layer switches measure 44×24 inside the
+  mobile dialog and need a 44×44 hit area around the visible switch.
+- Issue #5: resident Dashboard/Map nearby reads still use list({}); change those
+  nearby reads only to list({nearby:true}). Preserve the private own-alert read
+  and get(id) policy. The public adapter was already merged in PR #9.
+
+P1 did not edit P2-owned source, icons, styles or Map Kit to bypass ownership.
+These findings prevent calling the combined product fully reviewed or tagging
+a final v1 release. P1's own implementation and review are complete; partner
+fixes and a shared final sign-off remain. The historical remote sync-b tag is
+also still pending the user's normal Git credential environment.
+
