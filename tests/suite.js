@@ -153,6 +153,34 @@ test('feedback notification links use the existing resident feedback page', asyn
   equal(note.link, `resident-feedback.html?id=${feedback.id}`);
 });
 
+test('nearby map read exposes only public fields and preserves private own/get reads', async () => {
+  const f = fixture(); await f.login(f.authA, 'maria.santos');
+  await f.storeA.transact(['alerts'], db => { const a = db.emergency_alerts.find(a => a.id === 1042); a.location_label = 'Maria Santos at 14 Riverside Street'; a.description = 'Private detail'; a.photo_name = 'private.jpg'; a.map_x = 63; a.map_y = 57; });
+  const nearby = await f.apiA.alerts.list({ nearby: true });
+  equal(nearby.map(a => a.id), [1042, 1038, 1031]);
+  equal(Object.keys(nearby[0]).sort(), ['id', 'barangay_id', 'alert_type', 'status', 'created_at', 'location_label', 'map_x', 'map_y', 'description'].sort());
+  const publicAlert = nearby.find(a => a.id === 1042); equal(publicAlert.location_label, 'Barangay Sampaguita'); equal([publicAlert.map_x, publicAlert.map_y], [60, 60]);
+  ok(!JSON.stringify(nearby).includes('Maria')); ok(!JSON.stringify(nearby).includes('private.jpg')); ok(!JSON.stringify(nearby).includes('Private detail'));
+  equal((await f.apiA.alerts.list()).map(a => a.id), [1042]); equal((await f.apiA.alerts.get(1042)).photo_name, 'private.jpg');
+  await rejects(() => f.apiA.alerts.get(1038), 'FORBIDDEN');
+  await rejects(() => f.apiA.alerts.list({ nearby: true, resident_id: 4 }), 'VALIDATION');
+});
+
+test('nearby filters do not reveal private identity or exact address through search', async () => {
+  const f = fixture(); await f.login(f.authA, 'jose.dela.cruz');
+  equal(await f.apiA.alerts.list({ nearby: true, q: 'Maria Santos' }), []);
+  equal(await f.apiA.alerts.list({ nearby: true, q: 'Riverside Street' }), []);
+  equal((await f.apiA.alerts.list({ nearby: true, q: 'Flood', status: 'Pending' })).map(a => a.id), [1042]);
+  equal((await f.apiA.alerts.list({ nearby: true, alert_type: 'Landslide' })).map(a => a.id), [1031]);
+});
+
+test('nearby map read stays within the resident barangay and requires a session', async () => {
+  const f = fixture(); await rejects(() => f.apiA.alerts.list({ nearby: true }), 'AUTH');
+  const other = await f.apiA.users.register({ full_name: 'Dalisay Resident', email: 'dalisay@example.com', password: 'demo1234', barangay_id: 2, address: '1 Main Road' });
+  await f.authA.login(other.email, 'demo1234'); equal(await f.apiA.alerts.list({ nearby: true }), []);
+  await f.login(f.authA, 'ana.reyes'); await rejects(() => f.apiA.alerts.list({ nearby: true }), 'FORBIDDEN');
+});
+
 export async function runSuite(onResult = () => {}) {
   const results = [];
   for (const test of tests) { let error = ''; try { await test.run(); } catch (e) { error = e.stack || e.message; } const result = { name: test.name, passed: !error, error }; results.push(result); onResult(result); }

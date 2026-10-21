@@ -72,13 +72,42 @@ maintained behavior/design-context equivalents for this hand-off.
 - Global feedback uses UI.toast; field problems stay inline. Document titles
   identify the page. Shell controls remain available when page data fails.
 
-P2's UI foundation is merged in PR #6. Remaining shared dependencies are
-tracked in Issue #2: menu, layout-dashboard and clipboard-check icons; the circle-check asset's white
-stroke; the shared disaster icon mapping; and 44 px header-brand hit areas.
-The P1 disaster fallback is explicitly TODO(contract) until P2 supplies the
-canonical mapping. Icons.disaster(type), when supplied, should return the
-sprite name (such as waves), which Icons.svg renders.
+P2's UI foundation is merged in PR #6; PR #8 supplies the additional shell
+icons, corrected circle-check, disaster helper and 44 px header-brand target.
+P1 now consumes these shared assets directly. Icons.disaster(type) returns a
+sprite name, rendered by Icons.svg. Issue #2 tracks the remaining Earthquake
+mapping correction from activity to triangle-alert required by the brief.
 
 The test launcher supports Node 20–24: it omits the removed experimental
 default-module flag on Node 24 and newer. Application pages never need Node.
+
+## Public map read — contract Issue #5
+
+`Api.alerts.list({ nearby: true, status?, alert_type?, q? })` is an explicit
+resident-only read of public incidents within the resident's barangay. Do not
+combine nearby with resident_id. Default list() and list({resident_id}) keep
+their existing private own-alert behavior, and get(id) still checks ownership.
+
+The public DTO contains only id, barangay_id, alert_type, status, created_at,
+location_label, map_x, map_y and description. The label is the barangay name;
+coordinates are rounded to the nearest 10 percentage points on the illustrated
+map. Description is generated from the disaster type and barangay, never the
+resident's free text. Identity, household, exact address, victims, photos,
+assignments and logs are excluded. Search runs only against the public DTO,
+so a private name/address cannot be inferred from search results.
+
+P2 should use this explicit option for nearby maps/previews, keep its existing
+own-alert list for status/history, and subscribe to alerts for live changes.
+The API and its privacy tests are P1-owned; resident view changes remain P2's.
+
+## Official alerts implementation
+
+The list uses Figma's current incident rows, adapted to cards below 1024 px,
+with shared filters, search, newest/oldest sorting and centered pagination.
+Tablet/mobile View opens Alert summary before the full detail page.
+All actions use the frozen forward-only machine and assigned staff checks.
+Log response/rescue forms preserve notes on errors and confirmed close, use
+automatic timestamps, and select facilities through the shared dialog helper.
+Resolved alerts remain read-only. Rescuer quick actions open Log rescue only
+for an assigned Responding incident; repeated transitions are not invented.
 
