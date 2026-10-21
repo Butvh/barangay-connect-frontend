@@ -5,6 +5,7 @@ import { createAuth } from '../assets/js/core/auth.js';
 import { createApi } from '../assets/js/core/api.js';
 import { Config } from '../assets/js/core/config.js';
 import { monitoringMarkers } from '../assets/js/pages/official-map-model.js';
+import { verificationPage, verificationStats, reviewable } from '../assets/js/pages/official-verification-model.js';
 
 const tests = [];
 const test = (name, run) => tests.push({ name, run });
@@ -12,6 +13,22 @@ const equal = (a, b, label = 'values differ') => { if (JSON.stringify(a) !== JSO
 const ok = (value, label = 'assertion failed') => { if (!value) throw new Error(label); };
 async function rejects(run, code) { let found; try { await run(); } catch (error) { found = error; } ok(found, `expected ${code}`); equal(found.code, code); }
 const noDelay = () => Promise.resolve();
+test('verification queue clamps pages after filters and keeps records immutable', () => {
+  const rows = Array.from({ length: 23 }, (_, i) => ({ id: i + 1, submitted_at: `2026-10-04T09:${String(i).padStart(2, '0')}:00+08:00`, review_status: i ? 'Approved' : 'Pending', resident: { full_name: `Resident ${i}` }, household: { address: `${i} Riverside Street` } })), before = JSON.stringify(rows);
+  const page = verificationPage(rows, { page: 3 }); equal(page.rows.map(r => r.id), [3, 2, 1]); equal(page.pages, 3);
+  const filtered = verificationPage(rows, { status: 'Pending', page: 3 }); equal(filtered.page, 1); equal(filtered.rows.map(r => r.id), [1]); equal(JSON.stringify(rows), before);
+});
+test('verification search matches names and addresses and handles empty results', () => {
+  const rows = [{ id: 1, resident: { full_name: 'Jose Dela Cruz' }, household: { address: '8 Mabini Street' }, submitted_at: Config.demo_time, review_status: 'Pending' }];
+  equal(verificationPage(rows, { q: '  JOSE  ' }).total, 1); equal(verificationPage(rows, { q: 'mabini' }).total, 1); const empty = verificationPage(rows, { q: 'Hillside', page: 8 }); equal([empty.total, empty.page, empty.pages], [0, 1, 1]);
+});
+test('verification summary uses Manila dates and counts only completed reviews', () => {
+  const rows = [{ review_status: 'Pending', deadline_at: '2026-10-03T17:00:00Z' }, { review_status: 'Pending', deadline_at: '2026-10-04T17:00:00Z' }, { review_status: 'Approved', reviewed_at: '2026-10-03T18:00:00Z' }, { review_status: 'Rejected', reviewed_at: '2026-10-04T14:00:00+08:00' }, { review_status: 'Expired', reviewed_at: Config.demo_time }];
+  equal(verificationStats(rows, Config.demo_time), { pending: 2, due: 1, reviewed: 2 });
+});
+test('verification reviewability agrees with the deadline boundary', () => {
+  const record = { review_status: 'Pending', deadline_at: Config.demo_time }; ok(reviewable(record, Config.demo_time)); ok(!reviewable(record, '2026-10-04T14:20:00.001+08:00')); ok(!reviewable({ ...record, review_status: 'Approved' }, Config.demo_time)); ok(!reviewable({ ...record, deadline_at: null }, Config.demo_time));
+});
 const mapData = () => ({ alerts: [{ id: 1, alert_type: 'Flood', status: 'Pending', map_x: 0, map_y: 100 }, { id: 2, alert_type: 'Other', status: 'Resolved', map_x: 20, map_y: 30 }], facilities: [{ id: 1, type: 'Hospital', name: 'Hospital', map_x: 10, map_y: 20 }, { id: 2, type: 'EvacuationCenter', name: 'School', map_x: 50, map_y: 50 }], households: [{ id: 1, address: '8 Mabini Street', map_x: 43, map_y: 44 }, { id: 1, address: '8 Mabini Street', map_x: 43, map_y: 44 }], complaints: [{ id: 1, location: ' 8   MABINI STREET ', category: 'Drainage', status: 'Pending' }, { id: 2, location: 'Elsewhere', category: 'Drainage', status: 'Pending' }] });
 const mapFilters = { status: '', type: '', facility: '', households: true, complaints: true };
 test('monitoring filters preserve status and edge coordinates without mutating records', () => {
@@ -96,6 +113,16 @@ test('F-X4 registration -> reject -> resubmit -> approve -> SOS', async () => {
   await f.apiB.verification.review(row.id, { decision: 'Rejected', reason: 'Please upload a readable document.' }); await rejects(() => f.apiA.alerts.create({}), 'FORBIDDEN');
   const again = await f.apiA.verification.submit(person.id, { document_type: 'Proof of residence', file_name: 'clear-proof.pdf' });
   await f.apiB.verification.review(again.id, { decision: 'Approved' }); equal((await f.apiA.verification.get(again.id)).review_status, 'Approved'); equal((await f.apiA.alerts.create({})).status, 'Pending');
+});
+test('verification review rejects other official roles without changing data', async () => {
+  const f = fixture();
+  for (const name of ['carlo.mendoza', 'ramon.bautista']) { await f.login(f.authA, name); const before = f.storeA.read(); await rejects(() => f.apiA.verification.get(2), 'FORBIDDEN'); await rejects(() => f.apiA.verification.review(2, { decision: 'Approved' }), 'FORBIDDEN'); equal(f.storeA.read(), before); }
+});
+test('competing verification decisions commit once and notify the resident once', async () => {
+  const f = fixture(); await f.login(f.authA, 'ana.reyes');
+  const before = f.storeA.read().notifications.filter(n => n.user_id === 5).length;
+  const results = await Promise.allSettled([f.apiA.verification.review(2, { decision: 'Approved' }), f.apiA.verification.review(2, { decision: 'Rejected', reason: 'Please upload a readable document.' })]);
+  equal(results.filter(r => r.status === 'fulfilled').length, 1); equal(f.storeA.read().notifications.filter(n => n.user_id === 5).length, before + 1); ok(['Approved', 'Rejected'].includes((await f.apiA.verification.get(2)).review_status));
 });
 test('residency expiry is scoped and never expires an approval', async () => {
   const f = fixture(); await f.login(f.authA, 'ana.reyes'); f.setTime('2026-10-12T10:00:00+08:00'); equal(await f.apiA.verification.expireOverdue(), 1); equal((await f.apiA.verification.get(1)).review_status, 'Approved'); equal((await f.apiA.verification.get(2)).review_status, 'Expired');

@@ -176,3 +176,47 @@ template. Those filter/View buttons are wired through addEventListener and were
 exercised above. The audit's four existing findings are unchanged; no inline
 event-handler attributes were introduced to satisfy its heuristic.
 
+## Residency verification queue and review
+
+The Secretary-only queue and detail routes use the current O-07/O-08 layout
+(Figma 261:21268 and 261:21407), the existing shell, UI.badge, UI.confirm, shared
+inputs/buttons and the centered pagination helper. No P2 file or token changes.
+The queue shows only the latest verification for each resident, from the frozen
+API. Search/status/sort/page state is kept in the URL and survives a detail/back
+round trip. Counts are derived from records; date boundaries use Asia/Manila.
+Tablet/mobile replace the table with labelled cards without losing fields.
+
+The supported decisions remain Approved and Rejected. Rejection needs a reason
+and the app-owned confirmation; Approve returns directly to the queue. Completed
+and Expired records cannot be reviewed again. The newer Figma request-resubmission
+action/checklist and extra sample resident are not additional data/workflow scope.
+Document preview stays an explicitly labelled gray placeholder with actual demo
+file names, since document contents are not persisted in this front-end model.
+
+Both routes run expireOverdue before reading and refresh each minute. API no-op
+expiry does not emit changes, so subscriptions do not create a refresh loop.
+Detail reviewability agrees with the API's exact deadline boundary. The API
+rechecks permission and status at commit time; competing decisions commit only
+once. A failed save keeps the typed reason and reloads current status. Stale or
+unavailable records disable actions. Unsaved reasons are protected for in-app
+navigation/sign-out and browser unload. Save returns to the preserved queue
+filters with an accessible saved message. Native selects keep the same
+operating-system-owned popup behavior as the other official pages.
+
+Validation: 114 tests passed, including queue filtering/page clamping, Manila
+date summaries, deadline boundaries, review permissions and competing decisions.
+Both pages passed five responsive widths (10 view/width combinations), without
+horizontal overflow or undersized enabled tablet/mobile targets. Browser checks
+covered search/clear, empty results, status/sort, filter restoration, missing ID,
+read-only review states, reason validation, Cancel, draft protection and role
+redirects. A real two-tab test passed Jose's Reject → document resubmission →
+Approve workflow and SOS unlock. A separate new fictional registration appeared
+in the open queue without a reload. Consoles were clear and demo data restored.
+API expiry and race rejection are tested in isolation; a forced service outage
+and seven-day time advance were not exercised through the browser UI.
+
+The premium audit has one additional button-action heuristic finding in the
+queue template (seven total, six pre-existing). The search-clear/dismiss controls
+use addEventListener and were exercised in the browser. No inline event-handler
+attributes were added to work around that heuristic.
+
