@@ -6,6 +6,7 @@ import { createApi } from '../assets/js/core/api.js';
 import { Config } from '../assets/js/core/config.js';
 import { monitoringMarkers } from '../assets/js/pages/official-map-model.js';
 import { verificationPage, verificationStats, reviewable } from '../assets/js/pages/official-verification-model.js';
+import { feedbackPage, feedbackCounts } from '../assets/js/pages/official-feedback-model.js';
 
 const tests = [];
 const test = (name, run) => tests.push({ name, run });
@@ -13,6 +14,23 @@ const equal = (a, b, label = 'values differ') => { if (JSON.stringify(a) !== JSO
 const ok = (value, label = 'assertion failed') => { if (!value) throw new Error(label); };
 async function rejects(run, code) { let found; try { await run(); } catch (error) { found = error; } ok(found, `expected ${code}`); equal(found.code, code); }
 const noDelay = () => Promise.resolve();
+test('feedback filtering clamps pagination, searches joined data and preserves records', () => {
+  const rows = Array.from({ length: 23 }, (_, i) => ({ id: i + 1, type: 'complaint', description: `Concern ${i}`, location: 'Mabini Street', resident: { full_name: 'Jose Dela Cruz' }, status: i ? 'Resolved' : 'Pending', created_at: Config.demo_time })), before = JSON.stringify(rows);
+  equal(feedbackPage(rows, { page: 3 }).rows.map(row => row.id), [3, 2, 1]); const value = feedbackPage(rows, { status: 'Pending', q: ' JOSE ', page: 8 }); equal([value.total, value.page, value.rows[0].id], [1, 1, 1]); equal(feedbackPage(rows, { q: 'Hillside' }).total, 0); equal(JSON.stringify(rows), before);
+});
+test('general feedback ignores workflow filters and complaint counts exclude suggestions', () => {
+  const rows = [{ id: 1, type: 'general', comment: 'Clear guidance', rating: 4, status: null, created_at: Config.demo_time }, { id: 2, type: 'suggestion', status: 'Pending' }, { id: 3, type: 'complaint', status: 'Assigned' }];
+  equal(feedbackPage(rows, { type: 'general', status: 'Pending', q: 'guidance' }).rows.map(row => row.id), [1]); equal(feedbackCounts(rows), { Pending: 0, Assigned: 1, Resolved: 0 });
+});
+test('competing feedback assignment and resolution commits only once per transition', async () => {
+  const f = fixture(); await f.login(f.authA, 'ana.reyes'); const before = f.storeA.read().notifications.length;
+  const assigned = await Promise.allSettled([f.apiA.feedback.assignTanod(1, 6), f.apiA.feedback.assignTanod(1, 6)]); equal(assigned.filter(r => r.status === 'fulfilled').length, 1);
+  const resolved = await Promise.allSettled([f.apiA.feedback.resolve(1), f.apiA.feedback.resolve(1)]); equal(resolved.filter(r => r.status === 'fulfilled').length, 1); equal(f.storeA.read().notifications.length, before + 2); equal((await f.apiA.feedback.get(1)).status, 'Resolved');
+});
+test('general feedback cannot be assigned or resolved and other official roles cannot review feedback', async () => {
+  const f = fixture(); await f.login(f.authA, 'ana.reyes'); const before = f.storeA.read(); await rejects(() => f.apiA.feedback.assignTanod(3, 6), 'INVALID_STATE'); await rejects(() => f.apiA.feedback.resolve(3), 'INVALID_STATE'); equal(f.storeA.read(), before);
+  for (const name of ['carlo.mendoza', 'ramon.bautista']) { await f.login(f.authA, name); await rejects(() => f.apiA.feedback.list(), 'FORBIDDEN'); await rejects(() => f.apiA.feedback.resolve(1), 'FORBIDDEN'); equal(f.storeA.read(), before); }
+});
 test('verification queue clamps pages after filters and keeps records immutable', () => {
   const rows = Array.from({ length: 23 }, (_, i) => ({ id: i + 1, submitted_at: `2026-10-04T09:${String(i).padStart(2, '0')}:00+08:00`, review_status: i ? 'Approved' : 'Pending', resident: { full_name: `Resident ${i}` }, household: { address: `${i} Riverside Street` } })), before = JSON.stringify(rows);
   const page = verificationPage(rows, { page: 3 }); equal(page.rows.map(r => r.id), [3, 2, 1]); equal(page.pages, 3);
