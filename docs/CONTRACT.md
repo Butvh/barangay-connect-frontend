@@ -111,3 +111,22 @@ automatic timestamps, and select facilities through the shared dialog helper.
 Resolved alerts remain read-only. Rescuer quick actions open Log rescue only
 for an assigned Responding incident; repeated transitions are not invented.
 
+Sync B verification (October 21, 2026): A-1042 completed all five statuses
+through the actual official pages with a separate resident tab. The resident
+timeline, staff assignments, destination and all four status notifications
+updated live. A new resident SOS (A-1043) appeared in the official list without
+reload. School/hospital choices, missing-destination validation, Cancel,
+resolution confirmation and notification-to-summary links were checked.
+
+Alerts, resolved Detail, Log response and Log rescue passed 20 distinct
+view/width checks at 1920, 1440, 1366, 768 and 390 px, plus checks after the
+final spacing corrections. No horizontal overflow or undersized tablet/mobile
+controls were found. Timeline dates share one column and status/back controls
+share a vertical center. The browser console remained clear. Both core tests
+(104 passed) and the offline asset check pass.
+
+The premium static audit reports four actionless-button heuristic findings
+in login, alert actions, alert detail and dashboard templates. Those controls
+use the required addEventListener wiring and were exercised in the browser;
+inline event-handler attributes were not added to satisfy that heuristic.
+

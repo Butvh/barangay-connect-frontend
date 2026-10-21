@@ -197,7 +197,7 @@ html:has(.official-app):has(dialog[open]),html:has(.official-login):has(dialog[o
 .official-alert-heading>div{display:flex;align-items:center;gap:var(--s4);flex-wrap:wrap}.official-alert-heading .btn{min-width:184px}
 .official-person-action{display:flex;flex-direction:column;align-items:stretch;gap:var(--s4);padding:var(--s6);width:max-content;max-width:min(100%,384px);align-self:flex-start}
 .official-person-action p{color:var(--text);font-size:var(--h3);line-height:var(--h3-lh);font-weight:var(--medium)}.official-person-action .btn{min-width:184px}
-.official-detail-grid{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:var(--s6);align-items:start}.official-detail-grid>.official-section{padding:0}
+.official-detail-grid{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:var(--s6);align-items:start}.official-detail-grid>div.official-section{padding:0}
 .official-detail-logs{display:grid;grid-template-columns:1fr 1fr;gap:var(--s6);align-items:start}.official-detail-logs .official-facts{grid-template-columns:1fr}
 .official-photo-placeholder{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s3);min-height:112px;padding:var(--s6);background:var(--border);color:var(--text-secondary);border-radius:var(--radius-card);overflow-wrap:anywhere}
 .official-photo-placeholder small{flex-basis:100%;color:var(--text-secondary)}
@@ -215,7 +215,7 @@ html:has(.official-app):has(dialog[open]),html:has(.official-login):has(dialog[o
   .official-timeline li{grid-template-columns:184px minmax(0,1fr)}
 }
 @media(max-width:767px){
-  .official-alert-filters{gap:var(--s3)}.official-search-field{grid-column:1/-1}.official-alert-filters>.field:last-child{grid-column:1/-1}
+  .official-alert-filters{grid-template-columns:1fr;gap:var(--s3)}.official-search-field{grid-column:1/-1}.official-alert-filters>.field:last-child{grid-column:1/-1}
   .official-incident-heading{padding:var(--s4);gap:var(--s3)}.official-incident-heading h2{font-size:var(--h3);line-height:var(--h3-lh)}.official-incident-table tr{padding:var(--s4)}.official-incident-overview{gap:var(--s3)}
   .official-incident-overview .icon-tile{width:44px;height:44px}.official-pagination{padding:var(--s4)}.official-pagination .btn{padding-inline:var(--s4)}
   .official-alert-heading>h2{flex-basis:100%;min-width:0}.official-alert-heading>div{width:100%;justify-content:space-between;gap:var(--s2)}.official-alert-heading .btn{min-width:0;padding-inline:var(--s4)}
