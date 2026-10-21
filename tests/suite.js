@@ -13,6 +13,7 @@ import { latestHomeAnnouncement } from '../assets/js/pages/resident-dashboard-mo
 import { registerAnnouncementTests } from './announcements.js';
 import { registerFeedbackSummaryTests } from './feedback-summary.js';
 import { registerSecretaryDashboardTests } from './secretary-dashboard.js';
+import { registerResponderDashboardTests } from './responder-dashboard.js';
 
 const tests = [];
 const test = (name, run) => tests.push({ name, run });
@@ -23,6 +24,7 @@ const noDelay = () => Promise.resolve();
 registerAnnouncementTests({ test, equal, ok, rejects, fixture });
 registerFeedbackSummaryTests({ test, equal, fixture });
 registerSecretaryDashboardTests({ test, equal, ok, rejects, fixture });
+registerResponderDashboardTests({ test, equal, ok, fixture });
 
 test('Home selects one announcement by publication instant without reordering the API records', () => {
   const rows = [

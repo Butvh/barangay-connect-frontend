@@ -3,6 +3,7 @@ import { Shell } from '../core/shell-official.js';
 import { BCMap } from '../core/map.js';
 import { logAlert } from './official-alert-actions.js';
 import { mountSecretaryDashboard } from './secretary-dashboard.js?v=secretary-dashboard-1';
+import { renderResponderDashboard } from './official-responder-dashboard.js';
 
 let user;
 try { Auth.requireRole(['secretary', 'responder', 'rescuer']); user = Auth.current(); }
@@ -34,8 +35,8 @@ async function render() {
     const barangay = barangays.find(b => b.id === user.barangay_id)?.name || 'Your barangay', today = Store.now().slice(0, 10);
     miniMaps.forEach(m => m.destroy()); miniMaps = [];
     if (role === 'responder') {
-      document.title = 'Responder dashboard — Barangay Connect'; const assigned = alerts.filter(a => a.assigned_responder_id === user.id && a.status !== 'Resolved');
-      main.innerHTML = `<header class="official-heading"><h1>Dashboard</h1><p>Responder workspace · ${e(barangay)}</p></header><div class="official-assignment-grid"><section class="official-section">${assigned.length ? assigned.map(a => alertCard(a, true)).join('') : `<section class="card">${UI.empty({ icon: 'shield-check', title: 'No assigned alerts', text: 'An alert appears here when the Secretary acknowledges and assigns it to you.' })}</section>`}</section><section class="card official-section"><h3>Response activity</h3><p>Response type, status and time are recorded in your response log.</p><p><strong>${Number(stats.assigned_today)}</strong> assigned today</p>${destination('official-map.html', 'Open operational map', 'btn-primary')}</section></div>`;
+      document.title = 'Responder dashboard — Barangay Connect';
+      miniMaps.push(renderResponderDashboard({ main, alerts, facilities, user, barangay, now: Store.now(), refreshed: async () => { await render(); main.focus(); } }));
     } else {
       document.title = 'Rescuer dashboard — Barangay Connect';
       const assigned = alerts.filter(a => a.assigned_rescuer_id === user.id), active = assigned.filter(a => a.status !== 'Resolved'), current = active[0], logs = assigned.flatMap(a => a.rescues.filter(r => r.rescuer_id === user.id).map(r => ({ ...r, alert: a }))), pending = logs.filter(r => r.rescue_status === 'In progress'), completed = logs.filter(r => r.rescue_status === 'Completed' && r.rescued_at.slice(0, 10) === today);
