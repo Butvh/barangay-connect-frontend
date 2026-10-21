@@ -201,3 +201,7 @@ only; it cannot host Laravel. Deploy Laravel to PHP/MySQL hosting separately.
    database backups, scheduled verification expiry and queue workers as needed.
    Check the chosen framework version's deployment guidance. Only release after
    P2's tracked nearby-read, icon and mobile-target findings are resolved too.
+
+## Announcement lifecycle endpoints
+
+Map the extended adapter to authenticated Secretary update/archive/retract routes and a scoped/scheduled expiry task. Enforce optimistic revision checks and append history in the same database transaction. Resident list/detail queries must exclude archived, retracted, unpublished and expired records at read time; an expiry job alone is insufficient for public visibility. Preserve original publication time/author on edit and retain legacy records. Expiry is optional; incoming timestamps require a timezone. Retraction reasons are required (trimmed, 1–500 characters). No restore/delete/scheduled-publication endpoint is introduced by this frontend feature.

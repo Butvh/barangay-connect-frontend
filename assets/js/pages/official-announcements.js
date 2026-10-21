@@ -1,54 +1,81 @@
-import { Auth, Api, Store, UI, Fmt, Icons, e, dialog, pagination, live } from './official-shared.js';
+import { Auth, Api, Store, UI, Fmt, Icons, e, pagination, live } from './official-shared.js';
 import { Shell } from '../core/shell-official.js';
-import { announcementAuthor, readAnnouncement } from './official-announcement-actions.js';
+import { announcementAuthor, announcementBadge, announcementTiming, readAnnouncement, composeAnnouncement, retractAnnouncement } from './official-announcement-actions.js';
+import { announcementPage } from './official-announcements-model.js';
+import { announcementStatus, announcementPublishedAt, nextAnnouncementExpiry } from '../core/announcements.js';
 
 let user;
 try { Auth.requireRole(['secretary']); user = Auth.current(); }
 catch (error) { if (!['AUTH', 'FORBIDDEN'].includes(error.code)) document.querySelector('#app').innerHTML = UI.empty({ title: 'Unable to open announcements', text: error.message }); }
 if (user) {
   const main = Shell.official({ active: 'Announcements' }), params = new URLSearchParams(location.search), size = 10;
-  let page = Math.max(1, Math.trunc(Number(params.get('page'))) || 1), rows = [], barangay = '', version = 0, loaded = false, requested = params.has('id') ? Number(params.get('id')) : null, composer;
-  main.innerHTML = `<header class="official-heading"><h1>Announcements</h1></header><div class="actions"><button type="button" class="btn btn-primary official-new-announcement" data-compose>New announcement</button></div><div class="banner banner-error" role="alert" data-load-error hidden><span class="grow"></span><button type="button" class="btn" data-retry>Try again</button></div><div class="banner banner-error" role="alert" data-link-error hidden><span class="grow">This announcement is unavailable in your barangay.</span><button type="button" class="icon-btn" aria-label="Dismiss unavailable announcement">${Icons.svg('x')}</button></div><section class="official-announcements-list" aria-label="Published announcements" aria-busy="true">${UI.skeleton(3)}</section>`;
-  const results = main.querySelector('.official-announcements-list'), error = main.querySelector('[data-load-error]');
-  function url(id) { const p = new URLSearchParams(); if (page > 1) p.set('page', page); if (id) p.set('id', id); history.replaceState(null, '', `official-announcements.html${p.size ? `?${p}` : ''}`); }
+  main.classList.add('announcements-main');
+  let page = Math.max(1, Math.trunc(Number(params.get('page'))) || 1), q = params.get('q') || '', status = ['Active', 'Archived', 'Retracted'].includes(params.get('status')) ? params.get('status') : '';
+  let rows = [], barangay = '', version = 0, loaded = false, requested = params.has('id') ? Number(params.get('id')) : null, composer, expiryTimer, menu, menuTrigger;
+  main.innerHTML = `<header class="official-heading announcements-heading"><div><h1>Announcements</h1><p>Manage and share important announcements with the community.</p></div><button type="button" class="icon-btn announcement-add" data-compose aria-label="New announcement" title="New announcement">${Icons.svg('plus')}</button></header><div class="announcement-toolbar"><div class="announcement-filters" role="group" aria-label="Announcement status">${['All', 'Active', 'Archived', 'Retracted'].map(label => `<button type="button" data-status="${label === 'All' ? '' : label}" aria-pressed="false">${label}</button>`).join('')}</div><form class="announcement-search" role="search"><label class="sr-only" for="announcement-search">Search announcements</label>${Icons.svg('search', { size: 20 })}<input id="announcement-search" name="q" type="search" placeholder="Search announcements..." value="${e(q)}" maxlength="200"></form></div><div class="banner banner-error" role="alert" data-load-error hidden><span class="grow"></span><button type="button" class="btn" data-retry>Try again</button></div><div class="banner banner-error" role="alert" data-link-error hidden><span class="grow">This announcement is unavailable in your barangay.</span><button type="button" class="icon-btn" aria-label="Dismiss unavailable announcement">${Icons.svg('x')}</button></div><section class="official-announcements-list" aria-label="Announcements" aria-busy="true">${UI.skeleton(3)}</section>`;
+  const results = main.querySelector('.official-announcements-list'), error = main.querySelector('[data-load-error]'), search = main.querySelector('[name="q"]');
+  function url(id) { const p = new URLSearchParams(); if (status) p.set('status', status); if (q) p.set('q', q); if (page > 1) p.set('page', page); if (id) p.set('id', id); history.replaceState(null, '', `official-announcements.html${p.size ? `?${p}` : ''}`); }
   function open(row) { url(row.id); return readAnnouncement(row, () => url()); }
+  function closeMenu(restore = false) { menu?.remove(); menu = null; menuTrigger?.setAttribute('aria-expanded', 'false'); if (restore && menuTrigger?.isConnected) menuTrigger.focus(); menuTrigger = null; }
+  async function saved(row, action) {
+    if (action === 'published') { page = 1; q = ''; status = 'Active'; search.value = ''; }
+    url(); await load();
+    const target = results.querySelector(`[data-record="${row.id}"] h2`) || results; target.tabIndex = -1; target.focus({ preventScroll: action !== 'published' });
+  }
+  function compose(row = null) { if (composer?.open) return; composer = composeAnnouncement({ row, barangay, onSaved: saved }); composer.addEventListener('close', () => { composer = null; }, { once: true }); }
+  async function action(row, name) {
+    try {
+      if (name === 'view') { await open(row); return; }
+      const current = await Api.announcements.get(row.id), state = announcementStatus(current, Store.now());
+      if (name === 'edit') { if (state !== 'Active') throw new Error('Only active announcements can be edited.'); compose(current); }
+      if (name === 'archive') {
+        if (state !== 'Active') throw new Error('Only active announcements can be archived.');
+        if (await UI.confirm({ title: 'Archive announcement?', text: `Residents will no longer see “${current.title}”. The record and publication history will be preserved.`, confirmLabel: 'Archive' })) { const archived = await Api.announcements.archive(current.id, { expected_revision: current.revision }); await saved(archived, 'archived'); UI.toast('Announcement archived.'); }
+      }
+      if (name === 'retract') { if (!['Active', 'Archived'].includes(state)) throw new Error('This announcement cannot be retracted.'); retractAnnouncement(current, saved); }
+    } catch (err) { UI.toast(err.message, 'error'); await load(); }
+  }
+  function openMenu(button, row) {
+    const same = menuTrigger === button; closeMenu(); if (same) return;
+    const state = announcementStatus(row, Store.now()), actions = [['view', 'eye', 'View'], ...(state === 'Active' ? [['edit', 'pencil', 'Edit'], ['archive', 'archive', 'Archive']] : []), ...(['Active', 'Archived'].includes(state) ? [['retract', 'ban', 'Retract']] : [])];
+    menuTrigger = button; button.setAttribute('aria-expanded', 'true');
+    menu = document.createElement('div'); menu.className = 'announcement-menu'; menu.id = 'announcement-action-menu'; menu.setAttribute('role', 'menu'); menu.setAttribute('aria-label', `Actions for ${row.title}`);
+    menu.innerHTML = actions.map(([key, icon, label]) => `<button type="button" role="menuitem" data-action="${key}"${key === 'retract' ? ' class="is-danger"' : ''}>${Icons.svg(icon, { size: 20 })}<span>${label}</span></button>`).join('');
+    document.body.append(menu); const r = button.getBoundingClientRect(), width = Math.min(200, innerWidth - 16); menu.style.width = `${width}px`; menu.style.left = `${Math.max(8, Math.min(r.right - width, innerWidth - width - 8))}px`;
+    menu.style.top = `${Math.max(8, r.bottom + menu.offsetHeight + 4 <= innerHeight - 8 ? r.bottom + 4 : r.top - menu.offsetHeight - 4)}px`;
+    menu.querySelectorAll('button').forEach(item => item.addEventListener('click', () => { const name = item.dataset.action; closeMenu(true); action(row, name); }));
+    menu.addEventListener('keydown', event => { const items = [...menu.querySelectorAll('button')], index = items.indexOf(document.activeElement); if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) { event.preventDefault(); items[event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1 : (index + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length].focus(); } if (event.key === 'Tab') closeMenu(); });
+    menu.querySelector('button').focus();
+  }
   function render() {
-    const focused = results.contains(document.activeElement) ? document.activeElement.dataset.read : null, pages = Math.max(1, Math.ceil(rows.length / size)); page = Math.min(page, pages);
-    results.innerHTML = rows.length ? `${rows.slice((page - 1) * size, page * size).map(row => `<article class="card official-announcement-row"><div><h2>${e(row.title)}</h2><small>${e(announcementAuthor(row))} · ${e(Fmt.date(row.created_at))}</small></div><button type="button" class="btn" data-read="${row.id}" aria-label="Read announcement: ${e(row.title)}">Read announcement</button></article>`).join('')}${pagination({ page, pages, size, total: rows.length, noun: 'announcements' })}` : `<section class="card">${UI.empty({ icon: 'megaphone', title: 'No announcements yet', text: 'Publish an update to share it with residents.' })}</section>`;
-    results.querySelectorAll('[data-read]').forEach(button => button.addEventListener('click', () => open(rows.find(row => row.id === Number(button.dataset.read)))));
+    const focused = results.contains(document.activeElement) ? document.activeElement.closest('[data-record]')?.dataset.record : null; closeMenu();
+    const value = announcementPage(rows, { q, status, page, size, at: Store.now() }); page = value.page;
+    main.querySelectorAll('[data-status]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.status === status)));
+    results.innerHTML = value.total ? value.rows.map(row => `<article class="card announcement-row" data-record="${row.id}"><div class="announcement-copy"><h2>${e(row.title)}</h2><p class="announcement-preview">${e(row.content)}</p><div class="announcement-byline"><span class="announcement-author-avatar" aria-hidden="true">${e(Fmt.initials(row.author?.full_name))}</span><span>${e(announcementAuthor(row))}</span><span aria-hidden="true">·</span><time datetime="${e(announcementPublishedAt(row))}">${e(Fmt.dateTime(announcementPublishedAt(row)))}</time></div></div><div class="announcement-state"><div>${announcementBadge(row)}</div><p>${Icons.svg('clock', { size: 16 })}<span>${e(announcementTiming(row))}</span></p></div><button type="button" class="icon-btn announcement-menu-trigger" data-menu="${row.id}" aria-label="Actions for ${e(row.title)}" aria-haspopup="menu" aria-expanded="false" aria-controls="announcement-action-menu">${Icons.svg('ellipsis-vertical', { size: 20 })}</button></article>`).join('') + pagination({ page, pages: value.pages, size, total: value.total, noun: 'announcements' }) : `<section class="card">${UI.empty({ icon: 'megaphone', title: q || status ? 'No matching announcements' : 'No announcements yet', text: q || status ? 'Try another search or status filter.' : 'Publish an update to share it with residents.' })}</section>`;
+    results.querySelectorAll('[data-menu]').forEach(button => button.addEventListener('click', () => openMenu(button, rows.find(row => row.id === Number(button.dataset.menu)))));
     results.querySelectorAll('[data-page]').forEach(button => button.addEventListener('click', () => { page = Number(button.dataset.page); url(); render(); results.tabIndex = -1; results.focus(); }));
-    if (focused) results.querySelector(`[data-read="${Number(focused)}"]`)?.focus({ preventScroll: true });
+    if (focused) results.querySelector(`[data-menu="${Number(focused)}"]`)?.focus({ preventScroll: true });
+    url();
   }
   async function load() {
     const request = ++version;
     try {
-      const [records, areas] = await Promise.all([Api.announcements.list(), Api.barangays.list()]); if (request !== version) return; rows = records; barangay = areas.find(b => b.id === user.barangay_id)?.name || 'Your barangay'; loaded = true; error.hidden = true; render();
-      if (requested !== null) { const row = rows.find(r => r.id === requested); requested = null; if (row) open(row); else { url(); main.querySelector('[data-link-error]').hidden = false; } }
+      await Api.announcements.expireOverdue();
+      const [records, areas] = await Promise.all([Api.announcements.list(), Api.barangays.list()]); if (request !== version) return;
+      rows = records; barangay = areas.find(b => b.id === user.barangay_id)?.name || 'Your barangay'; loaded = true; error.hidden = true; render();
+      clearTimeout(expiryTimer); const next = nextAnnouncementExpiry(rows, Store.now()); if (next) expiryTimer = setTimeout(() => update(), Math.min(2147483647, Math.max(0, next - Date.parse(Store.now()))));
+      if (requested !== null) { const row = Number.isSafeInteger(requested) && requested > 0 ? rows.find(r => r.id === requested) : null; requested = null; if (row) open(row); else { url(); main.querySelector('[data-link-error]').hidden = false; } }
     } catch (err) { if (request !== version) return; error.querySelector('.grow').textContent = loaded ? `Announcements could not refresh. Displayed updates may be out of date. ${err.message}` : `Unable to load announcements. ${err.message}`; error.hidden = false; if (!loaded) results.innerHTML = UI.empty({ icon: 'megaphone', title: 'Announcements unavailable', text: 'Use Try again to reload published updates.' }); }
     finally { if (request === version) results.removeAttribute('aria-busy'); }
   }
-  function compose() {
-    if (composer?.open) return;
-    let busy = false, dirty = false, closing = false;
-    const beforeClose = async () => { if (busy || closing) return false; if (!dirty) return true; closing = true; try { return await UI.confirm({ title: 'Discard announcement?', text: 'This announcement has not been published.', confirmLabel: 'Discard changes', danger: true }); } finally { closing = false; } };
-    const el = dialog('New announcement', `<form class="stack-sm official-announcement-form" novalidate><p>${e(barangay || 'Your barangay')}</p><div class="banner banner-error" role="alert" data-save-error hidden></div><div class="field"><label for="announcement-title">Title</label><input class="input" id="announcement-title" name="title" required maxlength="200" aria-describedby="announcement-title-error"><small class="error-text" id="announcement-title-error"></small></div><div class="field"><label for="announcement-content">Content</label><textarea class="textarea" id="announcement-content" name="content" required maxlength="5000" aria-describedby="announcement-content-help announcement-content-error"></textarea><small id="announcement-content-help">Write the information residents need to know. Up to 5,000 characters.</small><small class="error-text" id="announcement-content-error"></small></div><small>Posting as Secretary ${e(user.full_name)} · <time data-posting-date>${e(Fmt.date(Store.now()))}</time></small><div class="actions official-announcement-actions"><button type="button" class="btn" data-cancel>Cancel</button><button type="submit" class="btn btn-primary">Publish</button></div></form>`, { beforeClose });
-    composer = el; el.classList.add('official-announcement-composer');
-    const form = el.querySelector('form'), saveError = form.querySelector('[data-save-error]');
-    el.addEventListener('close', () => { composer = null; }, { once: true });
-    form.addEventListener('input', event => { dirty = Boolean(form.elements.title.value || form.elements.content.value); const name = event.target.name; event.target.removeAttribute('aria-invalid'); form.querySelector(`#announcement-${name}-error`).textContent = ''; saveError.hidden = true; });
-    form.querySelector('[data-cancel]').addEventListener('click', async () => { if (await beforeClose()) UI.closeDialog(el); });
-    form.addEventListener('submit', async event => {
-      event.preventDefault(); if (busy) return;
-      const title = form.elements.title.value.trim(), content = form.elements.content.value.trim(); let first;
-      for (const [name, value, max] of [['title', title, 200], ['content', content, 5000]]) { const field = form.elements[name], hint = form.querySelector(`#announcement-${name}-error`), message = !value ? `Enter ${name === 'title' ? 'an announcement title' : 'announcement content'}.` : value.length > max ? `Use ${max.toLocaleString('en-US')} characters or fewer.` : ''; hint.textContent = message; if (message) { field.setAttribute('aria-invalid', 'true'); first ||= field; } else field.removeAttribute('aria-invalid'); }
-      if (first) { first.focus(); return; }
-      busy = true; form.setAttribute('aria-busy', 'true'); el.querySelectorAll('input,textarea,button').forEach(control => control.disabled = true); const publish = form.querySelector('[type="submit"]'); publish.textContent = 'Publishing…'; saveError.hidden = true;
-      try { const saved = await Api.announcements.create({ title, content }); dirty = false; UI.closeDialog(el); page = 1; url(); await load(); UI.toast('Announcement published.'); const heading = results.querySelector(`[data-read="${saved.id}"]`)?.closest('article').querySelector('h2'); if (heading) { heading.tabIndex = -1; heading.focus(); } }
-      catch (err) { saveError.textContent = err.message; saveError.hidden = false; saveError.tabIndex = -1; saveError.focus(); for (const [name, message] of Object.entries(err.fields || {})) { const hint = form.querySelector(`#announcement-${name}-error`); if (hint) { hint.textContent = message; form.elements[name]?.setAttribute('aria-invalid', 'true'); } } }
-      finally { busy = false; form.removeAttribute('aria-busy'); el.querySelectorAll('input,textarea,button').forEach(control => control.disabled = false); publish.textContent = 'Publish'; }
-    });
-  }
-  main.querySelector('[data-compose]').addEventListener('click', compose); main.querySelector('[data-retry]').addEventListener('click', load); main.querySelector('[data-link-error] button').addEventListener('click', () => { main.querySelector('[data-link-error]').hidden = true; main.querySelector('[data-compose]').focus(); });
-  window.addEventListener('beforeunload', event => { if (composer?.open && (composer.querySelector('[aria-busy="true"]') || composer.querySelector('input').value || composer.querySelector('textarea').value)) { event.preventDefault(); event.returnValue = ''; } });
-  live(['announcements'], load)(); window.addEventListener('pagehide', event => { if (!event.persisted) version++; }, { once: true });
+  main.querySelector('[data-compose]').addEventListener('click', () => compose()); main.querySelector('[data-retry]').addEventListener('click', load);
+  main.querySelector('[data-link-error] button').addEventListener('click', () => { main.querySelector('[data-link-error]').hidden = true; main.querySelector('[data-compose]').focus(); });
+  main.querySelectorAll('[data-status]').forEach(button => button.addEventListener('click', () => { status = button.dataset.status; page = 1; render(); }));
+  main.querySelector('.announcement-search').addEventListener('submit', event => event.preventDefault());
+  search.addEventListener('input', () => { q = search.value; page = 1; render(); });
+  const outside = event => { if (menu && !menu.contains(event.target) && !menuTrigger?.contains(event.target)) closeMenu(); }, key = event => { if (menu && event.key === 'Escape') { event.preventDefault(); closeMenu(true); } }, scroll = () => closeMenu(), visible = () => { if (document.visibilityState === 'visible') update(); };
+  document.addEventListener('pointerdown', outside); document.addEventListener('keydown', key); window.addEventListener('resize', scroll); window.addEventListener('scroll', scroll, true); document.addEventListener('visibilitychange', visible);
+  window.addEventListener('beforeunload', event => { if (composer?.open && (composer.dataset.dirty === 'true' || composer.querySelector('[aria-busy="true"]'))) { event.preventDefault(); event.returnValue = ''; } });
+  const update = live(['announcements'], load); update();
+  window.addEventListener('pagehide', event => { if (event.persisted) return; version++; clearTimeout(expiryTimer); closeMenu(); document.removeEventListener('pointerdown', outside); document.removeEventListener('keydown', key); window.removeEventListener('resize', scroll); window.removeEventListener('scroll', scroll, true); document.removeEventListener('visibilitychange', visible); });
 }
