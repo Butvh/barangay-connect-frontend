@@ -436,3 +436,40 @@ A fresh localhost test origin avoided stale modules on the older preview
 origin. All live writes used isolated fictional demo data. No public-site SOS
 was submitted. Real devices, virtual keyboards, forced outages and the full
 200% zoom matrix were not exercised. No final v1 sign-off is implied.
+
+## Authorized access and feedback safety patch — contract Issue #18, October 21, 2026
+
+The user authorized H3/H4 and this limited P1-owned implementation follow-up.
+`users.get(id)` retains its existing user/household authorization and DTO shape.
+Its `verification` field is now null for operational roles, including staff
+with a resident flag. Only the resident owner and authorized same-barangay
+Secretary receive the latest verification. Dedicated verification endpoints,
+Profile owner reads and Secretary review remain unchanged.
+
+Secretary Feedback now resolves an explicit selection against the full sorted
+category before choosing its page. Initial valid links switch to the record's
+actual category; incompatible search/status filters clear with a visible
+notice. Sorting and live refresh retain that record and recalculate its page.
+If a selected record disappears or no longer matches filters, details/actions
+clear and the page explains unavailability. Invalid, duplicate, unknown and
+inaccessible linked IDs never silently select an actionable substitute. A new
+explicit row/filter/page choice retains the existing browsing behavior.
+Assignment/resolution still use the selected record and existing confirmations.
+No new API signature, schema, endpoint or visual redesign is introduced.
+
+Verification: 137 Node and browser tests pass, the 222-file offline checker
+passes, all 46 modules pass syntax checks and whitespace checks pass. New
+regressions cover role/owner/barangay projection policy, dual-role staff,
+strict linked IDs, older feedback, filter reveal, sort/live page movement and
+missing selections. Browser checks used 13 complaints in an isolated localhost
+origin: a linked older case opened on page 2, incompatible filters reset with
+a notice, a cross-tab submission retained selection, and assignment/resolve
+updated that case. After resolution excluded it from the active status filter,
+no replacement actions appeared. Suggestion/General Feedback links select the
+correct category; General Feedback remains read-only. Four invalid-link cases
+had zero selected rows/actions. Twelve category/unavailable-state checks at
+1920/768/390 found no horizontal overflow. Console warnings/errors were absent.
+Fresh code review found no actionable issues. Fictional test data was restored;
+no public-site records were changed. Real devices, virtual keyboards, forced
+outages and the full 200% zoom matrix were not exercised. Other audit findings
+and final release sign-off remain outside this patch.

@@ -6,7 +6,7 @@ import { createApi } from '../assets/js/core/api.js';
 import { Config } from '../assets/js/core/config.js';
 import { monitoringMarkers } from '../assets/js/pages/official-map-model.js';
 import { verificationPage, verificationStats, reviewable } from '../assets/js/pages/official-verification-model.js';
-import { feedbackPage, feedbackCounts } from '../assets/js/pages/official-feedback-model.js';
+import { feedbackPage, feedbackCounts, feedbackRequestId } from '../assets/js/pages/official-feedback-model.js';
 import { Icons } from '../assets/js/core/icons.js';
 import { reportRequest, reportScreen, initialReportLocation } from '../assets/js/pages/resident-report-model.js';
 
@@ -80,6 +80,71 @@ test('a new SOS is allowed after the previous own alert is resolved', async () =
   await f.login(f.authA, 'maria.santos'); const alert = await f.apiA.alerts.create({});
   ok(alert.id !== 1042); equal(alert.status, 'Pending'); equal((await f.apiA.alerts.get(1042)).status, 'Resolved');
 });
+
+test('operational user reads cannot bypass verification endpoint authorization', async () => {
+  const f = fixture();
+  for (const person of ['carlo.mendoza', 'ramon.bautista']) {
+    await f.login(f.authA, person);
+    await rejects(() => f.apiA.verification.get(2), 'FORBIDDEN');
+    const resident = await f.apiA.users.get(5);
+    equal(resident.verification, null); equal(resident.full_name, 'Jose Dela Cruz');
+    equal(resident.household.address, '8 Mabini Street'); ok(!('password' in resident));
+  }
+});
+test('resident owner and Secretary retain verification projection without widening user access', async () => {
+  const f = fixture(); await f.login(f.authA, 'jose.dela.cruz');
+  equal((await f.apiA.users.get(5)).verification.id, 2);
+  await rejects(() => f.apiA.users.get(4), 'FORBIDDEN');
+  await f.login(f.authA, 'ana.reyes'); equal((await f.apiA.users.get(5)).verification.id, 2);
+  await f.storeA.transact(['users'], db => { db.users.find(u => u.id === 5).barangay_id = 2; });
+  for (const person of ['ana.reyes', 'carlo.mendoza', 'ramon.bautista']) {
+    await f.login(f.authA, person); await rejects(() => f.apiA.users.get(5), 'FORBIDDEN');
+  }
+});
+test('staff self reads do not expose verification even with a resident flag', async () => {
+  const f = fixture();
+  await f.storeA.transact(['users', 'verification'], db => {
+    db.users.find(u => u.id === 2).is_resident = true;
+    db.verify_residency.push({ ...db.verify_residency[0], id: 99, user_id: 2, file_name: 'private-proof.png' });
+  });
+  await f.login(f.authA, 'carlo.mendoza'); equal((await f.apiA.users.get(2)).verification, null);
+});
+function feedbackSelectionRows() {
+  return Array.from({ length: 23 }, (_, i) => ({ id: i + 1, type: 'complaint', description: `Concern ${i + 1}`, status: i ? 'Resolved' : 'Pending', created_at: Config.demo_time }));
+}
+test('feedback link IDs reject malformed and ambiguous requests without choosing a record', () => {
+  equal(feedbackRequestId(''), null); equal(feedbackRequestId('?id=1'), 1);
+  for (const q of ['?id=', '?id=0', '?id=-1', '?id=1.5', '?id=1e3', '?id=9007199254740992', '?id=1&id=2']) {
+    const id = feedbackRequestId(q); equal(id, 0); equal(feedbackPage(feedbackSelectionRows(), { id }).selected, null);
+  }
+});
+test('feedback selection works in suggestions and General Feedback without operational actions', () => {
+  const rows = [{ id: 8, type: 'suggestion', description: 'Signs', status: 'Pending', created_at: Config.demo_time }, { id: 9, type: 'general', comment: 'Guidance', rating: 4, created_at: Config.demo_time }];
+  equal(feedbackPage(rows, { type: 'suggestion', id: 8 }).selected.id, 8);
+  equal(feedbackPage(rows, { type: 'general', id: 9 }).selected.rating, 4);
+});
+test('feedback links select the exact older record and its page rather than another case', () => {
+  const rows = feedbackSelectionRows(), before = JSON.stringify(rows);
+  const value = feedbackPage(rows, { id: 1 });
+  equal(value.page, 3); equal(value.rows.map(r => r.id), [3, 2, 1]); equal(value.selected.id, 1);
+  equal(JSON.stringify(rows), before);
+});
+test('initial feedback links reveal records excluded by filters with an explicit reset signal', () => {
+  const value = feedbackPage(feedbackSelectionRows(), { id: 1, q: 'unrelated', status: 'Resolved', reveal: true });
+  equal([value.selected.id, value.page, value.q, value.status, value.filtersCleared], [1, 3, '', '', true]);
+});
+test('feedback refresh and sorting keep the selected identity as its page moves', () => {
+  const rows = feedbackSelectionRows();
+  const oldest = feedbackPage(rows, { id: 1, sort: 'oldest', page: 3 }); equal([oldest.page, oldest.selected.id], [1, 1]);
+  rows.push({ ...rows[0], id: 24 }); const newer = feedbackPage(rows, { id: 4, page: 2 }); equal([newer.page, newer.selected.id], [3, 4]);
+});
+test('missing or filtered feedback selection never substitutes another actionable row', () => {
+  for (const options of [{ id: 999, reveal: true }, { id: 1, status: 'Resolved' }, { id: 1, type: 'suggestion', reveal: true }]) {
+    const value = feedbackPage(feedbackSelectionRows(), options); equal(value.selected, null); equal(value.selectionMissing, true);
+  }
+  equal(feedbackPage(feedbackSelectionRows(), { page: 2 }).selected.id, 13);
+});
+
 test('feedback filtering clamps pagination, searches joined data and preserves records', () => {
   const rows = Array.from({ length: 23 }, (_, i) => ({ id: i + 1, type: 'complaint', description: `Concern ${i}`, location: 'Mabini Street', resident: { full_name: 'Jose Dela Cruz' }, status: i ? 'Resolved' : 'Pending', created_at: Config.demo_time })), before = JSON.stringify(rows);
   equal(feedbackPage(rows, { page: 3 }).rows.map(row => row.id), [3, 2, 1]); const value = feedbackPage(rows, { status: 'Pending', q: ' JOSE ', page: 8 }); equal([value.total, value.page, value.rows[0].id], [1, 1, 1]); equal(feedbackPage(rows, { q: 'Hillside' }).total, 0); equal(JSON.stringify(rows), before);
