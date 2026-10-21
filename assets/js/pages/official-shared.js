@@ -10,7 +10,7 @@ export const e = UI.escape;
 window.addEventListener('pageshow', event => { if (event.persisted) location.reload(); });
 export const roleLabel = role => ({ secretary: 'Secretary', responder: 'Responder', rescuer: 'Rescuer' })[role] || 'Official';
 // TODO(contract): enable each destination when its P1 implementation lands.
-const ready = new Set(['official-dashboard.html', 'official-alerts.html', 'official-alert.html']);
+const ready = new Set(['official-dashboard.html', 'official-alerts.html', 'official-alert.html', 'official-map.html', 'official-facilities.html']);
 export const pageReady = href => ready.has(String(href).split('?')[0]);
 export function destination(href, label, classes = '') {
   return pageReady(href) ? `<a class="btn ${classes}" href="${e(href)}">${e(label)}</a>` : `<button type="button" class="btn ${classes}" disabled title="This section is not available yet.">${e(label)}</button>`;
