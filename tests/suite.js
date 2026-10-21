@@ -7,6 +7,7 @@ import { Config } from '../assets/js/core/config.js';
 import { monitoringMarkers } from '../assets/js/pages/official-map-model.js';
 import { verificationPage, verificationStats, reviewable } from '../assets/js/pages/official-verification-model.js';
 import { feedbackPage, feedbackCounts } from '../assets/js/pages/official-feedback-model.js';
+import { Icons } from '../assets/js/core/icons.js';
 
 const tests = [];
 const test = (name, run) => tests.push({ name, run });
@@ -14,6 +15,9 @@ const equal = (a, b, label = 'values differ') => { if (JSON.stringify(a) !== JSO
 const ok = (value, label = 'assertion failed') => { if (!value) throw new Error(label); };
 async function rejects(run, code) { let found; try { await run(); } catch (error) { found = error; } ok(found, `expected ${code}`); equal(found.code, code); }
 const noDelay = () => Promise.resolve();
+test('shared disaster icons use the agreed Lucide symbols, including Earthquake and Other', () => {
+  for (const [type, name] of [['Fire', 'flame'], ['Flood', 'waves'], ['Typhoon/Storm', 'cloud-rain'], ['Landslide', 'mountain'], ['Earthquake', 'triangle-alert'], ['Other', 'triangle-alert']]) { equal(Icons.disaster(type), name); ok(Icons.svg(Icons.disaster(type)).includes(`#${name}`)); }
+});
 test('feedback filtering clamps pagination, searches joined data and preserves records', () => {
   const rows = Array.from({ length: 23 }, (_, i) => ({ id: i + 1, type: 'complaint', description: `Concern ${i}`, location: 'Mabini Street', resident: { full_name: 'Jose Dela Cruz' }, status: i ? 'Resolved' : 'Pending', created_at: Config.demo_time })), before = JSON.stringify(rows);
   equal(feedbackPage(rows, { page: 3 }).rows.map(row => row.id), [3, 2, 1]); const value = feedbackPage(rows, { status: 'Pending', q: ' JOSE ', page: 8 }); equal([value.total, value.page, value.rows[0].id], [1, 1, 1]); equal(feedbackPage(rows, { q: 'Hillside' }).total, 0); equal(JSON.stringify(rows), before);

@@ -156,7 +156,9 @@ The actual map is assets/img/maps/sampaguita.png; Dalisay/Pag-asa have explicit
 unavailable-artwork states. Photos/documents persist file-name metadata only.
 No individual victim records, routing, messaging or admin screens were added.
 
-The P1 adapter and its tests are complete. P2's nearby callers still need the
-explicit public option above (Issue #5); Earthquake icon mapping and resident
-touch areas remain tracked in Issue #2. These UI dependencies do not change
-the frozen record schema. See CONTRACT.md for the final screen/QA evidence.
+The P1 adapter and its tests are complete. With the user's specific ownership
+exception, the resident Dashboard/Map nearby callers now use the explicit
+public option above; private own-alert history and get(id) remain unchanged.
+Earthquake now uses triangle-alert, and the reported resident touch areas are
+at least 44 by 44 pixels. These fixes address the findings in Issues #2 and #5
+without changing the frozen record schema. See CONTRACT.md for QA evidence.

@@ -359,3 +359,47 @@ a final v1 release. P1's own implementation and review are complete; partner
 fixes and a shared final sign-off remain. The historical remote sync-b tag is
 also still pending the user's normal Git credential environment.
 
+## Authorized P2 follow-up — October 21, 2026
+
+The user explicitly authorized only the Earthquake icon, two nearby-alert
+reads and reported resident mobile hit areas. This exception permits the
+changes below in P2-owned source; it does not transfer general P2 ownership.
+The remaining-findings list above records the pre-fix review.
+
+- The shared Earthquake mapping is triangle-alert; the other disaster mappings
+  and the existing Lucide SVG assets are unchanged. An exact six-type mapping
+  regression test covers this rule.
+- Resident Dashboard and Map nearby reads use alerts.list({nearby:true}). The
+  Dashboard's resident_id own-history query and private get(id) policy remain
+  unchanged. Maria can see public A-1038, and Jose can see public A-1042. Their
+  nearby sheets contain barangay-level location and generated summaries,
+  without another resident's identity, exact address, victim count or notes.
+- Dashboard history/inline links, feedback details, rating Clear, resident
+  demo-login buttons and Map layer switches have at least 44 by 44 hit areas.
+  Map switches retain their visible 24 px track and 48 px row height. Resident
+  login styling is scoped; official Login was checked as a sibling screen.
+
+Verification: 121 Node and browser tests pass, as do the 221-file offline
+checker, changed-module syntax and whitespace checks. Thirty responsive cases
+cover Login, Dashboard, Map, My feedback, General Feedback and the open Map
+layers dialog at 1920/1440/1366/768/390. No document overflow or undersized
+audited targets were found. Screenshots and measurements are retained in
+p2-authorized-fixes-browser-qa.json and p2-fixes-*.png in the local evidence
+folder. The nearby navigation, announcement link, feedback dialog, rating
+Clear, Map switch toggles and Escape/focus return were exercised. Browser
+console warnings/errors were absent. Demo sessions were signed out; no stored
+records were submitted, changed or reset.
+
+A fresh localhost origin was used because the prior 127.0.0.1 browser origin
+retained older page modules despite matching current source served by the
+preview server. The strict static audit retains the same 11 action-detection
+heuristic findings in unchanged P1 files, with zero unresolved ownership
+findings. Those controls use event listeners and were exercised in the prior
+feature reviews; the strict audit itself does not pass. No new design system
+or runtime dependencies were introduced. Real-device touch/virtual keyboard,
+the full 200% zoom matrix, forced outage and a new two-tab write walkthrough
+were not run in this patch. Earlier feature integration evidence remains.
+
+The tracked code findings are resolved by this patch; partner final review and
+release-tag publication remain separate steps. No final v1 sign-off is implied.
+
