@@ -121,6 +121,9 @@ flag and barangay, rather than granting that person another application role.
 - API reads return copies. Joined records include public user data without a
   password. Resident get/list stays limited to ownership unless an explicit
   public projection is requested. All official incident access is scoped.
+- The verification field in users.get is available only to the resident owner
+  and authorized same-barangay Secretary. Operational-role reads return null;
+  the UI must not interpret an unavailable projection as Pending verification.
 - `alerts.list({nearby:true})` is resident-only, mutually exclusive with
   resident_id. Its DTO contains id, barangay_id, alert_type, status, created_at,
   barangay-level location_label, map_x/map_y rounded to tens and a generated

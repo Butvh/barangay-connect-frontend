@@ -96,6 +96,8 @@ the illustration. No mapping service, GPS conversion or routing is implied.
 - Resolve/acknowledge: Secretary, same barangay, exact preceding alert state.
 - Verification: Secretary, current pending submission before deadline, allowed
   decision, rejection reason required; scheduled job for overdue submissions.
+  Joined user resources must expose verification only to the resident owner or
+  authorized Secretary; operational views omit it rather than invent a status.
 - Feedback: own create/read for residents; Secretary assignment/resolution for
   the same barangay; General Feedback never has workflow actions.
 - Announcements: Secretary, same barangay, title/content length validation.
