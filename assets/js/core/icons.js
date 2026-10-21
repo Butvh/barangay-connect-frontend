@@ -1,7 +1,7 @@
 const names = new Set(['house','map','map-pin','bell','phone','message-square','message-circle','triangle-alert','circle-check','clock','school','hospital','building-2','life-buoy','megaphone','shield-check','siren','cloud-rain','upload','arrow-right','file-text','lightbulb','check','chevron-right','chevron-left','chevron-down','x','plus','minus','user','users','calendar','search','trash-2','log-out','lock','loader-circle','star','package','info','eye','eye-off','flame','waves','mountain','activity','camera','menu','layout-dashboard','clipboard-check']);
 const disasterIcons = new Map([
   ['Fire', 'flame'], ['Flood', 'waves'], ['Typhoon/Storm', 'cloud-rain'],
-  ['Landslide', 'mountain'], ['Earthquake', 'activity'], ['Other', 'triangle-alert'],
+  ['Landslide', 'mountain'], ['Earthquake', 'triangle-alert'], ['Other', 'triangle-alert'],
 ]);
 export const Icons={
   disaster(type){return disasterIcons.get(type)||'triangle-alert';},
