@@ -1,4 +1,36 @@
 CONTRACT (async unless marked sync; errors throw ApiError {code: AUTH|FORBIDDEN|INVALID_STATE|VALIDATION|NOT_FOUND|CONFLICT, message, fields?}; all calls resolve after 150 to 350 ms)
+
+Responder Dashboard reference redesign (October 21, 2026): Figma nodes
+3720:88228 / 3720:88291 / 3720:88345 define desktop/tablet/mobile layout;
+3716:88141 contains the metric, quick-action, activity, facility and alert
+components and connected dialog states. The user explicitly chose to keep
+the existing contract rather than add priorities, check-ins, travel tracking,
+backup requests or routing. These capabilities are visibly unavailable; no
+synthetic count, travel estimate, GPS position or successful backup request
+is displayed or persisted. Only existing hospitals/evacuation centers appear.
+
+The Responder-only projection scopes records to the current assigned user
+and barangay. Current assignment preserves API order, excluding Resolved.
+Assigned today uses acknowledged_at (the existing automatic assignment
+instant), counted by Asia/Manila date. Its breakdown counts completed own
+responses or Resolved assignments. Completed responses counts the current
+responder's Completed records for that Manila date. Activity is derived from
+real report/assignment/response timestamps and refreshes on alert events.
+The Completed metric opens those same today's records; View all opens all
+recorded activity. Update status reuses Log response with its existing guard;
+unavailable actions explain the reason without a write or success toast.
+
+The original Figma more-control goes directly to details, not a menu. The
+implementation preserves that behavior with the existing ellipsis icon.
+Existing pencil, clipboard-check and map icons provide the quick-action,
+metric and expansion controls; the shared icon library remains P2-owned.
+Its white map-pin is placed on a blue tile for contrast without editing the
+shared sprite. Dialog closes restore focus to the current dashboard action,
+including after a background refresh has replaced the original trigger.
+Facility links select their actual marker via official-map.html?facility=id.
+The map reuses BCMap, controls, markers, privacy and approximate coordinates.
+No Secretary/Rescuer UI, tokens, permissions, seed or P2-owned file is changed.
+
 Auth (sync): Auth.current(), Auth.login(email, password) (async), Auth.logout(), Auth.requireRole(roles[]) where roles are 'secretary'|'responder'|'rescuer'|'resident', Auth.roleOf(user) (staff role wins over resident), Auth.homeFor(user) returns the dashboard URL.
 Api.barangays.list() · Api.facilities.list({type, barangay_id}) / get(id) · Api.users.register({...}) / get(id) / update(id, patch) · Api.verification.submit(user_id, {document_type, file_name}) / list({status}) / get(id) / review(id, {decision:'Approved'|'Rejected', reason}) / expireOverdue() · Api.alerts.list({status, alert_type, q, resident_id}) / get(id) (joined: resident, household, assigned_responder, assigned_rescuer, responses[], rescues[] with facility, timeline[{status, at, current}]) / create({alert_type, description, location_label, map_x, map_y, victim_count, photo_name}) / addDetails(id, patch) / acknowledge(id) / logResponse(id, {response_type, response_status, notes}) / logRescue(id, {facility_id, rescue_status, notes}) / resolve(id) · Api.announcements.list() / get(id) / create({title, content, expires_at?}) / update(id, patch) / archive(id) / retract(id, {reason}) / expireOverdue() · Api.feedback.list({type, status, resident_id}) / get(id) / create(type, payload) / assignTanod(id, tanod_id) / resolve(id) · Api.notifications.list() / markRead(id) / markAllRead() / clearRead() · Api.dashboard.officialStats() · Api.subscribe(entity, handler) returns an unsubscribe function (entity is 'alerts'|'verification'|'announcements'|'feedback'|'notifications'|'users'; fires on same-tab and cross-tab changes).
 Server-side rules inside Api (via alertMachine and permissions): every write checks the signed-in user's role and the current status, and creates the notifications for F-X1 to F-X5.
