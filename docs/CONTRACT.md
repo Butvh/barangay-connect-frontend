@@ -474,3 +474,33 @@ Fresh code review found no actionable issues. Fictional test data was restored;
 no public-site records were changed. Real devices, virtual keyboards, forced
 outages and the full 200% zoom matrix were not exercised. Other audit findings
 and final release sign-off remain outside this patch.
+
+## P1 integration follow-up after PR #19 — October 21, 2026
+
+The operational Alert Detail page treated a null verification projection as
+Pending after the access-safety patch. It now fetches the joined resident
+verification only for Secretary and renders a badge only when an actual
+verification record is available. Responder/Rescuer incident actions and all
+other layout/content stay unchanged; no API or P2-owned source was changed.
+
+Verification on base main 031350a plus this patch: 137 Node/browser tests, the
+222-file offline checker, all 46 module syntax checks and whitespace checks
+pass. A real two-tab tablet walkthrough reached Acknowledged, Responding,
+Rescue in progress and Resolved, with the resident updating at every hop and
+showing Sampaguita Elementary School. Response Cancel and Resolve Cancel kept
+the alert unchanged. Nine role/width checks at 1920/768/390 found no document
+overflow or enabled targets below 44 px on tablet/mobile. Secretary retains
+Approved; Responder and Rescuer have no verification row. A linked General
+Feedback record selected its actual category; an unavailable ID selected no
+substitute and exposed no detail actions. Official console clear; an initial
+resident navigation before asynchronous sign-in completed produced the
+expected AUTH guard error. The signed-in walkthrough had no unexpected errors.
+Local fictional records were restored; no public records changed.
+
+Evidence is post-sync-browser-qa.json and post-sync-*.png in the local evidence
+folder. A temporary local script query avoided stale browser module caching;
+official-alert.html was restored before committing. The strict audit retains
+the same 11 documented action-detection findings (zero unresolved ownership
+findings); it does not pass. Real-device/virtual-keyboard, full 200% zoom and
+forced-outage verification remain unperformed. No final release sign-off is
+implied.
