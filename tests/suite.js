@@ -4,6 +4,7 @@ import { createStore, memoryStorage } from '../assets/js/core/store.js';
 import { createAuth } from '../assets/js/core/auth.js';
 import { createApi } from '../assets/js/core/api.js';
 import { Config } from '../assets/js/core/config.js';
+import { monitoringMarkers } from '../assets/js/pages/official-map-model.js';
 
 const tests = [];
 const test = (name, run) => tests.push({ name, run });
@@ -11,6 +12,25 @@ const equal = (a, b, label = 'values differ') => { if (JSON.stringify(a) !== JSO
 const ok = (value, label = 'assertion failed') => { if (!value) throw new Error(label); };
 async function rejects(run, code) { let found; try { await run(); } catch (error) { found = error; } ok(found, `expected ${code}`); equal(found.code, code); }
 const noDelay = () => Promise.resolve();
+const mapData = () => ({ alerts: [{ id: 1, alert_type: 'Flood', status: 'Pending', map_x: 0, map_y: 100 }, { id: 2, alert_type: 'Other', status: 'Resolved', map_x: 20, map_y: 30 }], facilities: [{ id: 1, type: 'Hospital', name: 'Hospital', map_x: 10, map_y: 20 }, { id: 2, type: 'EvacuationCenter', name: 'School', map_x: 50, map_y: 50 }], households: [{ id: 1, address: '8 Mabini Street', map_x: 43, map_y: 44 }, { id: 1, address: '8 Mabini Street', map_x: 43, map_y: 44 }], complaints: [{ id: 1, location: ' 8   MABINI STREET ', category: 'Drainage', status: 'Pending' }, { id: 2, location: 'Elsewhere', category: 'Drainage', status: 'Pending' }] });
+const mapFilters = { status: '', type: '', facility: '', households: true, complaints: true };
+test('monitoring filters preserve status and edge coordinates without mutating records', () => {
+  const data = mapData(), before = JSON.stringify(data), result = monitoringMarkers(data, { ...mapFilters, status: 'Pending', type: 'Flood' }, 'secretary');
+  equal(result.alertCount, 1); const alert = result.markers.find(m => m.kind === 'alert'); equal([alert.x, alert.y, alert.status], [0, 100, 'Pending']); equal(JSON.stringify(data), before);
+});
+test('monitoring complaint pins require Secretary and a matching household location', () => {
+  const result = monitoringMarkers(mapData(), mapFilters, 'secretary'); equal(result.unplacedComplaints, 1); equal(result.markers.filter(m => m.kind === 'complaint').map(m => [m.record.id, m.x, m.y]), [[1, 43, 44]]);
+  for (const role of ['responder', 'rescuer']) { const read = monitoringMarkers(mapData(), mapFilters, role); equal(read.unplacedComplaints, 0); equal(read.markers.filter(m => m.kind === 'complaint').length, 0); }
+});
+test('monitoring layers deduplicate households and distinguish facility types', () => {
+  const data = mapData(); equal(monitoringMarkers(data, mapFilters, 'secretary').markers.filter(m => m.kind === 'household').length, 1);
+  const filtered = monitoringMarkers(data, { ...mapFilters, facility: 'Hospital', households: false, complaints: false }, 'secretary'); equal(filtered.markers.map(m => m.kind), ['hall', 'alert', 'alert', 'hospital']);
+  equal(monitoringMarkers(data, { ...mapFilters, facility: 'none' }, 'secretary').markers.filter(m => ['hospital', 'evacuation'].includes(m.kind)).length, 0);
+});
+test('monitoring never fabricates a pin for missing or invalid coordinates', () => {
+  const data = mapData(); data.alerts[0].map_x = null; data.facilities[0].map_y = 101; data.households[0].map_x = NaN; data.households[1].map_x = undefined;
+  const result = monitoringMarkers(data, mapFilters, 'secretary'); equal(result.markers.map(m => m.id), ['hall', 'alert-2', 'facility-2']); equal(result.unplacedComplaints, 2);
+});
 function fixture() {
   const storage = memoryStorage();
   const eventsA = new EventTarget(), eventsB = new EventTarget();

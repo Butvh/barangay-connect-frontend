@@ -130,3 +130,49 @@ in login, alert actions, alert detail and dashboard templates. Those controls
 use the required addEventListener wiring and were exercised in the browser;
 inline event-handler attributes were not added to satisfy that heuristic.
 
+## Map monitoring and facility directory
+
+P1's Map monitoring consumes P2's BCMap and its existing local Sampaguita
+illustration. Filter/status/type/facility controls and layer chips use the
+canonical controls and tokens. Filters and selected records are reflected in
+the URL. Refreshes update markers without remounting the map or resetting zoom.
+The marker status adapter and disaster icons are scoped to the official map;
+P2's map implementation, tokens and resident styles are unchanged.
+
+Desktop uses filters/map/selection columns; smaller screens use filter,
+facility and legend dialogs, with a selected-alert sheet on mobile. A collapsed
+Map records list provides a non-drag alternative and access to overlapping
+pins. Buttons/markers have at least 44 px targets on tablet/mobile. Acknowledge
+and Resolve use the same API permission checks and confirmation as Alert Detail;
+Assign remains disabled because assignments are automatic in this prototype.
+
+The frozen API has no whole-barangay household enumeration or complaint
+coordinates. The household layer therefore uses households joined to the
+available alerts and, for the Secretary, complaint residents returned through
+Api.users.get. A complaint is pinned only when its location matches one of those
+household addresses; unmatched complaints are counted in a visible note, and no
+location is fabricated. Responder/Rescuer views never request complaint data and
+disable that layer. The static barangay-hall landmark follows the Figma map.
+
+Facility markers and the selector open official-facilities.html?id=..., whose
+read-only directory supports All/Evacuation centers/Hospitals, Facility details,
+and View on map. This destination was built with the map to complete that route.
+Creation, editing, active/inactive status and menus were not added: the agreed
+facility model only contains type, name, address, capacity/contact and location.
+Native selects retain operating-system-owned popup behavior, as on Alerts.
+
+Verification: 108 tests passed, including four map projection/privacy/location
+tests. Both pages passed 1920/1440/1366/768/390 resize checks without horizontal
+overflow or undersized tablet/mobile targets. Browser checks covered filtering,
+no results, zoom preservation, keyboard pan, marker alternatives, mobile sheets,
+Escape/focus restoration, facility navigation and all three official roles.
+The actual two-tab workflow passed with Acknowledge and Resolve from the map;
+a new resident SOS appeared as a marker without reloading. Both consoles were
+clear. Fictional demo data was restored after testing. Forced API-failure UI
+was reviewed in code; a forced service outage was not exercised in the browser.
+
+The premium audit adds two button-action heuristic findings on the facility
+template. Those filter/View buttons are wired through addEventListener and were
+exercised above. The audit's four existing findings are unchanged; no inline
+event-handler attributes were introduced to satisfy its heuristic.
+
