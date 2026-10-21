@@ -2,7 +2,7 @@ import { Auth, Api, UI, Icons, Fmt, Store, e, roleLabel, destination, live, erro
 import { Shell } from '../core/shell-official.js';
 import { BCMap } from '../core/map.js';
 import { logAlert } from './official-alert-actions.js';
-import { readAnnouncement } from './official-announcement-actions.js';
+import { mountSecretaryDashboard } from './secretary-dashboard.js?v=secretary-dashboard-1';
 
 let user;
 try { Auth.requireRole(['secretary', 'responder', 'rescuer']); user = Auth.current(); }
@@ -13,6 +13,7 @@ catch (error) {
 }
 if (user) {
 const role = Auth.roleOf(user), main = Shell.official({ role, active: 'Dashboard' });
+if (role === 'secretary') { mountSecretaryDashboard(main, user); } else {
 main.setAttribute('aria-busy', 'true'); main.innerHTML = '<p class="sr-only" role="status">Loading dashboard…</p>' + UI.skeleton(3);
 let miniMaps = [];
 function metric(label, value, supporting, icon, success = false) {
@@ -29,16 +30,10 @@ function map(container, barangay, alerts, facilities = []) {
 }
 async function render() {
   try {
-    const [stats, alerts, announcements, facilities, barangays, queue] = await Promise.all([Api.dashboard.officialStats(), Api.alerts.list(), role === 'secretary' ? Api.announcements.list() : [], Api.facilities.list(), Api.barangays.list(), role === 'secretary' ? Api.verification.list({ status: 'Pending' }) : []]);
+    const [stats, alerts, facilities, barangays] = await Promise.all([Api.dashboard.officialStats(), Api.alerts.list(), Api.facilities.list(), Api.barangays.list()]);
     const barangay = barangays.find(b => b.id === user.barangay_id)?.name || 'Your barangay', today = Store.now().slice(0, 10);
     miniMaps.forEach(m => m.destroy()); miniMaps = [];
-    if (role === 'secretary') {
-      document.title = 'Official dashboard — Barangay Connect';
-      const active = alerts.filter(a => a.status !== 'Resolved');
-      main.innerHTML = `<header class="official-heading"><h1>Official Dashboard</h1><p>${e(new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'Asia/Manila' }).format(new Date(Store.now())))}</p></header><div class="official-stats">${metric('Active alerts', stats.active_alerts, 'Pending or being handled', 'triangle-alert')}${metric('Pending verifications', stats.pending_verifications, 'Awaiting review', 'shield-check')}${metric('Open feedback', stats.open_feedback, 'Complaints and suggestions', 'message-square')}${metric('Resolved today', stats.resolved_today, Fmt.date(Store.now()), 'circle-check', true)}</div><div class="official-dashboard-grid"><section class="card official-section"><div class="official-section-header"><h2>Active alerts</h2>${destination('official-alerts.html', 'View all alerts')}</div><div class="official-alert-cards">${active.slice(0, 4).map(a => alertCard(a)).join('') || UI.empty({ icon: 'circle-check', title: 'No active alerts', text: 'New resident SOS reports will appear here.' })}</div></section><section class="card official-section"><h2>Map overview</h2><div class="official-mini-map" id="dashboard-map"></div><small>Alert locations in ${e(barangay)}</small>${destination('official-map.html', 'Open map monitoring')}</section><section class="card official-section"><h2>Recent announcements</h2><div class="official-announcement-cards">${announcements.slice(0, 2).map(a => `<article class="card official-announcement-card">${Icons.svg('megaphone', { size: 24 })}<h3>${e(a.title)}</h3><small>Secretary Ana Reyes · ${e(Fmt.date(a.created_at))}</small><button type="button" class="btn" data-announcement="${a.id}">Read announcement</button></article>`).join('') || UI.empty({ icon: 'megaphone', title: 'No announcements yet', text: 'Published barangay updates will appear here.' })}</div></section><section class="card official-section"><h2>Pending verifications</h2><div class="official-verification-preview">${queue.slice(0, 2).map(v => `<article><p>${e(v.resident.full_name)} · ${e(v.household?.address || 'Address not provided')}</p>${UI.badge(v.review_status)}<small>Submitted ${e(Fmt.date(v.submitted_at))} · Due ${e(Fmt.date(v.deadline_at))} · ${e(Fmt.countdown(v.deadline_at, Store.now()))}</small></article>`).join('') || '<p>No verifications are awaiting review.</p>'}</div>${queue.length ? destination('official-verifications.html', 'Review verifications') : ''}</section></div>`;
-      main.querySelectorAll('[data-announcement]').forEach(button => button.addEventListener('click', () => readAnnouncement(announcements.find(a => a.id === Number(button.dataset.announcement)))));
-      map(main.querySelector('#dashboard-map'), user.barangay_id, active.slice(0, 3));
-    } else if (role === 'responder') {
+    if (role === 'responder') {
       document.title = 'Responder dashboard — Barangay Connect'; const assigned = alerts.filter(a => a.assigned_responder_id === user.id && a.status !== 'Resolved');
       main.innerHTML = `<header class="official-heading"><h1>Dashboard</h1><p>Responder workspace · ${e(barangay)}</p></header><div class="official-assignment-grid"><section class="official-section">${assigned.length ? assigned.map(a => alertCard(a, true)).join('') : `<section class="card">${UI.empty({ icon: 'shield-check', title: 'No assigned alerts', text: 'An alert appears here when the Secretary acknowledges and assigns it to you.' })}</section>`}</section><section class="card official-section"><h3>Response activity</h3><p>Response type, status and time are recorded in your response log.</p><p><strong>${Number(stats.assigned_today)}</strong> assigned today</p>${destination('official-map.html', 'Open operational map', 'btn-primary')}</section></div>`;
     } else {
@@ -53,4 +48,5 @@ async function render() {
 }
 live(['alerts', 'announcements', 'verification', 'feedback', 'users'], render)();
 window.addEventListener('pagehide', event => { if (!event.persisted) miniMaps.forEach(m => m.destroy()); }, { once: true });
+}
 }
