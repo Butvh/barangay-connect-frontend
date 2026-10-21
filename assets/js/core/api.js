@@ -160,6 +160,16 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
     },
     alerts: {
       list: (options = {}) => read((db, user) => {
+        // Issue #5: explicit public-map DTO; the default remains the private own list.
+        if (options.nearby === true) {
+          assertRole(user, ['resident']);
+          if (options.resident_id) throw new ApiError('VALIDATION', 'Choose nearby incidents or your own alerts, not both.');
+          const area = db.barangays.find(b => b.id === user.barangay_id)?.name || 'Your barangay';
+          const q = String(options.q || '').trim().toLowerCase();
+          return recent(db.emergency_alerts.filter(a => a.barangay_id === user.barangay_id && (!options.status || a.status === options.status) && (!options.alert_type || a.alert_type === options.alert_type)))
+            .map(a => ({ id: a.id, barangay_id: a.barangay_id, alert_type: a.alert_type, status: a.status, created_at: a.created_at, location_label: area, map_x: Math.round(a.map_x / 10) * 10, map_y: Math.round(a.map_y / 10) * 10, description: `${a.alert_type} incident reported in ${area}.` }))
+            .filter(a => !q || [a.id, `A-${a.id}`, a.alert_type, a.location_label].some(value => String(value).toLowerCase().includes(q)));
+        }
         if (roleOf(user) === 'resident' && options.resident_id && Number(options.resident_id) !== user.id) throw new ApiError('FORBIDDEN', 'View your own alerts.');
         const q = String(options.q || '').trim().toLowerCase();
         return recent(db.emergency_alerts.filter(a => a.barangay_id === user.barangay_id && (roleOf(user) !== 'resident' || a.resident_id === user.id) && (!options.resident_id || a.resident_id === Number(options.resident_id)) && (!options.status || a.status === options.status) && (!options.alert_type || a.alert_type === options.alert_type) && (!q || [a.id, `A-${a.id}`, a.location_label, db.users.find(u => u.id === a.resident_id)?.full_name].some(v => String(v || '').toLowerCase().includes(q))))).map(a => joinedAlert(db, a));
