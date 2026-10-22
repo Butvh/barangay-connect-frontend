@@ -1,5 +1,48 @@
 CONTRACT (async unless marked sync; errors throw ApiError {code: AUTH|FORBIDDEN|INVALID_STATE|VALIDATION|NOT_FOUND|CONFLICT, message, fields?}; all calls resolve after 150 to 350 ms)
 
+Rescuer Dashboard reference alignment (October 22, 2026): frame 2538:58815,
+visible content 4040:95589–4040:96040, is the approved desktop source. Its
+metric, quick-action, assignment-detail, activity and facility instances use
+the same component family as the Responder reference. Both roles therefore
+compose one P1 operational renderer and the established official.css rules;
+Rescuer-only variants retain four actions and longer labels. Secretary keeps
+its existing renderer. tokens.css remains the canonical source for Inter,
+color, spacing, radius, shadow and mobile type values. Existing local Lucide,
+location/maximize artwork and BCMap are reused without changing their owners.
+
+The Rescuer projection filters by assigned_rescuer_id and barangay_id, preserves
+API order for the first non-Resolved assignment and recent alerts, and only
+counts the current rescuer's rescue records. Assigned today uses the first valid
+responded_at: logResponse assigns the rescuer in that same transaction. It
+does not use acknowledgement time. Missing response time stays unrecorded.
+Today is Asia/Manila.
+The assignment breakdown counts Resolved or own Completed rescue records as
+finished. Completed rescues counts actual Completed rescue records today; the
+metric dialog shows precisely those same records. Activity uses real report,
+assignment and rescue timestamps in descending order, excluding invalid dates.
+
+There are no transport check-in, pickup, drop-off, priority, travel-stage,
+distance/ETA, GPS or routing fields. Check-ins shows an em dash and an
+unavailable explanation; priority stays unavailable/Unrated. Pickup and
+drop-off actions are disabled and explained in visible help. Update rescue
+status reuses the canonical Log rescue dialog and is enabled only for the
+assigned rescuer while the alert is Responding. A saved record still advances
+the alert to Rescue in progress; it does not add repeat logging or let a
+rescuer resolve the alert. Only a recorded Completed rescue marks the final
+progress step; the three travel steps remain unrecorded. No transport is
+inferred from In progress. Facilities use capacity/contact, not invented
+travel estimates or a Command center type. Facility rows select the actual
+marker on Map Monitoring, as requested by the written brief; recent records
+open their actual authorized details instead of static sample overlays.
+
+Canonical UI ownership for this flow: shell/navigation and role guards are
+shell-official/Auth; buttons/badges/dialogs are UI; rescue form, facility
+chooser, validation, discard guard, busy state and feedback are logAlert;
+map geometry and controls are BCMap; date formatting is Fmt. Select/Listbox
+ownership: native, through logAlert's existing labeled select; browser-owned
+popup appearance and keyboard behavior are accepted. No replacement control,
+permission, schema, seed record, P2 file or Figma node is introduced.
+
 Responder Dashboard reference redesign (October 21, 2026): Figma nodes
 3720:88228 / 3720:88291 / 3720:88345 define desktop/tablet/mobile layout;
 3716:88141 contains the metric, quick-action, activity, facility and alert

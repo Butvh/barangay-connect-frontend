@@ -1,4 +1,18 @@
 /* P1 consumes P2's canonical tokens, controls, auth layout and BCMap styles. */
+/* Rescuer uses the same Figma operational component family as Responder. */
+.rescuer-dashboard .responder-panel h2,.rescuer-dashboard .responder-panel h3{font-size:calc(var(--body-l) + var(--s1));line-height:calc(var(--body-l-lh) + var(--s1))}
+.rescuer-dashboard .responder-assignment-facts img{flex:none}
+.rescuer-dashboard .responder-metric{column-gap:var(--s4)}
+.rescuer-dashboard .responder-assignment{justify-content:space-between}
+.rescuer-dashboard .responder-responsibilities{margin-top:0}
+.rescuer-dashboard .responder-details-link>span{flex:1;text-align:center}
+.rescuer-dashboard .rescue-action-help{font-size:var(--caption);line-height:var(--caption-lh);color:var(--text-secondary)}
+.rescue-destination-callout{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--s1) var(--s2);min-height:44px;padding:var(--s2);border-radius:var(--radius);background:var(--blue-50);color:var(--text);text-decoration:none;overflow-wrap:anywhere}
+.rescue-destination-callout strong{font-size:var(--body);line-height:var(--body-lh);font-weight:var(--semibold)}
+.rescue-destination-callout small{font-size:var(--caption);line-height:var(--caption-lh);color:var(--text-secondary)}
+.rescue-destination-callout:hover{background:var(--blue-50);text-decoration:none}
+@media(min-width:1024px) and (max-width:1599px){.rescuer-dashboard .responder-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.rescuer-dashboard .responder-actions{grid-template-columns:repeat(2,minmax(0,1fr))}.rescuer-dashboard .rescue-action-help{grid-column:1/-1}}
+@media(max-width:767px){.rescuer-dashboard .responder-panel h2,.rescuer-dashboard .responder-panel h3{font-size:var(--h3);line-height:var(--h3-lh)}.official-main.rescuer-dashboard .responder-metric{min-height:184px}}
 @media(max-width:767px){.responder-record:not(.responder-recent){display:grid;grid-template-columns:var(--s12) minmax(0,1fr) var(--s4);column-gap:var(--s3);row-gap:var(--s1)}.responder-record:not(.responder-recent) .responder-tile{grid-row:1/3}.responder-record:not(.responder-recent) .responder-record-copy{grid-column:2;grid-row:1}.responder-record:not(.responder-recent) .responder-facility-info{grid-column:2;grid-row:2;width:auto;max-width:none;padding:0;text-align:left}.responder-record:not(.responder-recent)>svg{grid-column:3;grid-row:1/3;margin-left:0;align-self:center}}
 /* Only P1-owned documents load this stylesheet. */
 @media(max-width:767px){.responder-dashboard .responder-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.responder-dashboard .responder-metric{display:grid;grid-template-columns:minmax(0,1fr) var(--s8);align-items:start;align-content:start;min-height:164px;padding:var(--s4);gap:var(--s2)}.responder-dashboard .responder-metric .responder-tile{grid-column:2;grid-row:1;width:var(--s8);height:var(--s8)}.responder-dashboard .responder-metric .responder-tile svg{width:20px;height:20px}.responder-dashboard .responder-metric-copy{display:contents}.responder-dashboard .responder-metric-copy>span{grid-column:1;grid-row:1;min-height:40px}.responder-dashboard .responder-metric-copy strong{grid-column:1/-1;grid-row:2;align-self:start;font-size:var(--h1);line-height:var(--h1-lh)}.responder-dashboard .responder-metric-copy small{grid-column:1/-1;grid-row:3}.responder-dashboard .responder-metric>svg{display:none}}
