@@ -14,28 +14,34 @@ function stylesheet() {
   if (document.querySelector('[data-notification-styles]')) return;
   const link = document.createElement('link'); link.rel='stylesheet'; link.href='assets/css/notifications.css?v=notifications-1'; link.dataset.notificationStyles=''; document.head.append(link);
 }
-export function mountNotificationCenter(root, { bell, onOpen = row => { location.href=row.link; }, onClose } = {}) {
+export function mountNotificationCenter(root, { bell, onOpen = row => { location.href=row.link; }, onClose, presentation } = {}) {
   stylesheet(); root.classList.add('notification-center');
   const user=Auth.current(), role=Auth.roleOf(user), id=`notification-center-${++sequence}`;
   let rows=[], filter='all', revision=0, alive=true, busy=false, menu, menuTrigger, confirmation, expiryTimer;
   const valid=()=>Auth.current()?.id===user?.id && Auth.roleOf(Auth.current())===role;
   const heading=root.tagName==='DIALOG'?'h2':'h1';
-  root.innerHTML=`<${heading} class="notification-heading" id="${id}-heading">Notifications</${heading}><div class="notification-controls"><div class="notification-tabs" role="tablist" aria-label="Notification filter">${['all','unread','read'].map(t=>`<button type="button" role="tab" id="${id}-${t}" data-filter="${t}" aria-controls="${id}-list" aria-selected="${t==='all'}" tabindex="${t==='all'?0:-1}">${t[0].toUpperCase()+t.slice(1)}</button>`).join('')}</div><button type="button" class="btn notification-clear" data-clear-read disabled>${asset('trash-blue')}<span>Clear read</span></button></div><div class="notification-list" id="${id}-list" role="tabpanel" aria-labelledby="${id}-all" tabindex="0"><p role="status">Loading notifications…</p></div><p class="sr-only" role="status" data-notice-status></p>${onClose?'<footer class="notification-footer"><button type="button" class="btn" data-close-center>Close</button></footer>':''}`;
+  root.innerHTML=presentation?presentation.layout({id}):`<${heading} class="notification-heading" id="${id}-heading">Notifications</${heading}><div class="notification-controls"><div class="notification-tabs" role="tablist" aria-label="Notification filter">${['all','unread','read'].map(t=>`<button type="button" role="tab" id="${id}-${t}" data-filter="${t}" aria-controls="${id}-list" aria-selected="${t==='all'}" tabindex="${t==='all'?0:-1}">${t[0].toUpperCase()+t.slice(1)}</button>`).join('')}</div><button type="button" class="btn notification-clear" data-clear-read disabled>${asset('trash-blue')}<span>Clear read</span></button></div><div class="notification-list" id="${id}-list" role="tabpanel" aria-labelledby="${id}-all" tabindex="0"><p role="status">Loading notifications…</p></div><p class="sr-only" role="status" data-notice-status></p>${onClose?'<footer class="notification-footer"><button type="button" class="btn" data-close-center>Close</button></footer>':''}`;
   const list=root.querySelector('.notification-list'), clear=root.querySelector('[data-clear-read]'), tabs=[...root.querySelectorAll('[data-filter]')];
   if(root.tagName==='DIALOG')root.setAttribute('aria-labelledby',`${id}-heading`);
   const focusRecord=(record,action='menu')=>{const target=root.querySelector(`[data-${action}="${Number(record)}"]`);(target||tabs.find(t=>t.dataset.filter===filter)).focus({preventScroll:true});};
   function closeMenu(focus=false) { if(!menu)return; const trigger=menuTrigger;menu.remove();menu=null;menuTrigger=null;trigger?.setAttribute('aria-expanded','false');if(focus)focusRecord(trigger?.dataset.menu); }
   function render() {
-    const focused=root.contains(document.activeElement)?document.activeElement.closest('[data-menu],[data-open]'):null;
-    const focusId=focused?.dataset.menu||focused?.dataset.open, focusAction=focused?.dataset.menu?'menu':'open';
+    const focused=root.contains(document.activeElement)?document.activeElement.closest('[data-menu],[data-open],[data-dismiss]'):null;
+    const focusId=focused?.dataset.menu||focused?.dataset.open||focused?.dataset.dismiss, focusAction=focused?.dataset.menu?'menu':focused?.dataset.dismiss?'dismiss':'open';
     closeMenu();
     const visible=rows.filter(row=>filter==='all'||(filter==='read'?row.is_read:!row.is_read));
     tabs.forEach(tab=>{const active=tab.dataset.filter===filter;tab.setAttribute('aria-selected',String(active));tab.tabIndex=active?0:-1;});
     list.setAttribute('aria-labelledby',`${id}-${filter}`);
-    list.innerHTML=visible.length?visible.map(row=>`<article class="notice-card${row.is_read?'':' is-new'}"><button type="button" class="notice-open" data-open="${row.id}" aria-label="Open ${e(row.title)}"><span class="notice-meta">${icon(row.icon)}<span class="notice-state">${row.is_read?'Read':'New'}</span></span><strong>${e(row.title)}</strong><span class="notice-description">${e(row.description)}</span><time datetime="${e(row.created_at)}">${e(Fmt.dateTime(row.created_at))}</time></button><button type="button" class="icon-btn notice-menu-trigger" data-menu="${row.id}" aria-label="Actions for ${e(row.title)}" aria-haspopup="menu" aria-expanded="false">${asset('more')}</button></article>`).join(''):UI.empty({icon:'bell',title:filter==='all'?'You’re all caught up':`No ${filter} notifications`,text:'New updates will appear here.'});
+    list.innerHTML=presentation?presentation.render(visible):visible.length?visible.map(row=>`<article class="notice-card${row.is_read?'':' is-new'}"><button type="button" class="notice-open" data-open="${row.id}" aria-label="Open ${e(row.title)}"><span class="notice-meta">${icon(row.icon)}<span class="notice-state">${row.is_read?'Read':'New'}</span></span><strong>${e(row.title)}</strong><span class="notice-description">${e(row.description)}</span><time datetime="${e(row.created_at)}">${e(Fmt.dateTime(row.created_at))}</time></button><button type="button" class="icon-btn notice-menu-trigger" data-menu="${row.id}" aria-label="Actions for ${e(row.title)}" aria-haspopup="menu" aria-expanded="false">${asset('more')}</button></article>`).join(''):UI.empty({icon:'bell',title:filter==='all'?'You’re all caught up':`No ${filter} notifications`,text:'New updates will appear here.'});
     clear.disabled=busy||!rows.some(row=>row.is_read);
     root.querySelector('[data-notice-status]').textContent=`${visible.length} ${filter==='all'?'':filter+' '}notifications`;
     list.querySelectorAll('[data-menu]').forEach(button=>button.addEventListener('click',()=>openMenu(button,rows.find(row=>row.id===Number(button.dataset.menu)))));
+    list.querySelectorAll('[data-dismiss]').forEach(button=>button.addEventListener('click',async()=>{
+      if(busy||!valid())return;busy=true;button.disabled=true;
+      try{await Api.notifications.dismiss(Number(button.dataset.dismiss));await refresh();if(alive&&valid())focusRecord(button.dataset.dismiss);}
+      catch(error){UI.toast(error.message,'error');await refresh();}
+      finally{busy=false;if(alive)clear.disabled=!rows.some(row=>row.is_read);}
+    }));
     list.querySelectorAll('[data-open]').forEach(button=>button.addEventListener('click',async()=>{
       if(busy||!valid())return;busy=true;button.disabled=true;
       try {const recordId=Number(button.dataset.open);await Api.notifications.markRead(recordId);if(!alive||!valid())return;await refresh();if(!alive||!valid())return;const row=await Api.notifications.get(recordId);if(!alive||!valid())return;focusRecord(recordId,'open');await onOpen(row);}

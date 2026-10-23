@@ -1,0 +1,80 @@
+/* R-13 Resident presentation only. Shared staff UI and confirmation are unchanged. */
+.resident-notifications-page.notification-center{display:block;max-width:1728px;padding-top:48px}
+.resident-notifications-header{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-bottom:32px}
+.resident-notifications-intro{display:flex;flex-direction:column;gap:8px;min-width:0}
+.resident-notifications-intro h1{font-size:40px;line-height:48px;letter-spacing:0}
+.resident-notifications-intro p{font-size:18px;line-height:26px}
+.resident-notifications-page .resident-notifications-controls{width:568px;flex-shrink:0;gap:24px}
+.resident-notifications-page .notification-tabs{flex:1;height:58px;padding:4px;border:1px solid var(--border);border-radius:12px;background:var(--surface);box-shadow:none}
+.resident-notifications-page .notification-tabs button{border-radius:8px;background:var(--surface);color:var(--text-secondary);font-size:16px;line-height:24px;min-height:48px}
+.resident-notifications-page .notification-tabs button[aria-selected=true]{background:var(--blue-100);color:var(--blue-700)}
+.resident-notifications-control-divider{height:56px;width:1px;flex-shrink:0;background:var(--border)}
+.resident-notifications-page .notification-clear.btn{width:152px;height:56px;padding:0 12px;gap:12px;border-color:var(--border);color:var(--text);font-size:16px;line-height:24px}
+.resident-notifications-page .resident-notifications-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;align-items:start;overflow:visible;padding:0;margin:0}
+.resident-notification-group{display:flex;flex-direction:column;gap:16px;padding:24px;min-width:0;background:var(--surface);border-radius:16px}
+.resident-notification-group h2{font-size:32px;line-height:40px;letter-spacing:0}
+.resident-notice-card{position:relative;border:1px solid var(--border);border-radius:12px;min-width:0;background:var(--surface)}
+.resident-notice-card.is-unread{border-color:var(--blue-100);background:var(--blue-50)}
+.resident-notice-open{display:flex;align-items:flex-start;gap:24px;width:100%;min-height:148px;padding:24px;border:0;border-radius:12px;background:transparent;color:var(--text);text-align:left;overflow-wrap:anywhere}
+.resident-notice-open:hover{box-shadow:inset 0 0 0 1px var(--blue-100)}
+.resident-notice-card.is-read .resident-notice-open{padding-right:92px}
+.resident-notice-tile{display:grid;place-items:center;flex-shrink:0;width:56px;height:56px;border-radius:12px;background:var(--blue-50);color:var(--blue-700)}
+.is-unread .resident-notice-tile{background:var(--surface)}
+.resident-notice-tile picture,.resident-notice-tile img{display:block}
+/* These two Figma exports have a 42.6667 px canvas in a 32 px design slot. */
+.resident-notice-glyph-scaled{width:32px;height:32px}
+.resident-notice-glyph-scaled img{max-width:none;transform:scale(.75);transform-origin:top left}
+.resident-notice-glyph-mobile{display:none}
+.resident-notice-content{display:flex;flex:1;min-width:0;flex-direction:column;gap:8px}
+.resident-notice-meta{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:12px;min-width:0;font-size:16px;line-height:24px;color:var(--text-secondary)}
+.resident-notice-state{display:inline-flex;align-items:center;gap:12px;white-space:nowrap}
+.resident-notice-state img{flex-shrink:0}
+.is-unread .resident-notice-state{color:var(--blue-600)}
+.resident-notice-meta time{white-space:nowrap}
+.resident-notice-content strong{font-size:20px;font-weight:600;line-height:28px}
+.resident-notice-description{font-size:18px;line-height:26px;color:var(--text-secondary)}
+.resident-notice-dismiss{position:absolute;right:24px;top:24px}
+.resident-notice-menu{position:absolute;left:30px;bottom:12px;opacity:0}
+.is-read .resident-notice-menu{left:auto;right:24px;bottom:24px}
+.resident-notice-card:hover .resident-notice-menu,.resident-notice-card:focus-within .resident-notice-menu{opacity:1}
+.is-closed .resident-notice-menu{top:24px;bottom:auto;opacity:1}
+@media(max-width:1279px){
+  .resident-notifications-header{align-items:flex-start;flex-direction:column}
+}
+@media(max-width:1023px){
+  .resident-notifications-page.notification-center{width:calc(100% - 48px);padding-top:24px}
+  .resident-notifications-intro h1{font-size:28px;line-height:44px}
+  .resident-notifications-intro p{font-size:14px;line-height:20px}
+  .resident-notifications-page .resident-notifications-controls{width:min(100%,568px);gap:12px}
+  .resident-notifications-page .notification-tabs{height:54px}
+  .resident-notifications-page .notification-tabs button{min-height:44px}
+  .resident-notifications-control-divider{display:none}
+  .resident-notifications-page .notification-clear.btn{height:52px}
+  .resident-notifications-page .resident-notifications-groups{grid-template-columns:1fr}
+  .resident-notification-group{padding:16px}
+  .resident-notification-group h2{font-size:20px;line-height:32px}
+  .resident-notice-open{min-height:140px;padding:16px;gap:12px}
+  .resident-notice-card.is-read .resident-notice-open{padding-right:72px}
+  .resident-notice-tile{width:40px;height:40px}
+  .resident-notice-glyph-scaled{width:24px;height:24px}
+  .resident-notice-glyph-scaled img{transform:none}
+  .resident-notice-glyph-desktop{display:none}
+  .resident-notice-glyph-mobile{display:block}
+  .resident-notice-meta{font-size:12px;line-height:16px;gap:8px}
+  .resident-notice-content strong{font-size:18px;font-weight:500;line-height:24px}
+  .resident-notice-description{font-size:14px;line-height:20px}
+  .resident-notice-dismiss{right:12px;top:16px}
+  .resident-notice-menu{left:14px;bottom:12px}
+  .is-read .resident-notice-menu{right:12px;bottom:12px}
+  .is-closed .resident-notice-menu{top:16px}
+}
+@media(max-width:767px){
+  .resident-notifications-page.notification-center{width:calc(100% - 32px)}
+  .resident-notifications-page .notification-clear.btn{width:132px;padding:0 8px;gap:8px}
+}
+@media(max-width:359px){
+  .resident-notifications-page .resident-notifications-controls{flex-wrap:wrap}
+  .resident-notifications-page .notification-tabs{width:100%;flex:auto}
+  .resident-notice-meta{align-items:flex-start;flex-direction:column;gap:4px}
+}
+@media(hover:none){.resident-notice-menu{opacity:1}}

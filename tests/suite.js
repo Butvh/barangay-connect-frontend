@@ -1,4 +1,5 @@
 import { registerNotificationTests } from './notifications.js';
+import { registerResidentNotificationTests } from './resident-notifications.js';
 import { RULES, ALERT_STATUSES, transition } from '../assets/js/core/alertMachine.js';
 import { roleOf } from '../assets/js/core/permissions.js';
 import { createStore, memoryStorage } from '../assets/js/core/store.js';
@@ -24,6 +25,7 @@ const ok = (value, label = 'assertion failed') => { if (!value) throw new Error(
 async function rejects(run, code) { let found; try { await run(); } catch (error) { found = error; } ok(found, `expected ${code}`); equal(found.code, code); }
 const noDelay = () => Promise.resolve();
 registerNotificationTests({ test, equal, ok, rejects, fixture });
+registerResidentNotificationTests({ test, equal, ok, fixture });
 registerAnnouncementTests({ test, equal, ok, rejects, fixture });
 registerFeedbackSummaryTests({ test, equal, fixture });
 registerSecretaryDashboardTests({ test, equal, ok, rejects, fixture });
