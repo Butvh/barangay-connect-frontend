@@ -24,3 +24,10 @@ panel 2084:40090 and confirmation 3639:87698 in that same Figma file. All retain
 their native 24 px dimensions and colors. `notification-mail.svg` uses the
 canonical Lucide mail geometry, under the included Lucide license, for the
 Mark as unread menu action.
+
+`resident-notification-*.svg` exports come from the approved Resident R-13
+frames 250:18436 (desktop) and 2017:33343 (mobile). They supply the original
+rounded-tile glyphs, 16 px state dots, neutral trash and dismiss icon. Desktop
+bell/megaphone exports have native 42.6667 px canvases, displayed through a
+0.75 transform in their 32 px design slots; mobile uses separate native 24 px
+exports. SVG files and root dimensions are preserved.

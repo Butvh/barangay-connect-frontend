@@ -678,3 +678,38 @@ Resident uses the same confirmation. Browser console warnings/errors were absent
 Browser test records remain isolated to the temporary localhost origin; no public
 site records were modified. Real devices, virtual keyboards, forced outages and
 the full 200% zoom matrix were not exercised. No final release sign-off is implied.
+
+### Resident Notifications Figma restoration — October 23, 2026
+
+Resident Notifications follows the approved R-13 desktop frame 250:18436 and
+mobile frame 2017:33343 again: heading/subtitle at left, filter controls at right,
+and separate SOS updates / Barangay and account updates white panels. An
+optional presentation adapter supplies only Resident markup; the existing shared
+controller still owns filtering, persistent state, live updates, source checks,
+menus, previews and clear-read confirmation. The staff fallback markup and shared
+notification stylesheet are unchanged. The confirmation block is byte-identical.
+
+The Resident stylesheet is loaded only on that page. It restores the original
+Inter scale, icon tiles, read/unread dots, timestamps, light-blue unread cards,
+white read cards and read-card X dismissal. Existing overflow actions remain
+available on hover/focus and always on touch; closed records keep a visible
+ellipsis. The new X control uses the same persistent API dismissal and retains
+focus on live refresh. Both named sections remain present for filtered/empty
+results; alert_new and alert_status belong only to SOS, all other authorized
+notifications belong to account/community updates. Records are not replaced by
+Figma sample data. The shared access fixes and all role/account isolation remain.
+
+Verification: 208 tests pass, including three new grouping/live-API regressions;
+the 274-file offline validator, 59-module syntax checks and diff checks pass.
+Browser checks covered All/Unread/Read, live cross-tab publication, opening a
+community update, Mark as unread, original preview destinations, unchanged
+confirmation Cancel/close, and dismiss focus across a cross-tab read update.
+Clear/dismiss mutations and recipient isolation are covered in isolated API tests.
+Seven widths (1920/1440/768/390/375/360/320) retained correct columns/stacking,
+no horizontal overflow or metadata clipping, 32/24 px glyphs and 44 px targets.
+Secretary still renders the existing staff panel with no Resident markup or
+stylesheet. Responder/Rescuer use that same unchanged default presentation;
+APIs, permissions, shared shells and shared CSS were not modified. Fresh review
+found no remaining findings. No console warnings/errors were observed. Local
+fictional records were used; no public-site records were changed. Real devices,
+virtual keyboards and the full zoom/outage matrix were not exercised.
