@@ -4,6 +4,7 @@ import { Auth, publicUser } from './auth.js';
 import { assertRole, assertBarangay, assertOwner, assertReadAlert, requireUser, roleOf, isOfficial } from './permissions.js';
 import { transition, ALERT_TYPES, ALERT_STATUSES, RESPONSE_TYPES } from './alertMachine.js';
 import { announcementStatus, announcementPublishedAt } from './announcements.js';
+import { canAccessNotification, notificationProjection, notificationSource, notificationIsRead } from './notifications.js';
 
 export { ApiError };
 const staff = ['secretary', 'responder', 'rescuer'];
@@ -38,10 +39,19 @@ function coordinate(value, field, fallback) {
 const latestVerification = (db, id) => recent(db.verify_residency.filter(row => row.user_id === id))[0] || null;
 const within = (db, user, row) => assertBarangay(user, db.users.find(person => person.id === row.user_id) || row);
 function notification(db, user_id, kind, message, link, at) {
-  db.notifications.push({ id: nextId(db.notifications), user_id, kind, text: message, link, is_read: false, created_at: at });
+  const row = { id: nextId(db.notifications), user_id, kind, text: message, link, is_read: false, created_at: at };
+  const source = notificationSource(db, row);
+  if (source?.type === 'alert') row.event_status = source.record?.status;
+  db.notifications.push(notificationProjection(db, row));
 }
 function notifyOfficials(db, barangay, kind, message, link, at) {
-  for (const user of db.users.filter(u => u.barangay_id === barangay && isOfficial(u))) notification(db, user.id, kind, message, link, at);
+  for (const user of db.users.filter(u => u.barangay_id === barangay && roleOf(u) === 'secretary')) notification(db, user.id, kind, message, link, at);
+}
+function accessibleNotification(db, user, id, at) {
+  const row = get(db.notifications, id, 'Notification');
+  if (!canAccessNotification(db, user, row, at)) throw new ApiError('FORBIDDEN', 'This notification is not available to your account.');
+  if (row.dismissed_at) throw new ApiError('NOT_FOUND', 'This notification was dismissed.');
+  return row;
 }
 function joinedAlert(db, alert) {
   const resident = db.users.find(u => u.id === alert.resident_id) || null;
@@ -96,6 +106,12 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
     if (action === 'logRescue' && alert.assigned_rescuer_id !== user.id) throw new ApiError('FORBIDDEN', 'Only the assigned Rescuer can log this rescue.');
     const next = transition(alert, action, user, at); Object.assign(alert, next);
     if (alert.resident_id) notification(db, alert.resident_id, 'alert_status', `A-${alert.id} · ${alert.status}`, `resident-alert.html?id=${alert.id}`, at);
+    const recipients = new Set(db.users.filter(u => u.barangay_id === alert.barangay_id && roleOf(u) === 'secretary').map(u => u.id));
+    for (const [field, role] of [['assigned_responder_id', 'responder'], ['assigned_rescuer_id', 'rescuer']]) {
+      const assigned = db.users.find(u => u.id === alert[field]);
+      if (assigned?.barangay_id === alert.barangay_id && roleOf(assigned) === role) recipients.add(assigned.id);
+    }
+    for (const recipient of recipients) notification(db, recipient, 'alert_status', `A-${alert.id} · ${alert.status}`, `official-alert.html?id=${alert.id}`, at);
     return alert;
   }
   function managedAnnouncement(db, user, id, at, patch) {
@@ -223,7 +239,7 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
       }),
       acknowledge: id => write(['alerts', 'notifications'], (db, user, at) => {
         const a = transitionAlert(db, user, id, 'acknowledge', at);
-        a.assigned_responder_id = db.users.find(u => u.barangay_id === user.barangay_id && u.is_responder)?.id || null;
+        a.assigned_responder_id = db.users.find(u => u.barangay_id === user.barangay_id && roleOf(u) === 'responder')?.id || null;
         if (a.assigned_responder_id) notification(db, a.assigned_responder_id, 'alert_status', `A-${a.id} acknowledged. Your response is requested.`, `official-alert.html?id=${a.id}`, at);
         return joinedAlert(db, a);
       }),
@@ -231,16 +247,17 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
         const response_type = oneOf(input.response_type, RESPONSE_TYPES, 'response_type'), response_status = oneOf(input.response_status, ['Responding', 'Completed'], 'response_status'), notes = text(input.notes, 'notes', { required: false });
         const a = transitionAlert(db, user, id, 'logResponse', at);
         db.alert_responses.push({ id: nextId(db.alert_responses), alert_id: a.id, responder_id: user.id, response_type, response_status, notes, responded_at: at });
-        a.assigned_rescuer_id = db.users.find(u => u.barangay_id === user.barangay_id && u.is_rescuer)?.id || null;
+        a.assigned_rescuer_id = db.users.find(u => u.barangay_id === user.barangay_id && roleOf(u) === 'rescuer')?.id || null;
         if (a.assigned_rescuer_id) notification(db, a.assigned_rescuer_id, 'alert_status', `A-${a.id} requires extraction and transport.`, `official-alert.html?id=${a.id}`, at);
         return joinedAlert(db, a);
       }),
       logRescue: (id, input = {}) => write(['alerts', 'notifications'], (db, user, at) => {
         const facility = get(db.facilities, input.facility_id, 'Facility'); if (facility.barangay_id !== null) assertBarangay(user, facility);
         const rescue_status = oneOf(input.rescue_status, ['In progress', 'Completed'], 'rescue_status'), notes = text(input.notes, 'notes', { required: false });
+        const firstNoticeId = nextId(db.notifications);
         const a = transitionAlert(db, user, id, 'logRescue', at);
         db.rescues.push({ id: nextId(db.rescues), alert_id: a.id, rescuer_id: user.id, facility_id: facility.id, rescue_status, notes, rescued_at: at });
-        if (a.resident_id) { const n = db.notifications.filter(n => n.user_id === a.resident_id && n.created_at === at).at(-1); if (n) n.text += ` · Destination: ${facility.name}`; }
+        for (const n of db.notifications.filter(n => n.id >= firstNoticeId)) { n.text += ` · Destination: ${facility.name}`; n.description += ` · Destination: ${facility.name}`; }
         return joinedAlert(db, a);
       }),
       resolve: id => write(['alerts', 'notifications'], (db, user, at) => joinedAlert(db, transitionAlert(db, user, id, 'resolve', at))),
@@ -251,7 +268,8 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
       create: (input = {}) => write(['announcements', 'notifications'], (db, user, at) => {
         assertRole(user, ['secretary']); const row = { id: nextId(db.announcements), barangay_id: user.barangay_id, posted_by: user.id, title: text(input.title, 'title', { max: 200 }), content: text(input.content, 'content', { max: 5000 }), created_at: at, published_at: at, status: 'Active', expires_at: announcementExpiry(input.expires_at, at), history: [], revision: 0 };
         announcementHistory(row, 'Published', user, at); db.announcements.push(row);
-        for (const resident of db.users.filter(u => u.is_resident && u.barangay_id === user.barangay_id)) notification(db, resident.id, 'announcement', row.title, `resident-announcements.html?id=${row.id}`, at); return announcementProjection(db, row, user, at);
+        notifyOfficials(db, user.barangay_id, 'announcement', row.title, `official-announcements.html?id=${row.id}`, at);
+        for (const resident of db.users.filter(u => roleOf(u) === 'resident' && u.barangay_id === user.barangay_id)) notification(db, resident.id, 'announcement', row.title, `resident-announcements.html?id=${row.id}`, at); return announcementProjection(db, row, user, at);
       }),
       update: (id, patch = {}) => write(['announcements'], (db, user, at) => {
         const row = managedAnnouncement(db, user, id, at, patch);
@@ -307,10 +325,13 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
       }),
     },
     notifications: {
-      list: () => read((db, user) => recent(db.notifications.filter(n => n.user_id === user.id))),
-      markRead: id => write(['notifications'], (db, user) => { const n = get(db.notifications, id, 'Notification'); assertOwner(user, n, 'user_id'); n.is_read = true; return n; }),
-      markAllRead: () => write(['notifications'], (db, user) => { let n = 0; db.notifications.filter(n => n.user_id === user.id && !n.is_read).forEach(row => { row.is_read = true; n++; }); return n; }),
-      clearRead: () => write(['notifications'], (db, user) => { const before = db.notifications.length; db.notifications = db.notifications.filter(n => n.user_id !== user.id || !n.is_read); return before - db.notifications.length; }),
+      list: () => read((db, user) => recent(db.notifications.filter(n => !n.dismissed_at && canAccessNotification(db, user, n, clock()))).map(n => notificationProjection(db, n))),
+      get: id => read((db, user) => notificationProjection(db, accessibleNotification(db, user, id, clock()))),
+      markRead: id => write(['notifications'], (db, user, at) => { const n = accessibleNotification(db, user, id, at); n.is_read = true; return notificationProjection(db, n); }),
+      markUnread: id => write(['notifications'], (db, user, at) => { const n = accessibleNotification(db, user, id, at); n.is_read = false; delete n.read_at; return notificationProjection(db, n); }),
+      dismiss: id => write(['notifications'], (db, user, at) => { const n = accessibleNotification(db, user, id, at); n.dismissed_at = at; return { id: n.id }; }),
+      markAllRead: () => write(['notifications'], (db, user, at) => { let count = 0; for (const n of db.notifications) if (!n.dismissed_at && canAccessNotification(db, user, n, at) && !notificationIsRead(n)) { n.is_read = true; count++; } return count; }),
+      clearRead: ({ recipient_id, expected_role } = {}) => write(['notifications'], (db, user, at) => { if ((recipient_id !== undefined && recipient_id !== user.id) || (expected_role !== undefined && expected_role !== roleOf(user))) throw new ApiError('FORBIDDEN', 'Your account changed. Reopen Notifications before clearing read updates.'); let count = 0; for (const n of db.notifications) if (!n.dismissed_at && notificationIsRead(n) && canAccessNotification(db, user, n, at)) { n.dismissed_at = at; count++; } return count; }),
     },
     dashboard: { officialStats: () => read((db, user) => {
       assertRole(user, staff); const alerts = db.emergency_alerts.filter(a => a.barangay_id === user.barangay_id), day = clock().slice(0, 10);

@@ -1,4 +1,4 @@
-import { Auth, Api } from '../pages/resident-runtime.js';
+import { Auth, Api, Store } from '../pages/resident-runtime.js';
 import { UI } from './ui.js';
 import { Fmt } from './format.js';
 import { Icons } from './icons.js';
@@ -10,9 +10,24 @@ host.innerHTML='<a class="skip-link" href="#main">Skip to content</a><header cla
 let barangayName='Your barangay';
 const update=()=>{const u=Auth.current()||user;host.querySelector('.identity-name').textContent=(u?.full_name||'Resident')+' · '+barangayName;host.querySelector('.avatar').textContent=Fmt.initials(u?.full_name);host.querySelector('.brand-compact').textContent=barangayName;};
 update();Api.barangays.list().then(rows=>{barangayName=(rows.find(b=>b.id===user?.barangay_id)?.name||'Your barangay').replace(/^Barangay /,'');update();}).catch(()=>{});const offUsers=Api.subscribe('users',update);
-const unread=async()=>{try{const rows=await Api.notifications.list();const count=rows.filter(n=>!n.read_at&&!n.is_read).length;const el=host.querySelector('.unread-dot');if(el)el.hidden=!count;}catch{}};
-unread();const offNotifications=Api.subscribe('notifications',unread);
-window.addEventListener('pagehide',event=>{if(event.persisted)return;offUsers();offNotifications();},{once:true});
+let unreadRevision=0,expiryTimer,alive=true;
+const bell=host.querySelector('.notification-link');
+const unread=async()=>{
+  const request=++unreadRevision;
+  try{
+    const rows=await Api.notifications.list();
+    if(!alive||request!==unreadRevision)return;
+    const own=Auth.current()?.id===user.id&&Auth.roleOf(Auth.current())==='resident';
+    const count=own?rows.filter(n=>!n.is_read).length:0;
+    bell.querySelector('.unread-dot').hidden=!count;bell.setAttribute('aria-label',`Notifications, ${count} unread`);
+    clearTimeout(expiryTimer);
+    const expiries=own?rows.map(n=>Date.parse(n.source_expires_at)).filter(Number.isFinite):[];
+    if(expiries.length)expiryTimer=setTimeout(unread,Math.min(2147483647,Math.max(0,Math.min(...expiries)-Date.parse(Store.now()))));
+  }catch{if(alive&&request===unreadRevision){clearTimeout(expiryTimer);bell.querySelector('.unread-dot').hidden=true;bell.setAttribute('aria-label','Notifications');}}
+};
+unread();const offNotifications=['notifications','announcements','alerts','feedback','verification','users'].map(entity=>Api.subscribe(entity,unread));
+const visible=()=>{if(!document.hidden)unread();};document.addEventListener('visibilitychange',visible);
+window.addEventListener('pagehide',event=>{if(event.persisted)return;alive=false;unreadRevision++;clearTimeout(expiryTimer);offUsers();offNotifications.forEach(off=>off());document.removeEventListener('visibilitychange',visible);},{once:true});
 return host.querySelector('main');
 }};
 

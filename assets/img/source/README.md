@@ -17,3 +17,10 @@ Secretary Dashboard uses the exact Figma exports `secretary-maximize.svg`,
 `secretary-section-arrow.svg` from frame 3743:90916 in file
 GaTDGoek1jzWbcOh9dz4f2. They retain their native SVG dimensions and colors;
 page-local assets avoid altering white shared sprite icons used elsewhere.
+
+Notification assets `notification-{waves,shield,alert,mountain,cloud,more,
+trash-blue,trash-red,trash-white,close}.svg` are exact exports from notification
+panel 2084:40090 and confirmation 3639:87698 in that same Figma file. All retain
+their native 24 px dimensions and colors. `notification-mail.svg` uses the
+canonical Lucide mail geometry, under the included Lucide license, for the
+Mark as unread menu action.

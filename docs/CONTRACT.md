@@ -75,7 +75,7 @@ The map reuses BCMap, controls, markers, privacy and approximate coordinates.
 No Secretary/Rescuer UI, tokens, permissions, seed or P2-owned file is changed.
 
 Auth (sync): Auth.current(), Auth.login(email, password) (async), Auth.logout(), Auth.requireRole(roles[]) where roles are 'secretary'|'responder'|'rescuer'|'resident', Auth.roleOf(user) (staff role wins over resident), Auth.homeFor(user) returns the dashboard URL.
-Api.barangays.list() · Api.facilities.list({type, barangay_id}) / get(id) · Api.users.register({...}) / get(id) / update(id, patch) · Api.verification.submit(user_id, {document_type, file_name}) / list({status}) / get(id) / review(id, {decision:'Approved'|'Rejected', reason}) / expireOverdue() · Api.alerts.list({status, alert_type, q, resident_id}) / get(id) (joined: resident, household, assigned_responder, assigned_rescuer, responses[], rescues[] with facility, timeline[{status, at, current}]) / create({alert_type, description, location_label, map_x, map_y, victim_count, photo_name}) / addDetails(id, patch) / acknowledge(id) / logResponse(id, {response_type, response_status, notes}) / logRescue(id, {facility_id, rescue_status, notes}) / resolve(id) · Api.announcements.list() / get(id) / create({title, content, expires_at?}) / update(id, patch) / archive(id) / retract(id, {reason}) / expireOverdue() · Api.feedback.list({type, status, resident_id}) / get(id) / create(type, payload) / assignTanod(id, tanod_id) / resolve(id) · Api.notifications.list() / markRead(id) / markAllRead() / clearRead() · Api.dashboard.officialStats() · Api.subscribe(entity, handler) returns an unsubscribe function (entity is 'alerts'|'verification'|'announcements'|'feedback'|'notifications'|'users'; fires on same-tab and cross-tab changes).
+Api.barangays.list() · Api.facilities.list({type, barangay_id}) / get(id) · Api.users.register({...}) / get(id) / update(id, patch) · Api.verification.submit(user_id, {document_type, file_name}) / list({status}) / get(id) / review(id, {decision:'Approved'|'Rejected', reason}) / expireOverdue() · Api.alerts.list({status, alert_type, q, resident_id}) / get(id) (joined: resident, household, assigned_responder, assigned_rescuer, responses[], rescues[] with facility, timeline[{status, at, current}]) / create({alert_type, description, location_label, map_x, map_y, victim_count, photo_name}) / addDetails(id, patch) / acknowledge(id) / logResponse(id, {response_type, response_status, notes}) / logRescue(id, {facility_id, rescue_status, notes}) / resolve(id) · Api.announcements.list() / get(id) / create({title, content, expires_at?}) / update(id, patch) / archive(id) / retract(id, {reason}) / expireOverdue() · Api.feedback.list({type, status, resident_id}) / get(id) / create(type, payload) / assignTanod(id, tanod_id) / resolve(id) · Api.notifications.list() / get(id) / markRead(id) / markUnread(id) / dismiss(id) / markAllRead() / clearRead({recipient_id?, expected_role?}?) · Api.dashboard.officialStats() · Api.subscribe(entity, handler) returns an unsubscribe function (entity is 'alerts'|'verification'|'announcements'|'feedback'|'notifications'|'users'; fires on same-tab and cross-tab changes).
 Server-side rules inside Api (via alertMachine and permissions): every write checks the signed-in user's role and the current status, and creates the notifications for F-X1 to F-X5.
 UI (Person 2): UI.escape(s), UI.openDialog(el), UI.closeDialog(el), UI.toast(msg, type), UI.tabs(root), UI.menu(trigger, panel), UI.skeleton(n), UI.empty({icon, title, text, action}), UI.badge(status) returns HTML (icon plus label), UI.confirm({title, text, confirmLabel, danger}) returns a Promise<boolean>. Icons.svg(name, {size}) returns an SVG string. Fmt.dateTime(iso) "Oct 4, 2026 · 2:10 PM", Fmt.date(iso) "Oct 4, 2026", Fmt.short(iso) "Oct 4 · 2:10 PM", Fmt.alertId(n), Fmt.countdown(deadline_iso).
 Shells: Shell.official({role, active}) and Shell.resident({active}) render the navigation and return the <main> element to fill.
@@ -614,3 +614,67 @@ implied.
 - The map preserves existing artwork and marker coordinates at its native 1.8 aspect ratio. Counts describe valid active markers and mapped facilities; proximity/distance is not available. Missing/invalid coordinates never become fabricated zero-coordinate markers. An unsupported barangay retains the existing coverage empty state. Publication expiry, verification deadlines, Manila midnight, visible-tab return and entity updates refresh the data; no API/schema/seed changes were introduced.
 
 Verification after integrating main PR #25: 181 tests pass (11 new Secretary dashboard model/API regressions), the 241-file offline validator passes, 53 JavaScript modules pass syntax checks, and diff whitespace checks pass. The project is static HTML/CSS/ES modules and has no production bundle/type-check step. Browser checks covered Secretary login/sidebar return/refresh, four summary destinations, exact Priority incident, selected map marker/full map, existing composer open/cancel, full activity dialog and linked General Feedback selection, Jose's verification details, and fresh announcement details. The newly merged Responder Dashboard and unchanged Rescuer heading/route isolation remain intact. Six viewport checks at 1920/1440/1366/768/390/320 found no horizontal overflow and retained the native map ratio; tablet/mobile main targets meet 44px. Console warnings/errors were absent. Empty/invalid/foreign records, deadline/publication boundaries, data transitions, and other-role permissions were covered in isolated in-memory tests; no browser demo records were modified. Fresh read-only review found no remaining actionable issues after correcting white-on-white section arrows. Real devices, virtual keyboards, forced outages, and the full 200% zoom matrix were not exercised. No final release sign-off is implied.
+
+### Shared notification system — October 23, 2026
+
+- The staff shell uses one shared notification center matching Figma panel
+  2084:40090 (500 px desktop, 24 px padding) and mobile 2090:41386. Resident
+  Notifications keeps its existing full-page route with the same cards, badges,
+  filters and anchored action menu. All roles use confirmation 3639:87698.
+  Notification-only CSS and local SVGs do not alter other page components.
+- All/Unread/Read filters apply immediately. Opening marks a record read, then
+  rechecks the active account and source authorization before previewing its
+  details. Staff alert previews and existing destination navigation are retained.
+  Read cards offer Mark as unread; every card offers Dismiss notification. Menu
+  placement is anchored, viewport-clamped and keyboard accessible. Lists scroll
+  independently of staff controls/footer; notifications remain full-page scrollable
+  for Residents. Cancel, close and Escape preserve records.
+- `get`, `markRead`, `markUnread`, `dismiss`, `markAllRead`, and `clearRead` enforce
+  recipient ID, effective role, canonical source route, source existence, barangay
+  and source ownership/assignment in the API adapter. Invalid or legacy misrouted
+  notifications are excluded from list/counts and denied on direct ID access.
+  Responder/Rescuer incident notifications require that exact current assignee.
+  Resident verification/SOS/feedback notices require their own account or record;
+  community announcements require their barangay and current Active visibility.
+- Administrative submissions/new SOS/publication notices target effective
+  Secretaries only. Incident transitions target that barangay's Secretaries,
+  exact assigned operators, and the affected Resident. New assignments retain
+  their assignment/assistance titles. Rescue updates include the actual recorded
+  destination. Publication notices go to Secretaries and effective Residents in
+  the same barangay, excluding operational staff. Existing writers are reused;
+  there is no invented facility-management or coordination-request workflow.
+- Notification DTOs add title, description, icon and source_expires_at; new
+  incident notices store event_status and presentation snapshots. Canonical legacy
+  records are projected without rewriting or resetting demo data. Legacy read_at
+  is recognized; Mark as unread removes it. Dismiss and Clear read persist
+  dismissed_at on only authorized recipient rows; they do not delete shared rows
+  or affect other users. Clear read optionally checks captured recipient_id and
+  expected_role inside the transaction to reject a stale confirmation. Existing
+  calls without arguments remain supported.
+- Entity subscriptions, request revision guards, visible-tab refresh, and source
+  expiry timers keep lists and bell counts current. Resident bell counts update
+  on every Resident page, including after announcement withdrawal/expiry.
+- This is still the fictional browser-store adapter, with no Laravel backend in
+  this repository. These data-access checks are not a production security
+  boundary; P1 must enforce equivalent recipient/source/role authorization and
+  state isolation in authenticated server endpoints when replacing the adapter.
+
+Verification: 205 Node tests pass (15 notification regressions), the 260-file
+static/offline validator passes, all 58 JavaScript modules pass syntax checks,
+and diff whitespace checks pass. No production bundle or separate type checker
+is configured for this plain HTML/CSS/ES-module project. Independent read-only
+review found no remaining actionable issues. Browser walkthroughs used a separate
+localhost origin and fictional demo accounts: Secretary acknowledgement delivered
+only to Carlo, response logging delivered only to Ramon, rescue logging included
+the chosen school, and Maria saw only her own incident progress. Tests covered
+All/Unread/Read, opening/read state, Mark as unread, anchored menus, Escape,
+Cancel/close confirmation, focus return, role-specific previews and destination
+links. Clear/dismiss mutations, direct-ID denial, cross-client persistence,
+source reassignment, dual roles, malformed sources, announcement withdrawal and
+exact expiry were verified in isolated in-memory tests. Desktop 1920, tablet 768,
+mobile 390 and 320 checks found no horizontal overflow; notification controls at
+320 meet 44 px targets and long staff lists retain visible controls/footer.
+Resident uses the same confirmation. Browser console warnings/errors were absent.
+Browser test records remain isolated to the temporary localhost origin; no public
+site records were modified. Real devices, virtual keyboards, forced outages and
+the full 200% zoom matrix were not exercised. No final release sign-off is implied.

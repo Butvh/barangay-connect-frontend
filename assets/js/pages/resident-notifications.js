@@ -1,15 +1,12 @@
-import {Auth,Api,UI,Fmt,e,icon,heading,tile,link,dialog,live,errorView,safeDestination} from './resident-shared.js';
-import {Shell} from '../core/shell-resident.js';
-Auth.requireRole(['resident']);
-const user=Auth.current();
-if(user){const main=Shell.resident({active:'Home'});main.classList.add('notifications-main');let filter='all';const key='bc-resident-dismissed-'+user.id;let dismissed=new Set(JSON.parse(sessionStorage.getItem(key)||'[]'));main.innerHTML=UI.skeleton(2);
-const unread=n=>!n.read_at&&!n.is_read;
-async function render(){try{const all=await Api.notifications.list(),rows=all.filter(n=>!dismissed.has(n.id)&&(filter==='all'||(filter==='unread'?unread(n):!unread(n))));
-main.innerHTML='<div class="notifications-header">'+heading('Notifications','Updates about your SOS, verification and barangay announcements.')+'<div class="notification-toolbar"><div class="tabs" role="tablist" aria-label="Notification filter">'+['all','unread','read'].map(t=>'<button class="tab" role="tab" aria-selected="'+(filter===t)+'" data-filter="'+t+'">'+t[0].toUpperCase()+t.slice(1)+'</button>').join('')+'</div><button class="btn btn-small" id="clear-read">'+icon('trash-2',{size:18})+'Clear read</button></div></div><div class="notifications-grid">'+[['SOS updates',n=>n.kind?.startsWith('alert')],['Barangay and account updates',n=>!n.kind?.startsWith('alert')]].map(([title,predicate])=>'<section class="card card-plain notification-group"><h2>'+title+'</h2>'+(rows.filter(predicate).map(n=>'<article class="notification-card '+(unread(n)?'unread':'')+'">'+tile(n.kind==='verification'?'shield-check':n.kind==='announcement'?'cloud-rain':n.kind==='feedback_update'?'message-square':'waves')+'<div class="grow"><div class="spread"><span class="caption">'+(unread(n)?'<span class="dot"></span>Unread':'Read')+'</span><time datetime="'+e(n.created_at)+'">'+e(Fmt.short(n.created_at))+'</time></div><button class="notification-open" data-open="'+n.id+'"><h3>'+e(n.title||n.text||'Barangay update')+'</h3><p>'+e(n.message||n.body||'')+'</p></button></div>'+(!unread(n)?'<button class="icon-btn" data-dismiss="'+n.id+'" aria-label="Dismiss '+e(n.title||n.text||'notification')+'">'+icon('x',{size:18})+'</button>':'')+'</article>').join('')||UI.empty({icon:'bell',title:'You’re all caught up',text:'New updates will appear here.'}))+'</section>').join('')+'</div>';
-main.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{filter=b.dataset.filter;render();}));
-main.querySelector('#clear-read').disabled=!all.some(n=>!unread(n));main.querySelector('#clear-read').addEventListener('click',async()=>{if(await UI.confirm({title:'Clear read notifications?',text:'Read notifications will be removed. Unread updates will remain.',confirmLabel:'Clear read'})){try{await Api.notifications.clearRead();UI.toast('Read notifications cleared.');}catch(err){UI.toast(err.message,'error');}}});
-main.querySelectorAll('[data-open]').forEach(b=>b.addEventListener('click',async()=>{const n=all.find(n=>n.id===Number(b.dataset.open));try{await Api.notifications.markRead(n.id);const d=dialog(n.title||n.text||'Notification','<div class="stack"><small>'+e(Fmt.dateTime(n.created_at))+'</small><p>'+e(n.message||n.body||'')+'</p>'+link(safeDestination(n),'View update','btn-primary')+'</div>',{sheet:true});}catch(err){UI.toast(err.message,'error');}}));
-main.querySelectorAll('[data-dismiss]').forEach(b=>b.addEventListener('click',()=>{dismissed.add(Number(b.dataset.dismiss));sessionStorage.setItem(key,JSON.stringify([...dismissed]));render();}));
-}catch(err){errorView(main,err,render);}}
-live(['notifications'],render)();}
+import { Auth, Fmt, e, link, dialog } from './resident-shared.js';
+import { Shell } from '../core/shell-resident.js';
+import { mountNotificationCenter } from '../core/notification-center.js';
 
+Auth.requireRole(['resident']);
+if (Auth.current()) {
+  const main = Shell.resident({active:'Home'});
+  main.classList.add('notifications-main', 'notification-page');
+  mountNotificationCenter(main, { bell: document.querySelector('.notification-link'), onOpen: record => {
+    dialog(record.title, `<div class="stack"><small>${e(Fmt.dateTime(record.created_at))}</small><p>${e(record.description)}</p>${link(record.link, 'View update', 'btn-primary')}</div>`, {sheet:true});
+  } });
+}
