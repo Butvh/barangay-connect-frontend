@@ -22,7 +22,14 @@ export function assertBarangay(user, record) {
   if (!sameBarangay(user, record)) throw new ApiError('FORBIDDEN', 'This record belongs to another barangay.');
 }
 export function canReadAlert(user, alert) {
-  return sameBarangay(user, alert) && (roleOf(user) !== 'resident' || alert.resident_id === user.id);
+  if (!sameBarangay(user, alert)) return false;
+  switch (roleOf(user)) {
+    case 'secretary': return true;
+    case 'responder': return alert.assigned_responder_id === user.id;
+    case 'rescuer': return alert.assigned_rescuer_id === user.id;
+    case 'resident': return alert.resident_id === user.id;
+    default: return false;
+  }
 }
 export function assertReadAlert(user, alert) {
   requireUser(user);

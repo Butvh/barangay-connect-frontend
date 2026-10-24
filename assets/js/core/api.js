@@ -1,7 +1,7 @@
 import { ApiError, copy, delay, zonedISO } from './config.js';
 import { Store } from './store.js';
 import { Auth, publicUser } from './auth.js';
-import { assertRole, assertBarangay, assertOwner, assertReadAlert, requireUser, roleOf, isOfficial } from './permissions.js';
+import { assertRole, assertBarangay, assertOwner, assertReadAlert, canReadAlert, requireUser, roleOf, isOfficial } from './permissions.js';
 import { transition, ALERT_TYPES, ALERT_STATUSES, RESPONSE_TYPES } from './alertMachine.js';
 import { announcementStatus, announcementPublishedAt } from './announcements.js';
 import { canAccessNotification, notificationProjection, notificationSource, notificationIsRead } from './notifications.js';
@@ -215,7 +215,7 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
         }
         if (roleOf(user) === 'resident' && options.resident_id && Number(options.resident_id) !== user.id) throw new ApiError('FORBIDDEN', 'View your own alerts.');
         const q = String(options.q || '').trim().toLowerCase();
-        return recent(db.emergency_alerts.filter(a => a.barangay_id === user.barangay_id && (roleOf(user) !== 'resident' || a.resident_id === user.id) && (!options.resident_id || a.resident_id === Number(options.resident_id)) && (!options.status || a.status === options.status) && (!options.alert_type || a.alert_type === options.alert_type) && (!q || [a.id, `A-${a.id}`, a.location_label, db.users.find(u => u.id === a.resident_id)?.full_name].some(v => String(v || '').toLowerCase().includes(q))))).map(a => joinedAlert(db, a));
+        return recent(db.emergency_alerts.filter(a => canReadAlert(user, a) && (!options.resident_id || a.resident_id === Number(options.resident_id)) && (!options.status || a.status === options.status) && (!options.alert_type || a.alert_type === options.alert_type) && (!q || [a.id, `A-${a.id}`, a.location_label, db.users.find(u => u.id === a.resident_id)?.full_name].some(v => String(v || '').toLowerCase().includes(q))))).map(a => joinedAlert(db, a));
       }),
       get: id => read((db, user) => { const a = get(db.emergency_alerts, id, 'Alert'); assertReadAlert(user, a); return joinedAlert(db, a); }),
       create: (input = {}) => write(['alerts', 'notifications'], (db, user, at) => {

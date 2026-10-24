@@ -1,5 +1,9 @@
 # Local icon sources
 
+`alert-*.svg` are exact exports from Secretary O-02 frame 261:17340 / content
+4077:96487 in GaTDGoek1jzWbcOh9dz4f2. They supply shared Alerts rows and
+filters at native 20/24/40 px sizes, scaled in responsive slots.
+
 The `lucide-*.svg` files are local copies of the canonical Lucide icons from
 https://github.com/lucide-icons/lucide/tree/main/icons, distributed under
 `Lucide-LICENSE.txt`. The `imgLucide*` files are original Figma exports.
