@@ -1,5 +1,34 @@
 CONTRACT (async unless marked sync; errors throw ApiError {code: AUTH|FORBIDDEN|INVALID_STATE|VALIDATION|NOT_FOUND|CONFLICT, message, fields?}; all calls resolve after 150 to 350 ms)
 
+Alerts alignment and private incident access (October 24, 2026): O-02
+261:17340 / 4077:96487 and operational variants 4129:96809 / 4130:97486
+share the approved row geometry, local icon exports and responsive layouts.
+No priority or seed records are added. Secretary sees all same-barangay
+incidents; effective Responder/Rescuer roles can list and get only records
+whose assigned_responder_id/assigned_rescuer_id equals the signed-in ID,
+within that barangay. Resident private reads remain own-only; nearby:true
+retains its resident-only redacted DTO. Filters cannot broaden this scope.
+The future Laravel list query AND show policy must enforce the same rule
+before returning joined records; browser-side checks are demo-adapter
+authorization, not a substitute for server authorization.
+
+Operational Alerts omit reporter facts and show the current user's real
+assignment. Responder assignment time is acknowledged_at; Rescuer time is
+the earliest valid responded_at, matching the existing logResponse assignment
+transaction and dashboard contract. Missing assignment times are not inferred
+from created_at. Resolved records retain their actual assignees. Existing
+status transitions and assignment rules are unchanged. Mobile previews
+re-read the authorized record before opening, so stale cached assignments
+cannot open a summary after access is revoked.
+
+Alerts-only select enhancement retains each native select's original
+options/value/change events. Its nonmodal top-layer list is field-width,
+anchored below the trigger, scrollable, and closes on selection, outside
+interaction, toggle, Escape/Tab or viewport movement. Arrow/Home/End and
+type-ahead navigate options without committing until Enter/Space.
+Search, status/type, sort and Clear filters compose with pagination and
+live alert/user refreshes. Other pages and shared UI selects are unchanged.
+
 Rescuer Dashboard reference alignment (October 22, 2026): frame 2538:58815,
 visible content 4040:95589–4040:96040, is the approved desktop source. Its
 metric, quick-action, assignment-detail, activity and facility instances use
