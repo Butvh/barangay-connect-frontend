@@ -6,10 +6,10 @@ import { alertWorkspace, alertsPage, incidentAssignment } from './official-alert
 import { mountAlertSelect } from './official-alert-select.js';
 
 let user;
-try { Auth.requireRole(['secretary', 'responder', 'rescuer']); user = Auth.current(); }
+try { Auth.requireRole(['captain', 'secretary', 'responder', 'rescuer']); user = Auth.current(); }
 catch (error) { if (!['AUTH', 'FORBIDDEN'].includes(error.code)) document.querySelector('#app').innerHTML = UI.empty({ icon: 'triangle-alert', title: 'Unable to open alerts', text: error.message, action: { href: 'login.html', label: 'Back to sign in' } }); }
 if (user) {
-  const role = Auth.roleOf(user), secretary = role === 'secretary', main = Shell.official({ active: 'Alerts' }), size = 10;
+  const role = Auth.roleOf(user), secretary = ['secretary', 'captain'].includes(role), main = Shell.official({ active: 'Alerts' }), size = 10;
   main.classList.add('alerts-page');
   let page = 1, records = [], request = 0, timer, area = '';
   const icon = (name, size = 24) => `<img src="assets/img/source/alert-${name}.svg" width="${size}" height="${size}" alt="" aria-hidden="true">`;

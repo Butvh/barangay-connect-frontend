@@ -5,7 +5,7 @@ export function monitoringMarkers(data, filters, role) {
   const alerts = data.alerts.filter(a => (!filters.status || a.status === filters.status) && (!filters.type || a.alert_type === filters.type));
   const facilities = data.facilities.filter(f => filters.facility !== 'none' && (!filters.facility || f.type === filters.facility));
   const households = [...new Map(data.households.filter(located).map(h => [h.id, h])).values()];
-  const complaints = role === 'secretary' && filters.complaints ? data.complaints : [];
+  const complaints = ['secretary', 'captain'].includes(role) && filters.complaints ? data.complaints : [];
   const positioned = complaints.map(record => ({ record, household: households.find(h => locationKey(h.address) === locationKey(record.location)) }));
   return {
     alertCount: alerts.length,

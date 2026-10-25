@@ -1,0 +1,658 @@
+{
+  "frames": [
+    {
+      "id": "4794:99739",
+      "name": "C-01 Captain Dashboard / Desktop",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4794:99996",
+      "name": "C-08 Captain Personnel / Desktop",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4794:100256",
+      "name": "C-09 Reports & Activity Logs / Desktop",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4797:100391",
+      "name": "C-P01 Add External Personnel / Centered modal",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4797:100448",
+      "name": "C-P02 Appoint From Tanods / Centered modal",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4797:100489",
+      "name": "C-P03 Personnel Details / Centered modal",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4797:100527",
+      "name": "C-P04 Reassign Role / Centered modal",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4797:100565",
+      "name": "C-P05 Remove From Role / Confirmation",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4797:100587",
+      "name": "C-P06 Tanod Details / Centered modal",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4800:100269",
+      "name": "C-02 Captain Alerts / Desktop",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4800:100521",
+      "name": "C-03 Captain Map Monitoring / Desktop",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4800:100728",
+      "name": "C-04 Captain Verifications / Desktop",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4800:100995",
+      "name": "C-05 Captain Announcements / Desktop",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4800:101163",
+      "name": "C-06 Captain Feedback / Desktop",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4800:101801",
+      "name": "C-07 Captain Facilities / Desktop",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4800:101958",
+      "name": "C-02a Captain Alert Detail / Desktop",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4800:102192",
+      "name": "C-05a Captain New Announcement / Centered modal",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4800:102362",
+      "name": "C-04a Captain Verification Detail / Desktop",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4801:102166",
+      "name": "C-R01 Incident Reports Overview / Desktop",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4801:102540",
+      "name": "C-R02 Captain Activity Log / Desktop",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4801:102820",
+      "name": "C-R03 Operational Summary / Desktop",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4801:103159",
+      "name": "C-R04 Personnel Performance / Desktop",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4801:103440",
+      "name": "C-R05 All Reports / Desktop",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4801:103750",
+      "name": "C-R06 Report Details A-1042 / Desktop",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4803:102654",
+      "name": "C-Dashboard / Tablet",
+      "width": 768,
+      "height": 1024
+    },
+    {
+      "id": "4803:103115",
+      "name": "C-Dashboard / Mobile",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "id": "4803:103526",
+      "name": "C-Personnel / Tablet",
+      "width": 768,
+      "height": 1024
+    },
+    {
+      "id": "4803:103799",
+      "name": "C-Personnel / Mobile",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "id": "4803:104022",
+      "name": "C-Reports / Tablet",
+      "width": 768,
+      "height": 1024
+    },
+    {
+      "id": "4803:104255",
+      "name": "C-Reports / Mobile",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "id": "4804:103353",
+      "name": "C-P07 Personnel Action Saved / Confirmation",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4804:103359",
+      "name": "C-P08 External Personnel / Required fields",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4804:103417",
+      "name": "C-P09 External Personnel / Filled prototype example",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4804:103475",
+      "name": "C-S01 Captain Notifications / Empty",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4804:103481",
+      "name": "C-R07 Report Export / Confirmation",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4804:103487",
+      "name": "C-R08 Print Report / Preview action",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4804:103493",
+      "name": "C-R09 Activity Details / Empty-state contract",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4804:103499",
+      "name": "C-R10 Personnel Performance Details / Carlo Mendoza",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4804:103505",
+      "name": "C-R04 Personnel Performance / Rescuers",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4804:103622",
+      "name": "C-R04 Personnel Performance / Secretaries",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4804:103739",
+      "name": "C-R06 Report Details A-1038 / Desktop",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4804:103873",
+      "name": "C-R06 Report Details A-1031 / Desktop",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4804:104007",
+      "name": "C-R05 All Reports / Flood filter",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4804:104153",
+      "name": "C-S02 Captain Navigation / Mobile drawer",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "id": "4807:104109",
+      "name": "C-P10 Appoint / Choose role",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4807:104120",
+      "name": "C-P11 Reassign / Choose role",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4807:104129",
+      "name": "C-P12 Personnel / Role filter",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4807:104142",
+      "name": "C-R11 Activity / Filters",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4807:104155",
+      "name": "C-P13 Personnel / Secretary filter",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4807:104409",
+      "name": "C-P14 Appoint / Selected rescuer",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4807:104451",
+      "name": "C-P15 Reassign / Selected responder",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4808:110646",
+      "name": "C-P01 Add External Personnel / Centered modal / Tablet",
+      "width": 768,
+      "height": 1024
+    },
+    {
+      "id": "4808:110704",
+      "name": "C-P02 Appoint From Tanods / Centered modal / Tablet",
+      "width": 768,
+      "height": 1024
+    },
+    {
+      "id": "4808:110746",
+      "name": "C-P03 Personnel Details / Centered modal / Tablet",
+      "width": 768,
+      "height": 1024
+    },
+    {
+      "id": "4808:110785",
+      "name": "C-P04 Reassign Role / Centered modal / Tablet",
+      "width": 768,
+      "height": 1024
+    },
+    {
+      "id": "4808:110824",
+      "name": "C-P05 Remove From Role / Confirmation / Tablet",
+      "width": 768,
+      "height": 1024
+    },
+    {
+      "id": "4808:110854",
+      "name": "C-P06 Tanod Details / Centered modal / Tablet",
+      "width": 768,
+      "height": 1024
+    },
+    {
+      "id": "4808:110886",
+      "name": "C-P08 External Personnel / Required fields / Tablet",
+      "width": 768,
+      "height": 1024
+    },
+    {
+      "id": "4808:110944",
+      "name": "C-P09 External Personnel / Filled prototype example / Tablet",
+      "width": 768,
+      "height": 1024
+    },
+    {
+      "id": "4808:111002",
+      "name": "C-P07 Personnel Action Saved / Confirmation / Tablet",
+      "width": 768,
+      "height": 1024
+    },
+    {
+      "id": "4808:111008",
+      "name": "C-P10 Appoint / Choose role / Tablet",
+      "width": 768,
+      "height": 1024
+    },
+    {
+      "id": "4808:111019",
+      "name": "C-P11 Reassign / Choose role / Tablet",
+      "width": 768,
+      "height": 1024
+    },
+    {
+      "id": "4808:111028",
+      "name": "C-P14 Appoint / Selected rescuer / Tablet",
+      "width": 768,
+      "height": 1024
+    },
+    {
+      "id": "4808:111070",
+      "name": "C-P15 Reassign / Selected responder / Tablet",
+      "width": 768,
+      "height": 1024
+    },
+    {
+      "id": "4808:111109",
+      "name": "C-P01 Add External Personnel / Centered modal / Mobile",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "id": "4808:111167",
+      "name": "C-P02 Appoint From Tanods / Centered modal / Mobile",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "id": "4808:111209",
+      "name": "C-P03 Personnel Details / Centered modal / Mobile",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "id": "4808:111248",
+      "name": "C-P04 Reassign Role / Centered modal / Mobile",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "id": "4808:111287",
+      "name": "C-P05 Remove From Role / Confirmation / Mobile",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "id": "4808:111317",
+      "name": "C-P06 Tanod Details / Centered modal / Mobile",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "id": "4808:111349",
+      "name": "C-P08 External Personnel / Required fields / Mobile",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "id": "4808:111407",
+      "name": "C-P09 External Personnel / Filled prototype example / Mobile",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "id": "4808:111465",
+      "name": "C-P07 Personnel Action Saved / Confirmation / Mobile",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "id": "4808:111471",
+      "name": "C-P10 Appoint / Choose role / Mobile",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "id": "4808:111482",
+      "name": "C-P11 Reassign / Choose role / Mobile",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "id": "4808:111491",
+      "name": "C-P14 Appoint / Selected rescuer / Mobile",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "id": "4808:111533",
+      "name": "C-P15 Reassign / Selected responder / Mobile",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "id": "4810:103719",
+      "name": "C-Shared Map Monitoring / Desktop — Overview",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4810:103927",
+      "name": "C-Shared Alerts List / Desktop — A-1042 filter",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4810:104181",
+      "name": "C-Shared Map Monitoring / Desktop — Captain · Zoomed in / Drag to explore",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4810:104425",
+      "name": "C-Shared Map Monitoring / Desktop — Acknowledged",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4810:104632",
+      "name": "C-Shared Announcements / Desktop — Filter · Active",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4810:104796",
+      "name": "C-Shared Announcements / Desktop — Filter · Archived",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4810:104958",
+      "name": "C-Shared Announcements / Desktop — Filter · Retracted",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4810:105120",
+      "name": "C-Shared Announcements / Desktop — View announcement · Active",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4810:105290",
+      "name": "C-Shared Announcements / Desktop — Quick actions · Active",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4810:105459",
+      "name": "C-Shared Announcements / Desktop — Quick actions · Retracted (flips up near screen edge)",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4810:105628",
+      "name": "C-Shared Feedback / Desktop · Record details",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4810:105656",
+      "name": "C-Shared Alert Detail / Desktop — Acknowledged · Captain view",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4810:105858",
+      "name": "C-Shared Verification Detail / Desktop — Reject overlay",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4813:106288",
+      "name": "C-P13 Personnel / Responder filter",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4813:106542",
+      "name": "C-P13 Personnel / Rescuer filter",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4822:106083",
+      "name": "C-P16 Effective date / Desktop",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4822:106095",
+      "name": "C-P16 Optional notes / Desktop",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4822:106107",
+      "name": "C-P16 Effective date / Tablet",
+      "width": 768,
+      "height": 1024
+    },
+    {
+      "id": "4822:106119",
+      "name": "C-P16 Optional notes / Tablet",
+      "width": 768,
+      "height": 1024
+    },
+    {
+      "id": "4822:106131",
+      "name": "C-P16 Effective date / Mobile",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "id": "4822:106143",
+      "name": "C-P16 Optional notes / Mobile",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "id": "4837:106083",
+      "name": "C-Shared Alerts / Search menu",
+      "width": 560,
+      "height": 558
+    },
+    {
+      "id": "4837:106158",
+      "name": "C-Shared Facilities / Evacuation center overlay",
+      "width": 640,
+      "height": 585
+    },
+    {
+      "id": "4837:106233",
+      "name": "C-Shared Facilities / Hospital overlay",
+      "width": 640,
+      "height": 619
+    },
+    {
+      "id": "4837:106309",
+      "name": "C-Shared Facilities / Add or edit overlay",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4837:106448",
+      "name": "C-Shared Map / Assignment overlay",
+      "width": 480,
+      "height": 216
+    },
+    {
+      "id": "4837:106459",
+      "name": "C-Shared Alert Detail / Resolved",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4837:106828",
+      "name": "C-Shared Alert Detail / Rescue in progress",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4842:106711",
+      "name": "C-Shared Facilities / Availability confirmation",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4842:106730",
+      "name": "C-Shared Facilities / Type options",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "id": "4842:106739",
+      "name": "C-Shared Alert / Resolve confirmation",
+      "width": 480,
+      "height": 216
+    }
+  ],
+  "nodeCount": 12887,
+  "linkCount": 2534,
+  "missing": [],
+  "outside": [],
+  "incorrectHeaderIds": [],
+  "reviewNote": "108 editable Captain frames. The final resolve route was verified separately: 4842:106739 targets Captain 4837:106459. Shared login/component variants are retained. See CAPTAIN-QA.md."
+}

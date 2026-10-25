@@ -6,11 +6,11 @@ import { resolveAlert } from './official-alert-actions.js';
 import { monitoringMarkers } from './official-map-model.js';
 
 let user;
-try { Auth.requireRole(['secretary', 'responder', 'rescuer']); user = Auth.current(); }
+try { Auth.requireRole(['captain', 'secretary', 'responder', 'rescuer']); user = Auth.current(); }
 catch (error) { if (!['AUTH', 'FORBIDDEN'].includes(error.code)) document.querySelector('#app').innerHTML = UI.empty({ title: 'Unable to open map monitoring', text: error.message }); }
 if (user) {
   const main = Shell.official({ active: 'Map monitoring' }), role = Auth.roleOf(user), params = new URLSearchParams(location.search);
-  const filters = { status: ALERT_STATUSES.includes(params.get('status')) ? params.get('status') : '', type: ALERT_TYPES.includes(params.get('type')) ? params.get('type') : '', facility: ['Hospital', 'EvacuationCenter', 'none'].includes(params.get('facilities')) ? params.get('facilities') : '', households: params.get('households') !== '0', complaints: role === 'secretary' && params.get('complaints') === '1' };
+  const filters = { status: ALERT_STATUSES.includes(params.get('status')) ? params.get('status') : '', type: ALERT_TYPES.includes(params.get('type')) ? params.get('type') : '', facility: ['Hospital', 'EvacuationCenter', 'none'].includes(params.get('facilities')) ? params.get('facilities') : '', households: params.get('households') !== '0', complaints: ['secretary', 'captain'].includes(role) && params.get('complaints') === '1' };
   let data = { alerts: [], facilities: [], households: [], complaints: [] }, mapView, selected = params.has('facility') ? `facility-${Number(params.get('facility'))}` : params.has('alert') ? `alert-${Number(params.get('alert'))}` : 'alert-1042', projection, loaded = false, busy = false, version = 0;
   main.classList.add('official-map-page');
   const options = (values, current) => values.map(([value, label]) => `<option value="${e(value)}"${current === value ? ' selected' : ''}>${e(label)}</option>`).join('');
@@ -95,7 +95,7 @@ if (user) {
   async function load() {
     const request = ++version;
     try {
-      const [alerts, facilities, complaints] = await Promise.all([Api.alerts.list(), Api.facilities.list(), role === 'secretary' ? Api.feedback.list({ type: 'complaint' }) : Promise.resolve([])]);
+      const [alerts, facilities, complaints] = await Promise.all([Api.alerts.list(), Api.facilities.list(), ['secretary', 'captain'].includes(role) ? Api.feedback.list({ type: 'complaint' }) : Promise.resolve([])]);
       const people = await Promise.all([...new Set(complaints.map(c => c.resident_id))].map(id => Api.users.get(id)));
       if (request !== version) return;
       data = { alerts, facilities, complaints, households: [...alerts.map(a => a.household), ...people.map(p => p.household)].filter(Boolean) }; loaded = true; error.hidden = true; update();

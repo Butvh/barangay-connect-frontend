@@ -1,9 +1,17 @@
-CONTRACT (async unless marked sync; errors throw ApiError {code: AUTH|FORBIDDEN|INVALID_STATE|VALIDATION|NOT_FOUND|CONFLICT, message, fields?}; all calls resolve after 150 to 350 ms)
+# Frontend integration contract
+
+CONTRACT (async unless marked sync; errors throw ApiError {code: AUTH|FORBIDDEN|INVALID_STATE|VALIDATION|NOT_FOUND|CONFLICT|CAPACITY|BUSY, message, fields?}; demo calls use a 150 to 350 ms delay)
+
+Current Captain behavior is documented in the October 25, 2026 section below.
+It extends the shared administrative roles and adds Personnel/Reports without
+resetting stored data. Earlier dated verification counts describe their original
+release checks, not the current full-suite total; run the validation commands
+in README.md for the current result.
 
 Alerts alignment and private incident access (October 24, 2026): O-02
 261:17340 / 4077:96487 and operational variants 4129:96809 / 4130:97486
 share the approved row geometry, local icon exports and responsive layouts.
-No priority or seed records are added. Secretary sees all same-barangay
+No priority or seed records are added. Secretary and Captain see all same-barangay
 incidents; effective Responder/Rescuer roles can list and get only records
 whose assigned_responder_id/assigned_rescuer_id equals the signed-in ID,
 within that barangay. Resident private reads remain own-only; nearby:true
@@ -17,7 +25,8 @@ assignment. Responder assignment time is acknowledged_at; Rescuer time is
 the earliest valid responded_at, matching the existing logResponse assignment
 transaction and dashboard contract. Missing assignment times are not inferred
 from created_at. Resolved records retain their actual assignees. Existing
-status transitions and assignment rules are unchanged. Mobile previews
+forward status transitions remain unchanged. Handoffs now require an active
+local operator before any incident mutation, as described in the Captain section. Mobile previews
 re-read the authorized record before opening, so stale cached assignments
 cannot open a summary after access is revoked.
 
@@ -103,9 +112,9 @@ Facility links select their actual marker via official-map.html?facility=id.
 The map reuses BCMap, controls, markers, privacy and approximate coordinates.
 No Secretary/Rescuer UI, tokens, permissions, seed or P2-owned file is changed.
 
-Auth (sync): Auth.current(), Auth.login(email, password) (async), Auth.logout(), Auth.requireRole(roles[]) where roles are 'secretary'|'responder'|'rescuer'|'resident', Auth.roleOf(user) (staff role wins over resident), Auth.homeFor(user) returns the dashboard URL.
+Auth (sync): Auth.current(), Auth.login(email, password) (async), Auth.logout(), Auth.requireRole(roles[]) where roles are 'captain'|'secretary'|'responder'|'rescuer'|'resident', Auth.roleOf(user) (Captain precedence, then effective staff role before resident; Inactive/Unassigned metadata revokes staff access), Auth.homeFor(user) returns the dashboard URL.
 Api.barangays.list() · Api.facilities.list({type, barangay_id}) / get(id) · Api.users.register({...}) / get(id) / update(id, patch) · Api.verification.submit(user_id, {document_type, file_name}) / list({status}) / get(id) / review(id, {decision:'Approved'|'Rejected', reason}) / expireOverdue() · Api.alerts.list({status, alert_type, q, resident_id}) / get(id) (joined: resident, household, assigned_responder, assigned_rescuer, responses[], rescues[] with facility, timeline[{status, at, current}]) / create({alert_type, description, location_label, map_x, map_y, victim_count, photo_name}) / addDetails(id, patch) / acknowledge(id) / logResponse(id, {response_type, response_status, notes}) / logRescue(id, {facility_id, rescue_status, notes}) / resolve(id) · Api.announcements.list() / get(id) / create({title, content, expires_at?}) / update(id, patch) / archive(id) / retract(id, {reason}) / expireOverdue() · Api.feedback.list({type, status, resident_id}) / get(id) / create(type, payload) / assignTanod(id, tanod_id) / resolve(id) · Api.notifications.list() / get(id) / markRead(id) / markUnread(id) / dismiss(id) / markAllRead() / clearRead({recipient_id?, expected_role?}?) · Api.dashboard.officialStats() · Api.subscribe(entity, handler) returns an unsubscribe function (entity is 'alerts'|'verification'|'announcements'|'feedback'|'notifications'|'users'; fires on same-tab and cross-tab changes).
-Server-side rules inside Api (via alertMachine and permissions): every write checks the signed-in user's role and the current status, and creates the notifications for F-X1 to F-X5.
+Demo adapter rules inside Api (via alertMachine and permissions): every write checks the current stored user's role and current state, and creates the notifications for F-X1 to F-X5. Production must enforce these rules on the server.
 UI (Person 2): UI.escape(s), UI.openDialog(el), UI.closeDialog(el), UI.toast(msg, type), UI.tabs(root), UI.menu(trigger, panel), UI.skeleton(n), UI.empty({icon, title, text, action}), UI.badge(status) returns HTML (icon plus label), UI.confirm({title, text, confirmLabel, danger}) returns a Promise<boolean>. Icons.svg(name, {size}) returns an SVG string. Fmt.dateTime(iso) "Oct 4, 2026 · 2:10 PM", Fmt.date(iso) "Oct 4, 2026", Fmt.short(iso) "Oct 4 · 2:10 PM", Fmt.alertId(n), Fmt.countdown(deadline_iso).
 Shells: Shell.official({role, active}) and Shell.resident({active}) render the navigation and return the <main> element to fill.
 Map (Person 2): BCMap.mount(container, {barangay_id, markers:[{id, kind:'household'|'own_household'|'hall'|'evacuation'|'hospital'|'alert'|'complaint', status, x, y, label, selected}], controls: true, interactive: true, onSelect(marker)}) returns {setMarkers(list), select(id), zoomIn(), zoomOut(), destroy()}. x and y are percentages 0 to 100. The map is a vanilla-JS pan and zoom (pointer drag, wheel, + and − buttons, arrow keys) over the illustrated map image exported from Figma. Markers are real <button> elements counter-scaled to a fixed size. No tiles, no routing.
@@ -282,7 +291,7 @@ event-handler attributes were introduced to satisfy its heuristic.
 
 ## Residency verification queue and review
 
-The Secretary-only queue and detail routes use the current O-07/O-08 layout
+The shared Secretary/Captain queue and detail routes use the current O-07/O-08 layout
 (Figma 261:21268 and 261:21407), the existing shell, UI.badge, UI.confirm, shared
 inputs/buttons and the centered pagination helper. No P2 file or token changes.
 The queue shows only the latest verification for each resident, from the frozen
@@ -326,7 +335,7 @@ attributes were added to work around that heuristic.
 
 ## Official announcements
 
-The Secretary-only list and New announcement dialog follow O-09 (Figma
+The shared Secretary/Captain list and New announcement dialog follow O-09 (Figma
 261:21525 and 261:21623), with canonical shell, buttons, fields, typography,
 colors and centered pagination. Rows stack on mobile. The composer becomes a
 bottom sheet, and published content uses one shared detail dialog from both
@@ -346,7 +355,7 @@ submission while saving and preserves input after an API error. Cancel, Close,
 Escape and backdrop dismissal share the unsaved-draft confirmation; browser
 unload is also protected. Closing restores focus, and publishing focuses the
 new announcement heading and announces success. API permission is checked
-again at write time, in addition to the page's Secretary guard.
+again at write time, in addition to the page's Secretary/Captain guard.
 
 Validation: 116 tests passed in Node and the browser, including blank/length
 validation, unchanged data on rejection, role restrictions and public author
@@ -373,7 +382,7 @@ that heuristic; the static audit therefore still exits with those findings.
 
 ## Official feedback
 
-The Secretary-only O-10 route follows Figma 261:23271, 261:23411, 261:23551
+The shared Secretary/Captain O-10 route follows Figma 261:23271, 261:23411, 261:23551
 and 2534:50010. Canonical owners remain Shell.official, UI.tabs, UI.badge,
 UI.confirm, the official dialog/pagination helpers and P2's field/button/icon
 and typography tokens. Native Select/Listbox ownership is intentional: the
@@ -561,8 +570,8 @@ The user authorized H3/H4 and this limited P1-owned implementation follow-up.
 `users.get(id)` retains its existing user/household authorization and DTO shape.
 Its `verification` field is now null for operational roles, including staff
 with a resident flag. Only the resident owner and authorized same-barangay
-Secretary receive the latest verification. Dedicated verification endpoints,
-Profile owner reads and Secretary review remain unchanged.
+Secretary/Captain receive the latest verification. Dedicated verification
+endpoints and Profile owner reads retain their existing scope.
 
 Secretary Feedback now resolves an explicit selection against the full sorted
 category before choosing its page. Initial valid links switch to the record's
@@ -597,7 +606,7 @@ and final release sign-off remain outside this patch.
 
 The operational Alert Detail page treated a null verification projection as
 Pending after the access-safety patch. It now fetches the joined resident
-verification only for Secretary and renders a badge only when an actual
+verification only for Secretary/Captain and renders a badge only when an actual
 verification record is available. Responder/Rescuer incident actions and all
 other layout/content stay unchanged; no API or P2-owned source was changed.
 
@@ -627,9 +636,9 @@ implied.
 
 - `Api.announcements.create({title, content, expires_at?})` publishes immediately. Expiry defaults to null; explicit values require a future ISO timestamp with a timezone. The form labels Manila time (UTC+8).
 - `update(id, {title?, content?, expires_at?, expected_revision?})` edits Active records only. Author, barangay, created_at and published_at cannot be changed. `archive(id, {expected_revision?}?)` archives Active records; `retract(id, {reason, expected_revision?})` withdraws Active or Archived records. There is no restore/delete method.
-- All writes revalidate Secretary role, barangay and current state inside the transaction. A stale supplied revision produces CONFLICT without changing data. Title/content retain the 200/5,000 limits; reason is trimmed and required, at most 500 characters.
+- All writes revalidate Secretary/Captain role, barangay and current state inside the transaction. A stale supplied revision produces CONFLICT without changing data. Title/content retain the 200/5,000 limits; reason is trimmed and required, at most 500 characters.
 - Records retain an append-only `history[]` of publication/edit/archive/expiry/retraction snapshots with actor, timestamp, title/content/expiry and applicable reason. Edits preserve original publication order/time. Legacy created_at-only records are projected as Active with no expiry and receive history lazily on mutation; existing storage/schema version is preserved.
-- `list()` returns all own-barangay statuses to the Secretary and only Active records to other signed-in roles. `get(id)` rejects inactive public reads with NOT_FOUND. Public DTOs omit management history/retraction metadata; author DTOs exclude credentials.
+- `list()` returns all own-barangay statuses to Secretary/Captain and only Active records to other signed-in roles. `get(id)` rejects inactive public reads with NOT_FOUND. Public DTOs omit management history/retraction metadata; author DTOs exclude credentials.
 - Expiry at or before the shared Store.now clock is immediately projected Archived for all reads, even before maintenance. Secretary `expireOverdue()` persists scoped expiry history once; repeated calls are no-ops. Home and the resident announcement list refresh at deadlines and on visible-tab return. No browser must visit the Secretary screen to hide expired public content.
 - The Secretary route retains ten-record pagination and URL page/status/search/deep-link state. Search matches title/content and combines with All/Active/Archived/Retracted. Each row has one anchored, keyboard-accessible action menu; no redundant Read button. Composer reuse supports publish/edit, optional expiry, validation, draft-discard confirmation and API error retention. Retraction is a centered reason/confirmation dialog with a 500-character counter. Existing shell/navigation is unchanged.
 - This remains a fictional browser-store adapter. A Laravel implementation must enforce the same authorization, transactional transitions, revision checks, history preservation and active-only public visibility on the server, and run scheduled expiry maintenance; browser checks are not a production security boundary.
@@ -742,3 +751,134 @@ APIs, permissions, shared shells and shared CSS were not modified. Fresh review
 found no remaining findings. No console warnings/errors were observed. Local
 fictional records were used; no public-site records were changed. Real devices,
 virtual keyboards and the full zoom/outage matrix were not exercised.
+
+## Captain workspace — October 25, 2026
+
+Roberto Aquino (`roberto.aquino@example.com`, existing demo password
+`demo1234`) now signs in to the Captain workspace. `official-dashboard.html`
+dispatches a distinct Captain oversight renderer while preserving Secretary,
+Responder and Rescuer dashboards. Captain navigation adds Personnel and Reports
+to Dashboard, Alerts, Map Monitoring, Verifications, Announcements, Feedback and
+Facilities. Account name, initials, role badge and notification access use the
+current signed-in user.
+
+Captain and Secretary share the same six administrative page implementations,
+same-barangay reads and management actions. Captain can acknowledge/resolve an
+incident, review residency, manage announcements and assign/resolve feedback.
+Response and rescue logging remain restricted to the assigned effective
+Responder/Rescuer. Other tenants cannot use direct record APIs to bypass scope.
+Personnel and Reports routes and API methods are Captain-only; hiding navigation
+is not the authorization mechanism.
+
+`roleOf` gives an active Captain precedence over other flags. Inactive or
+Unassigned personnel have no effective staff role; a separate resident flag may
+still grant resident access. Missing legacy personnel_status retains existing
+role behavior. An unassigned Tanod has no workspace; a Captain appointment grants
+the selected role without removing Tanod membership. Every request resolves the
+current stored identity, so an already-open session loses obsolete authority.
+
+SOS handoffs recheck current active local staffing inside the existing write
+transaction. Acknowledge requires an eligible Responder, and logResponse requires
+an eligible Rescuer. Absence produces INVALID_STATE before changing status,
+assignments, logs, audit or notifications. Successful handoffs retain the same
+forward-only lifecycle and recipient rules. Personnel role changes cannot strand
+someone's non-Resolved incident assignment in the old operational role.
+
+### Personnel service
+
+| Method | Input / output |
+|---|---|
+| `Api.personnel.list()` | `{records, tanods, capacities, activity}` for the Captain's barangay. records includes assigned personnel and retained former staff; tanods contains the complete existing Tanod pool, including appointed members. capacities is keyed by secretary/responder/rescuer with `{used, limit, available}`. activity derives actual retained personnel history. |
+| `Api.personnel.get(id)` | Safe detail projection using users.id as id/user_id; supports assigned/former staff and existing Tanods. Foreign records are forbidden. |
+| `Api.personnel.addExternal(input)` | full_name, role, contact_number, email, address, emergency_contact, effective_date, optional status Active/Inactive, notes and requirements metadata. Creates the user and assignment atomically; returns the safe detail. appointment_date is a compatibility alias for effective_date. Source and tenant are derived, never granted by input. |
+| `Api.personnel.appoint(id, input)` | Existing unassigned Tanod only; role, effective_date, optional notes and expected_revision. |
+| `Api.personnel.reassign(id, input)` | Assigned person; different role, effective_date, optional notes and expected_revision. |
+| `Api.personnel.remove(id, input)` | Assigned person; effective_date, optional notes and expected_revision. Ends the assignment and returns a retained Unassigned record. This is not account deletion. |
+
+Detail fields are id/user_id, barangay_id, full_name, email, contact_number,
+address, emergency_contact, role, immutable source, status, appointed_at,
+requirements, notes, history, revision, created_at, added_externally_at, legacy
+and derived busy_alert_ids. A history item has action, by/by_name, at,
+effective_date, from_role/to_role, status and notes. Actor names are preserved
+at recording time. Credentials are never returned.
+
+Limits are Secretary 3, Responder 6 and Rescuer 6 occupied positions; Inactive
+assignments still occupy capacity. One current assigned role is synchronized
+with user role flags/personnel_status in the same transaction. Capacity and
+case-insensitive global email uniqueness are rechecked at commit time, including
+competing clients. CAPACITY identifies a full role; BUSY identifies unresolved
+old-role incident assignments with actionable incident IDs. Failed writes leave
+users, assignments, history and audit unchanged.
+
+Appointment/effective dates must be valid `YYYY-MM-DD` Manila days today or in
+the past. Changes cannot precede the current appointment, or the last removal
+when appointing a Tanod again. Future scheduling is outside this feature.
+Name/contact/email/address/emergency contact are required for external additions;
+notes, including combined reassignment remarks, are limited to 500 characters.
+Requirements are optional metadata `{name, type, size}`: up to 10 PDF/JPG/PNG
+entries, matching MIME/extension, each 1 byte–5 MB. The accessible real file
+input records this metadata; no bytes are uploaded or stored. No applicant,
+Tanod-create, Tanod-delete, permanent staff-delete or history-delete API exists.
+
+Existing-record forms supply expected_revision. A stale supplied revision gives
+CONFLICT without overwriting the draft or newer data. Search, role/status/source
+filters, eight-record pagination, capacity links, both View all directories,
+profile/history views and Add/Appoint/Reassign/Remove flows use actual records.
+Dialogs are centered, scrollable and protect dirty drafts on cancellation,
+navigation and unload; saving, stale and busy conditions prevent unsafe writes.
+Personnel subscribes to users and alerts; no new subscription entity is required.
+
+### Reports, metrics and audit
+
+`Api.reports.snapshot()` returns `{alerts, verifications, feedback,
+announcements, facilities, users, personnel, activity_logs, barangays, at,
+barangay_id}`. Alerts are joined; verifications include historical submissions
+with scoped resident/household data; announcements include management history;
+users exclude credentials. Personal/domain records are restricted to the
+Captain's barangay, with public barangay lookups and shared hospitals retained.
+The snapshot is read-only and contains no invented counters.
+
+`captain-reports.html` supports overview, incidents, activity, operations,
+performance and all reports through `view`. Search/filter/sort/page/month state
+and linked record IDs resolve actual records. Activity/report/personnel detail
+dialogs, role tabs, printing and CSV export use the available source data.
+`captainReportData(snapshot, options)` in captain-reports-model.js supplies the
+same pure analytics projection to Reports and the Captain dashboard.
+
+Reporting periods use Asia/Manila. Incidents use report creation time. Response
+averages use the earliest valid recorded response after creation and disclose
+sample coverage. Completed rescues/reviews use their recorded completion/review
+times; known assisted counts sum once per completed-rescue incident, with unknown
+victim counts separate. Resolved feedback current totals do not imply a complete
+monthly resolution total when legacy event dates are absent. Personnel metrics
+use reviews/publications for Secretaries, completed responses for Responders and
+completed rescues/known assisted counts for Rescuers. Captain actions are not
+silently attributed to a Secretary role. Missing dates, hours, ratings and other
+unsupported metrics stay null/unavailable; unknown values are never zero/today.
+
+`personnel_records` and `activity_logs` are optional additive collections, with
+optional personnel_status on users. They require no schema-version reset.
+Legacy staff/Tanods are projected without inventing personal fields, appointment
+dates, original recruitment source or history. Existing non-Tanod staff display
+Existing personnel and are not counted as recent external additions.
+
+Audit rows are prospective and committed with domain writes. They preserve
+id, barangay_id, actor_id/name/role, entity, record_id, action, at, recorded_at,
+summary and an authorized relative href. An automatic expiry records System as
+actor, the actual expiry deadline as effective `at`, and the processor's run
+time as `recorded_at`; late processing does not move the event into a later
+reporting period or attribute it to the visiting Captain/Secretary.
+
+Reports pair equivalent source/audit evidence by entity, normalized action,
+record and instant, retaining authoritative audit actor/role once. Distinct
+edits and response/rescue log entries remain separate. Legacy source evidence
+without an audit row is still available; missing evidence is not fabricated.
+
+The browser store is a fictional adapter, not a production security boundary.
+Laravel must enforce authentication, same-barangay policies, role revocation,
+capacity/assignment locks, unique email, revisions, server dates, protected actual
+uploads and immutable history/audit. Do not ship demo credentials or reset in
+production. DATA-MODEL.md describes records and LARAVEL-MIGRATION.md describes
+the proposed server policy and endpoint mapping. Current verification commands
+are `node scripts/check.mjs` and `node scripts/run-tests.mjs`; earlier dated
+counts in this contract remain historical verification notes.

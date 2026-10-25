@@ -4,7 +4,7 @@ import { Shell } from '../core/shell-official.js';
 import { FEEDBACK_TYPES, FEEDBACK_STATUSES, feedbackText, feedbackPage, feedbackStats, feedbackRequestId } from './official-feedback-model.js?v=feedback-summary-1';
 
 let user;
-try { Auth.requireRole(['secretary']); user = Auth.current(); }
+try { Auth.requireRole(['secretary', 'captain']); user = Auth.current(); }
 catch (error) { if (!['AUTH', 'FORBIDDEN'].includes(error.code)) document.querySelector('#app').innerHTML = UI.empty({ title: 'Unable to open feedback', text: error.message }); }
 if (user) {
   const main = Shell.official({ active: 'Feedback' }), params = new URLSearchParams(location.search), size = 10;

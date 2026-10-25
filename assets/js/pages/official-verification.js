@@ -3,7 +3,7 @@ import { Shell } from '../core/shell-official.js';
 import { VERIFICATION_STATUSES, reviewable } from './official-verification-model.js';
 
 let user;
-try { Auth.requireRole(['secretary']); user = Auth.current(); }
+try { Auth.requireRole(['secretary', 'captain']); user = Auth.current(); }
 catch (error) { if (!['AUTH', 'FORBIDDEN'].includes(error.code)) document.querySelector('#app').innerHTML = UI.empty({ title: 'Unable to open verification', text: error.message }); }
 if (user) {
   const main = Shell.official({ active: 'Verifications' }), params = new URLSearchParams(location.search), id = Number(params.get('id'));

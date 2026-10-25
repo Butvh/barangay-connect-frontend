@@ -2,12 +2,15 @@ import { ApiError } from './config.js';
 
 export function roleOf(user) {
   if (!user) return null;
+  if (['Inactive', 'Unassigned'].includes(user.personnel_status)) return user.is_resident ? 'resident' : null;
+  if (user.is_captain) return 'captain';
   if (user.is_secretary) return 'secretary';
   if (user.is_responder) return 'responder';
   if (user.is_rescuer) return 'rescuer';
   return user.is_resident ? 'resident' : null;
 }
 export const isOfficial = user => ['is_secretary', 'is_responder', 'is_rescuer', 'is_tanod', 'is_captain'].some(key => Boolean(user?.[key]));
+export const isAdministrator = user => ['secretary', 'captain'].includes(roleOf(user));
 export const sameBarangay = (user, record) => Boolean(user && record && Number(user.barangay_id) === Number(record.barangay_id));
 export function requireUser(user) {
   if (!user || !roleOf(user)) throw new ApiError('AUTH', 'Sign in to continue.');
@@ -24,6 +27,7 @@ export function assertBarangay(user, record) {
 export function canReadAlert(user, alert) {
   if (!sameBarangay(user, alert)) return false;
   switch (roleOf(user)) {
+    case 'captain':
     case 'secretary': return true;
     case 'responder': return alert.assigned_responder_id === user.id;
     case 'rescuer': return alert.assigned_rescuer_id === user.id;

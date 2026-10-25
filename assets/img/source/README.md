@@ -35,3 +35,11 @@ rounded-tile glyphs, 16 px state dots, neutral trash and dismiss icon. Desktop
 bell/megaphone exports have native 42.6667 px canvases, displayed through a
 0.75 transform in their 32 px design slots; mobile uses separate native 24 px
 exports. SVG files and root dimensions are preserved.
+
+Captain metric assets are exact exports from editable Captain frames in
+APP-DEV-Final (GaTDGoek1jzWbcOh9dz4f2): `captain-dashboard-*` from 4794:99739,
+`captain-personnel-*` from 4794:99996, and `captain-reports-*` from
+4794:100256. Personnel user/users/hardhat/shield corrections use nodes
+4799:100378, 4799:100393, 4799:100409 and 4799:100422. SVG root dimensions
+remain unchanged (16 px chevrons, 24/30 px metric glyphs). The dashboard also
+reuses the existing Secretary location, section arrow, map and maximize assets.

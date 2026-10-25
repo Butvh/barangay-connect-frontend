@@ -2,7 +2,7 @@ import { Auth, Api, UI, Icons, e, facilityType, facilityDetail, facts, dialog, e
 import { Shell } from '../core/shell-official.js';
 
 let user;
-try { Auth.requireRole(['secretary', 'responder', 'rescuer']); user = Auth.current(); }
+try { Auth.requireRole(['captain', 'secretary', 'responder', 'rescuer']); user = Auth.current(); }
 catch (error) { if (!['AUTH', 'FORBIDDEN'].includes(error.code)) document.querySelector('#app').innerHTML = UI.empty({ title: 'Unable to open facilities', text: error.message }); }
 if (user) {
   const main = Shell.official({ active: 'Facilities' }), params = new URLSearchParams(location.search);

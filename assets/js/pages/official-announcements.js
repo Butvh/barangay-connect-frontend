@@ -5,7 +5,7 @@ import { announcementPage } from './official-announcements-model.js';
 import { announcementStatus, announcementPublishedAt, nextAnnouncementExpiry } from '../core/announcements.js';
 
 let user;
-try { Auth.requireRole(['secretary']); user = Auth.current(); }
+try { Auth.requireRole(['secretary', 'captain']); user = Auth.current(); }
 catch (error) { if (!['AUTH', 'FORBIDDEN'].includes(error.code)) document.querySelector('#app').innerHTML = UI.empty({ title: 'Unable to open announcements', text: error.message }); }
 if (user) {
   const main = Shell.official({ active: 'Announcements' }), params = new URLSearchParams(location.search), size = 10;

@@ -21,11 +21,11 @@ export function canAccessNotification(db, user, row, at) {
   if (!record) return false;
   if (source.type === 'verification') {
     const resident = source.audience === 'resident' ? record : db.users.find(u => u.id === record.user_id);
-    return sameBarangay(user, resident) && (source.audience === 'resident' ? role === 'resident' && resident.id === user.id : role === 'secretary');
+    return sameBarangay(user, resident) && (source.audience === 'resident' ? role === 'resident' && resident.id === user.id : ['secretary', 'captain'].includes(role));
   }
   if (!sameBarangay(user, record)) return false;
   if (source.audience === 'resident') return role === 'resident' && (source.type === 'announcement' ? announcementStatus(record, at) === 'Active' : record.resident_id === user.id);
-  if (role === 'secretary') return true;
+  if (['secretary', 'captain'].includes(role)) return true;
   return source.type === 'alert' && row.kind === 'alert_status' && (role === 'responder' ? record.assigned_responder_id === user.id : role === 'rescuer' && record.assigned_rescuer_id === user.id);
 }
 export function notificationPresentation(db, row) {

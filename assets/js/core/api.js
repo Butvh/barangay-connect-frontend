@@ -5,9 +5,11 @@ import { assertRole, assertBarangay, assertOwner, assertReadAlert, canReadAlert,
 import { transition, ALERT_TYPES, ALERT_STATUSES, RESPONSE_TYPES } from './alertMachine.js';
 import { announcementStatus, announcementPublishedAt } from './announcements.js';
 import { canAccessNotification, notificationProjection, notificationSource, notificationIsRead } from './notifications.js';
+import { personnelList, personnelGet, addExternalPersonnel, appointPersonnel, reassignPersonnel, removePersonnel } from './personnel.js';
+import { activitySnapshot, recordActivity } from './activity.js';
 
 export { ApiError };
-const staff = ['secretary', 'responder', 'rescuer'];
+const staff = ['captain', 'secretary', 'responder', 'rescuer'];
 const nextId = rows => Math.max(0, ...rows.map(row => row.id)) + 1;
 const recent = rows => [...rows].sort((a, b) => Date.parse(b.created_at || b.submitted_at) - Date.parse(a.created_at || a.submitted_at) || b.id - a.id);
 function get(rows, id, label = 'Record') {
@@ -45,7 +47,7 @@ function notification(db, user_id, kind, message, link, at) {
   db.notifications.push(notificationProjection(db, row));
 }
 function notifyOfficials(db, barangay, kind, message, link, at) {
-  for (const user of db.users.filter(u => u.barangay_id === barangay && roleOf(u) === 'secretary')) notification(db, user.id, kind, message, link, at);
+  for (const user of db.users.filter(u => u.barangay_id === barangay && ['secretary', 'captain'].includes(roleOf(u)))) notification(db, user.id, kind, message, link, at);
 }
 function accessibleNotification(db, user, id, at) {
   const row = get(db.notifications, id, 'Notification');
@@ -85,7 +87,7 @@ function announcementHistory(row, action, user, at, reason) {
 }
 function announcementProjection(db, row, user, at) {
   const result = { ...row, published_at: announcementPublishedAt(row), expires_at: row.expires_at ?? null, status: announcementStatus(row, at), revision: row.revision || 0, author: publicUser(db.users.find(u => u.id === row.posted_by)) };
-  if (roleOf(user) === 'secretary') {
+  if (['secretary', 'captain'].includes(roleOf(user))) {
     result.history = (row.history || [{ action: 'Published', by: row.posted_by, at: result.published_at, title: row.title, content: row.content, expires_at: result.expires_at }]).map(h => ({ ...h, by_name: db.users.find(u => u.id === h.by)?.full_name || null }));
   } else { for (const field of ['history', 'retraction_reason', 'retracted_by', 'archived_by']) delete result[field]; }
   return result;
@@ -99,27 +101,56 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
     return requireUser(user);
   };
   const read = async callback => { await wait(); const db = store.read(); return copy(callback(db, activeUser(db))); };
-  const write = async (entities, callback) => { await wait(); return store.transact(entities, db => callback(db, activeUser(db), clock())); };
+  const write = async (entities, callback) => { await wait(); return store.transact(entities, db => {
+    const user = activeUser(db), at = clock(), before = activitySnapshot(db);
+    const result = callback(db, user, at); recordActivity(db, before, user, roleOf(user), at); return result;
+  }); };
   function transitionAlert(db, user, id, action, at) {
     const alert = get(db.emergency_alerts, id, 'Alert'); assertBarangay(user, alert);
     if (action === 'logResponse' && alert.assigned_responder_id !== user.id) throw new ApiError('FORBIDDEN', 'Only the assigned Responder can log this response.');
     if (action === 'logRescue' && alert.assigned_rescuer_id !== user.id) throw new ApiError('FORBIDDEN', 'Only the assigned Rescuer can log this rescue.');
-    const next = transition(alert, action, user, at); Object.assign(alert, next);
+    const next = transition(alert, action, user, at);
+    const nextRole = action === 'acknowledge' ? 'responder' : action === 'logResponse' ? 'rescuer' : null;
+    if (nextRole) {
+      const operator = db.users.find(u => u.barangay_id === alert.barangay_id && roleOf(u) === nextRole);
+      if (!operator) throw new ApiError('INVALID_STATE', `No active ${nextRole} is available in this barangay. Appoint an active ${nextRole} before continuing this alert.`);
+      next[`assigned_${nextRole}_id`] = operator.id;
+    }
+    Object.assign(alert, next);
     if (alert.resident_id) notification(db, alert.resident_id, 'alert_status', `A-${alert.id} · ${alert.status}`, `resident-alert.html?id=${alert.id}`, at);
-    const recipients = new Set(db.users.filter(u => u.barangay_id === alert.barangay_id && roleOf(u) === 'secretary').map(u => u.id));
+    const recipients = new Set(db.users.filter(u => u.barangay_id === alert.barangay_id && ['secretary', 'captain'].includes(roleOf(u))).map(u => u.id));
     for (const [field, role] of [['assigned_responder_id', 'responder'], ['assigned_rescuer_id', 'rescuer']]) {
       const assigned = db.users.find(u => u.id === alert[field]);
-      if (assigned?.barangay_id === alert.barangay_id && roleOf(assigned) === role) recipients.add(assigned.id);
+      // The new operator receives the dedicated handoff notice below.
+      if (role !== nextRole && assigned?.barangay_id === alert.barangay_id && roleOf(assigned) === role) recipients.add(assigned.id);
     }
     for (const recipient of recipients) notification(db, recipient, 'alert_status', `A-${alert.id} · ${alert.status}`, `official-alert.html?id=${alert.id}`, at);
     return alert;
   }
   function managedAnnouncement(db, user, id, at, patch) {
-    assertRole(user, ['secretary']); const row = get(db.announcements, id, 'Announcement'); assertBarangay(user, row);
+    assertRole(user, ['secretary', 'captain']); const row = get(db.announcements, id, 'Announcement'); assertBarangay(user, row);
     if (patch?.expected_revision !== undefined && patch.expected_revision !== (row.revision || 0)) throw new ApiError('CONFLICT', 'This announcement changed. Close this form and review the latest version.');
     return row;
   }
   const api = {
+    personnel: {
+      list: () => read((db,user) => personnelList(db,user)),
+      get: id => read((db,user) => personnelGet(db,user,id)),
+      addExternal: input => write(['users'], (db,user,at) => addExternalPersonnel(db,user,input,at)),
+      appoint: (id,input) => write(['users'], (db,user,at) => appointPersonnel(db,user,id,input,at)),
+      reassign: (id,input) => write(['users'], (db,user,at) => reassignPersonnel(db,user,id,input,at)),
+      remove: (id,input) => write(['users'], (db,user,at) => removePersonnel(db,user,id,input,at)),
+    },
+    reports: { snapshot: () => read((db,user) => {
+      assertRole(user,['captain']); const scoped = row => row.barangay_id === user.barangay_id;
+      const people = db.users.filter(scoped);
+      return { alerts: recent(db.emergency_alerts.filter(scoped)).map(a => joinedAlert(db,a)),
+        verifications: db.verify_residency.filter(v => people.some(u => u.id === v.user_id)).map(v => {const resident=db.users.find(u=>u.id===v.user_id);return {...v,resident:publicUser(resident),household:db.households.find(h=>h.id===resident?.household_id)||null};}),
+        feedback: db.community_feedback.filter(scoped).map(row=>({...row,resident:publicUser(db.users.find(u=>u.id===row.resident_id)),assigned_tanod:publicUser(db.users.find(u=>u.id===row.assigned_tanod_id))})),
+        announcements: db.announcements.filter(scoped).map(row=>announcementProjection(db,row,user,clock())),
+        facilities: db.facilities.filter(f=>f.barangay_id===null||scoped(f)),users:people.map(publicUser),personnel:personnelList(db,user),
+        activity_logs:(db.activity_logs||[]).filter(scoped),barangays:db.barangays,at:clock(),barangay_id:user.barangay_id };
+    }) },
     barangays: { async list() { await wait(); return store.read().barangays; } },
     facilities: {
       list: (options = {}) => read((db, user) => {
@@ -148,7 +179,7 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
           return publicUser(user);
         });
       },
-      get: id => read((db, user) => { const person = get(db.users, id, 'Resident'); if (person.id !== user.id) { assertRole(user, staff); assertBarangay(user, person); } return { ...publicUser(person), household: db.households.find(h => h.id === person.household_id) || null, verification: roleOf(user) === 'secretary' || (roleOf(user) === 'resident' && person.id === user.id) ? latestVerification(db, person.id) : null }; }),
+      get: id => read((db, user) => { const person = get(db.users, id, 'Resident'); if (person.id !== user.id) { assertRole(user, staff); assertBarangay(user, person); } return { ...publicUser(person), household: db.households.find(h => h.id === person.household_id) || null, verification: ['secretary', 'captain'].includes(roleOf(user)) || (roleOf(user) === 'resident' && person.id === user.id) ? latestVerification(db, person.id) : null }; }),
       update: (id, patch) => write(['users'], (db, user) => {
         const person = get(db.users, id, 'Resident'); assertOwner(user, person, 'id');
         const allowed = ['full_name', 'contact_number', 'address', 'household_address', 'map_x', 'map_y'];
@@ -174,15 +205,15 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
         notifyOfficials(db, user.barangay_id, 'verification', `${user.full_name} submitted a verification document.`, `official-verification.html?id=${row.id}`, at); return row;
       }),
       list: (options = {}) => read((db, user) => {
-        assertRole(user, ['secretary', 'resident']);
+        assertRole(user, ['secretary', 'captain', 'resident']);
         return recent(db.verify_residency.filter(row => {
           const resident = db.users.find(u => u.id === row.user_id);
           return resident?.barangay_id === user.barangay_id && (roleOf(user) !== 'resident' || row.user_id === user.id) && latestVerification(db, resident.id)?.id === row.id && (!options.status || row.review_status === options.status);
         })).map(row => { const resident = db.users.find(u => u.id === row.user_id); return { ...row, resident: publicUser(resident), household: db.households.find(h => h.id === resident.household_id) || null }; });
       }),
-      get: id => read((db, user) => { const row = get(db.verify_residency, id, 'Verification'); if (roleOf(user) === 'resident') { if (row.user_id !== user.id) throw new ApiError('FORBIDDEN', 'View your own verification.'); } else { assertRole(user, ['secretary']); within(db, user, row); } const resident = db.users.find(u => u.id === row.user_id); return { ...row, resident: publicUser(resident), household: db.households.find(h => h.id === resident.household_id) || null }; }),
+      get: id => read((db, user) => { const row = get(db.verify_residency, id, 'Verification'); if (roleOf(user) === 'resident') { if (row.user_id !== user.id) throw new ApiError('FORBIDDEN', 'View your own verification.'); } else { assertRole(user, ['secretary', 'captain']); within(db, user, row); } const resident = db.users.find(u => u.id === row.user_id); return { ...row, resident: publicUser(resident), household: db.households.find(h => h.id === resident.household_id) || null }; }),
       review: (id, input = {}) => write(['verification', 'notifications', 'users'], (db, user, at) => {
-        assertRole(user, ['secretary']); const row = get(db.verify_residency, id, 'Verification'); within(db, user, row);
+        assertRole(user, ['secretary', 'captain']); const row = get(db.verify_residency, id, 'Verification'); within(db, user, row);
         if (row.review_status !== 'Pending' || Date.parse(row.deadline_at) < Date.parse(at)) throw new ApiError('INVALID_STATE', 'This verification is no longer pending or its deadline has expired.');
         row.review_status = oneOf(input.decision, ['Approved', 'Rejected'], 'decision');
         row.rejection_reason = text(input.reason, 'reason', { required: row.review_status === 'Rejected', max: 1000 });
@@ -190,12 +221,12 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
         notification(db, row.user_id, 'verification', `Your residency verification was ${row.review_status.toLowerCase()}.`, 'resident-verification.html', at); return row;
       }),
       expireOverdue: () => write(['verification', 'notifications'], (db, user, at) => {
-        assertRole(user, ['secretary', 'resident']);
+        assertRole(user, ['secretary', 'captain', 'resident']);
         let changed = 0;
         for (const row of db.verify_residency) {
           const person = db.users.find(u => u.id === row.user_id);
           if (person?.barangay_id !== user.barangay_id || (roleOf(user) === 'resident' && row.user_id !== user.id)) continue;
-          if (roleOf(user) !== 'resident') assertRole(user, ['secretary']);
+          if (roleOf(user) !== 'resident') assertRole(user, ['secretary', 'captain']);
           if (row.review_status === 'Pending' && Date.parse(row.deadline_at) < Date.parse(at)) { row.review_status = 'Expired'; changed++; notification(db, row.user_id, 'verification', 'Your verification deadline expired. Resubmit your document.', 'resident-verification.html', at); }
         }
         return changed;
@@ -239,7 +270,6 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
       }),
       acknowledge: id => write(['alerts', 'notifications'], (db, user, at) => {
         const a = transitionAlert(db, user, id, 'acknowledge', at);
-        a.assigned_responder_id = db.users.find(u => u.barangay_id === user.barangay_id && roleOf(u) === 'responder')?.id || null;
         if (a.assigned_responder_id) notification(db, a.assigned_responder_id, 'alert_status', `A-${a.id} acknowledged. Your response is requested.`, `official-alert.html?id=${a.id}`, at);
         return joinedAlert(db, a);
       }),
@@ -247,7 +277,6 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
         const response_type = oneOf(input.response_type, RESPONSE_TYPES, 'response_type'), response_status = oneOf(input.response_status, ['Responding', 'Completed'], 'response_status'), notes = text(input.notes, 'notes', { required: false });
         const a = transitionAlert(db, user, id, 'logResponse', at);
         db.alert_responses.push({ id: nextId(db.alert_responses), alert_id: a.id, responder_id: user.id, response_type, response_status, notes, responded_at: at });
-        a.assigned_rescuer_id = db.users.find(u => u.barangay_id === user.barangay_id && roleOf(u) === 'rescuer')?.id || null;
         if (a.assigned_rescuer_id) notification(db, a.assigned_rescuer_id, 'alert_status', `A-${a.id} requires extraction and transport.`, `official-alert.html?id=${a.id}`, at);
         return joinedAlert(db, a);
       }),
@@ -263,10 +292,10 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
       resolve: id => write(['alerts', 'notifications'], (db, user, at) => joinedAlert(db, transitionAlert(db, user, id, 'resolve', at))),
     },
     announcements: {
-      list: () => read((db, user) => { const at = clock(); return recent(db.announcements.filter(row => row.barangay_id === user.barangay_id && (roleOf(user) === 'secretary' || announcementStatus(row, at) === 'Active'))).map(row => announcementProjection(db, row, user, at)); }),
-      get: id => read((db, user) => { const row = get(db.announcements, id, 'Announcement'); assertBarangay(user, row); const at = clock(); if (roleOf(user) !== 'secretary' && announcementStatus(row, at) !== 'Active') throw new ApiError('NOT_FOUND', 'This announcement is no longer available.'); return announcementProjection(db, row, user, at); }),
+      list: () => read((db, user) => { const at = clock(); return recent(db.announcements.filter(row => row.barangay_id === user.barangay_id && (['secretary', 'captain'].includes(roleOf(user)) || announcementStatus(row, at) === 'Active'))).map(row => announcementProjection(db, row, user, at)); }),
+      get: id => read((db, user) => { const row = get(db.announcements, id, 'Announcement'); assertBarangay(user, row); const at = clock(); if (!['secretary', 'captain'].includes(roleOf(user)) && announcementStatus(row, at) !== 'Active') throw new ApiError('NOT_FOUND', 'This announcement is no longer available.'); return announcementProjection(db, row, user, at); }),
       create: (input = {}) => write(['announcements', 'notifications'], (db, user, at) => {
-        assertRole(user, ['secretary']); const row = { id: nextId(db.announcements), barangay_id: user.barangay_id, posted_by: user.id, title: text(input.title, 'title', { max: 200 }), content: text(input.content, 'content', { max: 5000 }), created_at: at, published_at: at, status: 'Active', expires_at: announcementExpiry(input.expires_at, at), history: [], revision: 0 };
+        assertRole(user, ['secretary', 'captain']); const row = { id: nextId(db.announcements), barangay_id: user.barangay_id, posted_by: user.id, title: text(input.title, 'title', { max: 200 }), content: text(input.content, 'content', { max: 5000 }), created_at: at, published_at: at, status: 'Active', expires_at: announcementExpiry(input.expires_at, at), history: [], revision: 0 };
         announcementHistory(row, 'Published', user, at); db.announcements.push(row);
         notifyOfficials(db, user.barangay_id, 'announcement', row.title, `official-announcements.html?id=${row.id}`, at);
         for (const resident of db.users.filter(u => roleOf(u) === 'resident' && u.barangay_id === user.barangay_id)) notification(db, resident.id, 'announcement', row.title, `resident-announcements.html?id=${row.id}`, at); return announcementProjection(db, row, user, at);
@@ -290,7 +319,7 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
         Object.assign(row, { status: 'Retracted', retracted_at: at, retracted_by: user.id, retraction_reason: reason }); return announcementProjection(db, row, user, at);
       }),
       expireOverdue: () => write(['announcements'], (db, user, at) => {
-        assertRole(user, ['secretary']); let changed = 0;
+        assertRole(user, ['secretary', 'captain']); let changed = 0;
         for (const row of db.announcements.filter(row => row.barangay_id === user.barangay_id)) {
           if (row.archived_at || row.retracted_at || !['active', 'published'].includes(String(row.status ?? 'Active').toLowerCase()) || !row.expires_at || announcementStatus(row, at) !== 'Archived') continue;
           announcementHistory(row, 'Expired', null, row.expires_at); Object.assign(row, { status: 'Archived', archived_at: row.expires_at, archived_by: null }); changed++;
@@ -300,11 +329,11 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
     },
     feedback: {
       list: (options = {}) => read((db, user) => {
-        if (roleOf(user) !== 'resident') assertRole(user, ['secretary']);
+        if (roleOf(user) !== 'resident') assertRole(user, ['secretary', 'captain']);
         if (roleOf(user) === 'resident' && options.resident_id && Number(options.resident_id) !== user.id) throw new ApiError('FORBIDDEN', 'View your own feedback.');
         return recent(db.community_feedback.filter(row => row.barangay_id === user.barangay_id && (roleOf(user) !== 'resident' || row.resident_id === user.id) && (!options.resident_id || row.resident_id === Number(options.resident_id)) && (!options.type || row.type === options.type) && (!options.status || row.status === options.status))).map(row => ({ ...row, resident: publicUser(db.users.find(u => u.id === row.resident_id)), assigned_tanod: publicUser(db.users.find(u => u.id === row.assigned_tanod_id)) }));
       }),
-      get: id => read((db, user) => { const row = get(db.community_feedback, id, 'Feedback'); assertBarangay(user, row); if (roleOf(user) === 'resident') assertOwner(user, row); else assertRole(user, ['secretary']); return { ...row, resident: publicUser(db.users.find(u => u.id === row.resident_id)), assigned_tanod: publicUser(db.users.find(u => u.id === row.assigned_tanod_id)) }; }),
+      get: id => read((db, user) => { const row = get(db.community_feedback, id, 'Feedback'); assertBarangay(user, row); if (roleOf(user) === 'resident') assertOwner(user, row); else assertRole(user, ['secretary', 'captain']); return { ...row, resident: publicUser(db.users.find(u => u.id === row.resident_id)), assigned_tanod: publicUser(db.users.find(u => u.id === row.assigned_tanod_id)) }; }),
       create: (type, input = {}) => write(['feedback', 'notifications'], (db, user, at) => {
         assertRole(user, ['resident']); oneOf(type, ['complaint', 'suggestion', 'general'], 'type');
         const row = { id: nextId(db.community_feedback), resident_id: user.id, barangay_id: user.barangay_id, type, created_at: at, category: '', description: '', location: '', status: type === 'general' ? null : 'Pending', assigned_tanod_id: null, rating: null, comment: '' };
@@ -313,13 +342,13 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
         db.community_feedback.push(row); notifyOfficials(db, user.barangay_id, 'feedback_update', `New ${type} from ${user.full_name}.`, `official-feedback.html?type=${type}&id=${row.id}`, at); return row;
       }),
       assignTanod: (id, tanod_id) => write(['feedback', 'notifications'], (db, user, at) => {
-        assertRole(user, ['secretary']); const row = get(db.community_feedback, id, 'Feedback'); assertBarangay(user, row);
+        assertRole(user, ['secretary', 'captain']); const row = get(db.community_feedback, id, 'Feedback'); assertBarangay(user, row);
         if (row.type === 'general' || row.status !== 'Pending') throw new ApiError('INVALID_STATE', 'Only pending complaints and suggestions can be assigned.');
         const tanod = get(db.users, tanod_id, 'Tanod'); if (!tanod.is_tanod || tanod.barangay_id !== user.barangay_id) throw new ApiError('VALIDATION', 'Choose a Tanod in this barangay.');
         row.assigned_tanod_id = tanod.id; row.status = 'Assigned'; notification(db, row.resident_id, 'feedback_update', `Your ${row.type} was assigned to Tanod ${tanod.full_name}.`, `resident-feedback.html?id=${row.id}`, at); return row;
       }),
       resolve: id => write(['feedback', 'notifications'], (db, user, at) => {
-        assertRole(user, ['secretary']); const row = get(db.community_feedback, id, 'Feedback'); assertBarangay(user, row);
+        assertRole(user, ['secretary', 'captain']); const row = get(db.community_feedback, id, 'Feedback'); assertBarangay(user, row);
         if (row.type === 'general' || row.status === 'Resolved') throw new ApiError('INVALID_STATE', 'This feedback cannot be marked resolved.');
         row.status = 'Resolved'; notification(db, row.resident_id, 'feedback_update', `Your ${row.type} was resolved.`, `resident-feedback.html?id=${row.id}`, at); return row;
       }),
