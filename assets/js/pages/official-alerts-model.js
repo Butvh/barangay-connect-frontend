@@ -8,7 +8,7 @@ export async function alertWorkspace(api, user) {
 }
 
 export function alertsPage(alerts, user, { q = '', status = '', alert_type = '', sort = 'newest', page = 1, size = 10 } = {}) {
-  const query = String(q).trim().toLowerCase(), secretary = roleOf(user) === 'secretary';
+  const query = String(q).trim().toLowerCase(), secretary = ['secretary', 'captain'].includes(roleOf(user));
   const matching = alerts.filter(a => canReadAlert(user, a) && (!status || a.status === status) && (!alert_type || a.alert_type === alert_type)
     && (!query || [`A-${a.id}`, a.alert_type, a.incident_name, a.location_label, a.description, secretary ? a.resident?.full_name : ''].some(v => String(v || '').toLowerCase().includes(query))))
     .sort((a, b) => {
@@ -22,7 +22,7 @@ export function alertsPage(alerts, user, { q = '', status = '', alert_type = '',
 }
 
 export function incidentAssignment(alert, user) {
-  const role = roleOf(user), secretary = role === 'secretary';
+  const role = roleOf(user), secretary = ['secretary', 'captain'].includes(role);
   const person = secretary ? alert.assigned_rescuer || alert.assigned_responder : role === 'rescuer' ? alert.assigned_rescuer : alert.assigned_responder;
   const personRole = secretary ? alert.assigned_rescuer ? 'Rescuer' : 'Responder' : 'You';
   // These are the assignment instants recorded by acknowledge/logResponse in the existing workflow.

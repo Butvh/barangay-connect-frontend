@@ -5,7 +5,7 @@ import { canTransition } from '../core/alertMachine.js';
 import { logAlert, resolveAlert } from './official-alert-actions.js';
 
 let user;
-try { Auth.requireRole(['secretary', 'responder', 'rescuer']); user = Auth.current(); }
+try { Auth.requireRole(['captain', 'secretary', 'responder', 'rescuer']); user = Auth.current(); }
 catch (error) { if (!['AUTH', 'FORBIDDEN'].includes(error.code)) document.querySelector('#app').innerHTML = UI.empty({ icon: 'triangle-alert', title: 'Unable to open the alert', text: error.message, action: { href: 'login.html', label: 'Back to sign in' } }); }
 if (user) {
   const main = Shell.official({ active: 'Alerts' }), id = Number(new URLSearchParams(location.search).get('id')), role = Auth.roleOf(user);
@@ -26,7 +26,7 @@ if (user) {
   async function render() {
     const version = ++rendering;
     try {
-      const a = await Api.alerts.get(id), resident = role === 'secretary' && a.resident ? await Api.users.get(a.resident.id) : null; if (version !== rendering) return;
+      const a = await Api.alerts.get(id), resident = ['secretary', 'captain'].includes(role) && a.resident ? await Api.users.get(a.resident.id) : null; if (version !== rendering) return;
       current = a; mapView?.destroy(); document.title = `${Fmt.alertId(a.id)} · ${a.status} — Barangay Connect`;
       main.innerHTML = `<header class="official-heading"><h1>Alert Detail</h1></header><div class="official-alert-heading"><h2>${Icons.svg(typeIcon(a.alert_type))}${e(alertName(a))}</h2><div>${UI.badge(a.status)}<a class="btn" href="official-alerts.html">Back to alerts</a></div></div>${actionCard(a)}<div class="official-detail-grid"><div class="official-section"><section class="card official-section"><h2>Emergency details</h2>${facts([['Reporter', a.resident?.full_name || 'Not provided'], ['Household', a.household?.address || 'Not provided'], ['Location', a.location_label], ['Victims', a.victim_count ?? 'Not confirmed'], ['Reported', Fmt.dateTime(a.created_at)]])}${resident?.verification ? `<div class="official-verification-line"><small>Verification</small>${UI.badge(resident.verification.review_status)}</div>` : ""}<p class="official-long-copy">${e(a.description || 'No description provided.')}</p><div class="official-photo-placeholder">${Icons.svg('camera')}<span>${a.photo_name ? `Photo preview · ${e(a.photo_name)}` : 'No photo provided.'}</span><small>Photos are represented by file names in this demo.</small></div></section><div class="official-detail-logs">${logs(a)}${logs(a, true)}</div></div><aside class="card official-section official-timeline"><h2>Status timeline</h2><ol>${a.timeline.map(t => `<li${t.current ? ' aria-current="step" class="current"' : ''}>${UI.badge(t.status)}<span>${t.current ? 'Current · ' : ''}${t.at ? `<time datetime="${e(t.at)}">${e(Fmt.short(t.at))}</time>` : 'Not reached'}</span></li>`).join('')}</ol><div class="official-mini-map" id="alert-map"></div><small>Approximate incident location.</small></aside></div>`;
       main.querySelector('[data-workflow]')?.addEventListener('click', async event => {

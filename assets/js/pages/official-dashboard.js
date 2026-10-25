@@ -3,9 +3,10 @@ import { Shell } from '../core/shell-official.js';
 import { mountSecretaryDashboard } from './secretary-dashboard.js?v=secretary-dashboard-1';
 import { renderResponderDashboard } from './official-responder-dashboard.js?v=rescuer-2';
 import { renderRescuerDashboard } from './official-rescuer-dashboard.js?v=rescuer-2';
+import { mountCaptainDashboard } from './captain-dashboard.js';
 
 let user;
-try { Auth.requireRole(['secretary', 'responder', 'rescuer']); user = Auth.current(); }
+try { Auth.requireRole(['captain', 'secretary', 'responder', 'rescuer']); user = Auth.current(); }
 catch (error) {
   if (!['AUTH', 'FORBIDDEN'].includes(error.code)) {
     document.querySelector('#app').innerHTML = UI.empty({ icon: 'triangle-alert', title: 'Unable to open the workspace', text: error.message, action: { href: 'login.html', label: 'Back to sign in' } });
@@ -13,7 +14,7 @@ catch (error) {
 }
 if (user) {
 const role = Auth.roleOf(user), main = Shell.official({ role, active: 'Dashboard' });
-if (role === 'secretary') { mountSecretaryDashboard(main, user); } else {
+if (role === 'captain') { mountCaptainDashboard(main, user); } else if (role === 'secretary') { mountSecretaryDashboard(main, user); } else {
 main.setAttribute('aria-busy', 'true'); main.innerHTML = '<p class="sr-only" role="status">Loading dashboard…</p>' + UI.skeleton(3);
 let miniMaps = [];
 async function render() {

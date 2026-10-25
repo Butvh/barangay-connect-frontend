@@ -1,0 +1,14 @@
+.captain-dashboard .secretary-middle{grid-template-columns:minmax(0,568fr) minmax(0,586fr) minmax(0,406fr)}
+.captain-dashboard .secretary-bottom{grid-template-columns:repeat(3,minmax(0,1fr))}
+.captain-dashboard .secretary-middle>.secretary-panel{min-height:390px}
+.captain-dashboard .secretary-quick-buttons .btn{min-height:60px}
+.captain-personnel-overview{display:grid;gap:4px;margin-block:auto}
+.captain-capacity-row{display:grid;grid-template-columns:28px minmax(80px,.8fr) minmax(40px,1fr) auto;align-items:center;gap:12px;min-height:64px;color:var(--text-secondary);border-bottom:1px solid var(--divider);font-size:14px}
+.captain-capacity-row:last-child{border:0}.captain-capacity-row>span:last-child{text-align:right}.captain-capacity-row strong,.captain-capacity-row small{display:block}
+.captain-capacity-row progress{appearance:none;width:100%;height:10px;border:0;border-radius:999px;overflow:hidden;background:var(--divider)}.captain-capacity-row progress::-webkit-progress-bar{background:var(--divider)}.captain-capacity-row progress::-webkit-progress-value{background:#5499d8;border-radius:999px}.captain-capacity-row progress::-moz-progress-bar{background:#5499d8}
+.captain-map-zoom{display:flex;gap:6px}.captain-map-zoom .icon-btn{border:1px solid var(--blue-100);color:var(--blue-600)}
+.captain-dashboard .secretary-map-summary{grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;align-items:center}.captain-dashboard .secretary-map-summary>div:nth-child(2)>.icon{color:var(--green-700)}.captain-dashboard .secretary-metric>img{flex-shrink:0}
+.captain-dashboard .secretary-map-surface .bc-map-viewport{width:100%;height:100%;aspect-ratio:auto}
+@media(max-width:1399px){.captain-dashboard .secretary-middle{grid-template-columns:1fr 1fr}.captain-dashboard .secretary-middle>.secretary-quick{grid-column:1/-1;min-height:0}.captain-dashboard .secretary-quick-buttons{grid-template-columns:repeat(4,minmax(0,1fr))}.captain-dashboard .secretary-bottom{grid-template-columns:1fr 1fr}.captain-dashboard .secretary-bottom>section:first-child{grid-column:1/-1}}
+@media(max-width:1023px){.captain-dashboard .secretary-middle,.captain-dashboard .secretary-bottom{grid-template-columns:1fr}.captain-dashboard .secretary-middle>.secretary-panel{min-height:0}.captain-dashboard .secretary-quick-buttons{grid-template-columns:repeat(2,minmax(0,1fr))}.captain-dashboard .secretary-bottom>.secretary-panel{min-height:0}}
+@media(max-width:599px){.captain-dashboard .secretary-quick-buttons{grid-template-columns:1fr}.captain-capacity-row{grid-template-columns:24px minmax(70px,.8fr) minmax(24px,1fr) auto;gap:8px;font-size:12px}.captain-dashboard .secretary-activity-list time{max-width:80px}}

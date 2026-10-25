@@ -15,7 +15,7 @@ export const RULES = Object.freeze({
 export function transition(alert, action, user, at) {
   const rule = RULES[action];
   if (!rule) throw new ApiError('INVALID_STATE', 'That alert action is not available.');
-  assertRole(user, [rule.role]);
+  assertRole(user, rule.role === 'secretary' ? ['secretary', 'captain'] : [rule.role]);
   if (alert.status !== rule.from) throw new ApiError('INVALID_STATE', `${action} requires ${rule.from}; this alert is ${alert.status}. Refresh the alert.`);
   const result = { ...alert, status: rule.to };
   if (action === 'acknowledge') Object.assign(result, { acknowledged_at: at, acknowledged_by: user.id });

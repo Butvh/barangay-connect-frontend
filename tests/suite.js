@@ -1,4 +1,8 @@
 import { registerNotificationTests } from './notifications.js';
+import { registerCaptainIntegrationTests } from './captain-integration.js';
+import { registerCaptainPersonnelTests } from './captain-personnel.js';
+import { registerCaptainReportsTests } from './captain-reports.js';
+import { registerCaptainDashboardTests } from './captain-dashboard.js';
 import { registerAlertsAccessTests } from './alerts-access.js';
 import { registerAlertsModelTests } from './alerts-model.js';
 import { registerResidentNotificationTests } from './resident-notifications.js';
@@ -27,6 +31,10 @@ const ok = (value, label = 'assertion failed') => { if (!value) throw new Error(
 async function rejects(run, code) { let found; try { await run(); } catch (error) { found = error; } ok(found, `expected ${code}`); equal(found.code, code); }
 const noDelay = () => Promise.resolve();
 registerNotificationTests({ test, equal, ok, rejects, fixture });
+registerCaptainIntegrationTests({ test, equal, ok, rejects, fixture });
+registerCaptainPersonnelTests({ test, equal, ok, rejects, fixture });
+registerCaptainReportsTests({ test, equal, ok, rejects, fixture });
+registerCaptainDashboardTests({ test, equal, ok, rejects, fixture });
 registerAlertsAccessTests({ test, equal, ok, rejects, fixture });
 registerAlertsModelTests({ test, equal, ok, fixture });
 registerResidentNotificationTests({ test, equal, ok, fixture });
@@ -151,7 +159,7 @@ test('concurrent resident tabs create one SOS and one set of official notificati
   const [a, b] = await Promise.all([f.apiA.alerts.create({}), f.apiB.alerts.create({})]);
   equal(a.id, b.id); equal((await f.apiA.alerts.list()).filter(a => a.status !== 'Resolved').length, 1);
   const after = f.storeA.read(); equal(after.revision, before.revision + 1);
-  equal(after.notifications.length - before.notifications.length, before.users.filter(u => u.barangay_id === 1 && roleOf(u) === 'secretary').length);
+  equal(after.notifications.length - before.notifications.length, before.users.filter(u => u.barangay_id === 1 && ['secretary', 'captain'].includes(roleOf(u))).length);
 });
 
 test('an active alert belonging to another resident does not block a newly approved resident SOS', async () => {
