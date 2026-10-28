@@ -43,3 +43,5 @@ APP-DEV-Final (GaTDGoek1jzWbcOh9dz4f2): `captain-dashboard-*` from 4794:99739,
 4799:100378, 4799:100393, 4799:100409 and 4799:100422. SVG root dimensions
 remain unchanged (16 px chevrons, 24/30 px metric glyphs). The dashboard also
 reuses the existing Secretary location, section arrow, map and maximize assets.
+
+Facilities controls: `facility-menu.svg` and `facility-plus.svg` are exported from APP-DEV-Final node 261:23680; `facility-active.svg` and `facility-inactive.svg` from 3469:77790, via the Figma MCP asset URLs on 2026-10-28. The existing local Sampaguita map and icon sprite are reused.

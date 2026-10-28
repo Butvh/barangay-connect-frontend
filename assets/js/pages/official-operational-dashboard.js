@@ -1,3 +1,4 @@
+import { facilityActive, facilityLocated } from '../core/facilities.js';
 import { UI, Icons, Fmt, e, dialog, victims, typeIcon, alertName, facilityType, facilityDetail } from './official-shared.js';
 import { BCMap } from '../core/map.js';
 import { canTransition } from '../core/alertMachine.js';
@@ -26,12 +27,13 @@ function activityList(rows, limit = rows.length, rescue = false) {
 }
 
 export function renderOperationalDashboard({ main, facilities, user, barangay, refreshed, data, kind = 'response' }) {
-  const rescue = kind === 'rescue', current = data.current;
+  const rescue = kind === 'rescue', current = data.current, availableFacilities = facilities.filter(facilityActive);
   const canRespond = current && canTransition(current, rescue ? 'logRescue' : 'logResponse', user);
   const recordTime = rescue ? 'rescued_at' : 'responded_at', recordStatus = rescue ? 'rescue_status' : 'response_status';
   const response = data.records.filter(r => r.alert.id === current?.id && Number.isFinite(Date.parse(r[recordTime])))
     .sort((a, b) => Date.parse(b[recordTime]) - Date.parse(a[recordTime]))[0];
-  const destinationFacility = rescue && response ? facilities.find(f => f.id === response.facility_id) : null;
+  const currentFacility = rescue && response ? facilities.find(f => f.id === response.facility_id) : null;
+  const destinationFacility = response?.facility || currentFacility;
   const assignedAt = rescue ? data.currentAssignedAt : current?.acknowledged_at;
   const title = rescue ? 'Rescuer Dashboard' : 'Responder Dashboard';
   const activityTitle = rescue ? 'Rescue activity log' : 'Response activity log';
@@ -69,7 +71,7 @@ export function renderOperationalDashboard({ main, facilities, user, barangay, r
         <div class="responder-panel-heading"><h2 id="responder-route-title">Route and status</h2>${current ? UI.badge(current.status) : unavailable('No assignment')}</div>
         <div class="responder-map-wrap"><div id="responder-dashboard-map" class="responder-map" aria-label="Operational map"></div>
           <a class="icon-btn responder-map-expand" href="${mapUrl(current)}" aria-label="Open full map" title="Open full map">${rescue ? '<img src="assets/img/source/secretary-maximize.svg" width="24" height="24" alt="">' : icon('map')}</a></div>
-        ${destinationFacility ? `<a class="rescue-destination-callout" href="official-map.html?facility=${destinationFacility.id}" aria-label="View destination ${e(destinationFacility.name)} on map"><strong>${e(destinationFacility.name)}</strong><small>${e(facilityType(destinationFacility))}</small></a>` : ''}
+        ${destinationFacility ? `<a class="rescue-destination-callout" href="official-map.html?facility=${destinationFacility.id}" aria-label="View destination ${e(destinationFacility.name)} on map"><strong>${e(destinationFacility.name)}</strong><small>${e(facilityType(destinationFacility))}</small>${currentFacility && !facilityActive(currentFacility) ? '<small class="error-text">Destination is currently inactive. Original assignment retained.</small>' : ''}</a>` : ''}
         <ol class="responder-progress" aria-label="Travel stages unavailable; completion uses your ${rescue ? 'rescue' : 'response'} record">
           ${(rescue ? ['En route', 'Picking up', 'Transporting', 'Completed'] : ['En route', 'On site', 'Assisting', 'Completed']).map((stage, i) => `<li${i === 3 && response?.[recordStatus] === 'Completed' ? ' class="recorded"' : ''}>
             <span aria-hidden="true"></span><strong>${stage}</strong><small>${i === 3 && response?.[recordStatus] === 'Completed' ? e(Fmt.short(response[recordTime])) : '<span aria-hidden="true">—</span><span class="sr-only">Not recorded</span>'}</small></li>`).join('')}
@@ -83,7 +85,7 @@ export function renderOperationalDashboard({ main, facilities, user, barangay, r
     <div class="responder-records">
       <section class="card responder-panel"><div class="responder-panel-heading"><h2>${activityTitle}</h2><button class="responder-text-action" type="button" data-responder-action="activity">View all ${sectionArrow}</button></div>${activityList(data.activity, 4, rescue)}</section>
       <section class="card responder-panel"><div class="responder-panel-heading"><h2>${rescue ? 'Destination facilities' : 'Nearby facilities'}</h2><a class="responder-text-action" href="official-map.html">View on map ${sectionArrow}</a></div>
-        ${facilities.length ? `<ul class="responder-record-list">${facilities.map(f => `<li><a class="responder-record" href="official-map.html?facility=${f.id}">
+        ${availableFacilities.length ? `<ul class="responder-record-list">${availableFacilities.map(f => `<li><a class="responder-record" href="official-map.html?facility=${f.id}">
           <span class="responder-tile responder-tone-${f.type === 'Hospital' ? 'red' : 'green'}">${icon(f.type === 'Hospital' ? 'hospital' : 'school', 24)}</span>
           <span class="responder-record-copy"><strong>${e(f.name)}</strong><small>${e(facilityType(f))}</small></span>
           <span class="responder-facility-info">${e(facilityDetail(f))}</span>${icon('chevron-right', 16)}</a></li>`).join('')}</ul><small>Travel estimates unavailable.</small>`
@@ -129,7 +131,7 @@ export function renderOperationalDashboard({ main, facilities, user, barangay, r
   }));
   const markers = [
     ...data.active.map(a => ({ id: `alert-${a.id}`, kind: 'alert', status: a.status, x: a.map_x, y: a.map_y, label: `${Fmt.alertId(a.id)} · ${a.location_label}`, selected: a.id === current?.id })),
-    ...facilities.map(f => ({ id: `facility-${f.id}`, kind: f.type === 'Hospital' ? 'hospital' : 'evacuation', x: f.map_x, y: f.map_y, label: f.name })),
+    ...availableFacilities.filter(facilityLocated).map(f => ({ id: `facility-${f.id}`, kind: f.type === 'Hospital' ? 'hospital' : 'evacuation', x: f.map_x, y: f.map_y, label: f.name })),
   ];
   const map = BCMap.mount(main.querySelector('#responder-dashboard-map'), { barangay_id: user.barangay_id, markers, controls: true, interactive: true,
     onSelect: marker => { location.assign(marker.id.startsWith('facility-') ? `official-map.html?facility=${marker.id.slice(9)}` : `official-map.html?alert=${marker.id.slice(6)}`); } });

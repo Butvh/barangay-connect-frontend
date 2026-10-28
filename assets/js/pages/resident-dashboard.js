@@ -38,9 +38,9 @@ if(signed){
     if(alert)markers.push({id:'alert-'+alert.id,kind:'alert',status:alert.status,x:alert.map_x,y:alert.map_y,label:alertLabel(alert)});
     maps.push(BCMap.mount(main.querySelector('#dashboard-map'),{barangay_id:user.barangay_id,markers,controls:false,interactive:false,onSelect:()=>location.href='resident-map.html'}));
     main.querySelector('#history').addEventListener('click',()=>dialog('My SOS history','<div class="stack-sm">'+(alerts.length?alerts.map(a=>'<a class="card spread" href="resident-alert.html?id='+a.id+'"><span><strong>'+e(alertLabel(a))+'</strong><p>'+e(Fmt.short(a.created_at))+'</p></span>'+UI.badge(a.status)+'</a>').join(''):UI.empty({icon:'clock',title:'No SOS history',text:'Your previous SOS alerts will appear here.'}))+'</div>'));
-    main.querySelector('#contacts').addEventListener('click',()=>dialog('Emergency contacts','<div class="stack"><p>Contact the barangay office or a nearby facility for assistance.</p>'+facilities.map(f=>'<div class="card stack-sm"><h3>'+e(f.name)+'</h3><p>'+e(f.address)+'</p>'+(f.contact?'<a href="tel:'+e(f.contact.replace(/[^+0-9]/g,''))+'">'+e(f.contact)+'</a>':'<p class="muted">Contact number not provided</p>')+'</div>').join('')+link('resident-map.html','View facilities on map')+'</div>'));
+    main.querySelector('#contacts').addEventListener('click',()=>{const contacts=dialog('Emergency contacts','<div class="stack"><p>Contact the barangay office or a nearby facility for assistance.</p>'+facilities.map(f=>'<div class="card stack-sm"><h3>'+e(f.name)+'</h3><p>'+e(f.address)+'</p>'+(f.contact?'<a href="tel:'+e(f.contact.replace(/[^+0-9]/g,''))+'">'+e(f.contact)+'</a>':'<p class="muted">Contact number not provided</p>')+'</div>').join('')+link('resident-map.html','View facilities on map')+'</div>');const off=Api.subscribe('facilities',()=>{if(contacts.open)contacts.close();});contacts.addEventListener('close',off,{once:true});});
   }catch(err){errorView(main,err,render);}}
-  const update=live(['alerts','verification','announcements','users'],render);update();
+  const update=live(['facilities','alerts','verification','announcements','users'],render);update();
   const onVisible=()=>{if(document.visibilityState==='visible')update();};
   const onPageShow=event=>{if(event.persisted)update();};
   document.addEventListener('visibilitychange',onVisible);

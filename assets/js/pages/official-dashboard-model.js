@@ -1,3 +1,4 @@
+import { facilityActive, facilityLocated } from '../core/facilities.js';
 import { ALERT_STATUSES } from '../core/alertMachine.js';
 import { announcementPublishedAt, announcementStatus } from '../core/announcements.js';
 import { reviewable } from './official-verification-model.js';
@@ -27,7 +28,7 @@ export function secretaryDashboard(data = {}, { barangayId = 1, at } = {}) {
   const recentAnnouncements = announcements.filter(row => announcementStatus(row, at) === 'Active').sort((a, b) => time(announcementPublishedAt(b)) - time(announcementPublishedAt(a)) || Number(b.id) - Number(a.id)).slice(0, 3);
   const mapAvailable = Number(barangayId) === 1;
   const mappedAlerts = mapAvailable ? activeAlerts.filter(located) : [];
-  const facilities = mapAvailable ? unique((data.facilities || []).filter(row => (row.barangay_id === null || scoped(row)) && ['Hospital', 'EvacuationCenter'].includes(row.type) && located(row))) : [];
+  const facilities = mapAvailable ? unique((data.facilities || []).filter(row => (row.barangay_id === null || scoped(row)) && ['Hospital', 'EvacuationCenter'].includes(row.type) && facilityActive(row) && facilityLocated(row))) : [];
   const priority = activeAlerts[0] || null;
   const markers = [
     ...mappedAlerts.map(row => ({ id: `alert-${row.id}`, kind: 'alert', status: row.status, x: Number(row.map_x), y: Number(row.map_y), label: `A-${row.id} · ${row.location_label || 'Location not provided'}`, selected: row.id === priority?.id, record: row })),

@@ -23,6 +23,6 @@ export function mountCaptainDashboard(main,user){
     main.querySelectorAll('[data-announcement]').forEach(button=>button.addEventListener('click',()=>readAnnouncement(data.announcements.find(row=>row.id===Number(button.dataset.announcement)),()=>main.querySelector(`[data-announcement="${button.dataset.announcement}"]`)?.focus())));
   }
   async function load(){const mine=++version;if(!validSession()){main.replaceChildren();Auth.requireRole(['captain']);return;}main.setAttribute('aria-busy','true');try{const next=await Api.reports.snapshot();if(mine!==version||!validSession())return;data=next;area=next.barangays.find(b=>b.id===user.barangay_id)?.name||'your barangay';model=captainDashboard(data);render();clearTimeout(expiryTimer);const expiry=nextAnnouncementExpiry(data.announcements,Store.now());if(expiry)expiryTimer=setTimeout(load,Math.max(0,Math.min(2147483647,expiry-Date.parse(Store.now()))));}catch(error){if(mine===version){map?.destroy();errorView(main,error,load);}}finally{if(mine===version)main.removeAttribute('aria-busy');}}
-  main.innerHTML=UI.skeleton(3);live(['alerts','verification','announcements','feedback','users'],load)();
+  main.innerHTML=UI.skeleton(3);live(['facilities','alerts','verification','announcements','feedback','users'],load)();
   window.addEventListener('pagehide',event=>{if(event.persisted)return;version++;clearTimeout(expiryTimer);map?.destroy();},{once:true});
 }

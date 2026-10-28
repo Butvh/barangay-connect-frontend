@@ -2,6 +2,8 @@
 
 Documentation only: this frontend contains no PHP, SQL or backend server.
 
+The facility endpoints, MySQL fields, validation, ownership and policies are specified in [FACILITIES-API.md](FACILITIES-API.md). Facility management currently uses the browser demo API; production authorization and cross-device synchronization remain Laravel responsibilities.
+
 ## Boundary
 
 Keep browser page modules calling the same Api/Auth interfaces. Replace the
