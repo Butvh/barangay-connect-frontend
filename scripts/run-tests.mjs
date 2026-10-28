@@ -7,3 +7,8 @@ const flags = Number(process.versions.node.split('.')[0]) < 24 ? ['--experimenta
 const result = spawnSync(process.execPath, [...flags, 'tests/node-runner.js'], { cwd: root, stdio: 'inherit' });
 if (result.error) console.error(result.error.message);
 process.exitCode = result.status ?? 1;
+if (!process.exitCode) {
+  const pages = spawnSync(process.execPath, ['tests/facility-pages.mjs'], { cwd: root, stdio: 'inherit' });
+  if (pages.error) console.error(pages.error.message);
+  process.exitCode = pages.status ?? 1;
+}

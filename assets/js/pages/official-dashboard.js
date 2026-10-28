@@ -32,7 +32,7 @@ async function render() {
   } catch (err) { miniMaps.forEach(m => m.destroy()); miniMaps = []; errorView(main, err, render); }
   finally { main.removeAttribute('aria-busy'); }
 }
-live(['alerts', 'announcements', 'verification', 'feedback', 'users'], render)();
+live(['facilities','alerts', 'announcements', 'verification', 'feedback', 'users'], render)();
 window.addEventListener('pagehide', event => { if (!event.persisted) miniMaps.forEach(m => m.destroy()); }, { once: true });
 }
 }

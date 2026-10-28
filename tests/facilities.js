@@ -1,3 +1,6 @@
+import { pointFromViewport, centeredTransform } from '../assets/js/core/map-geometry.js';
+import { monitoringMarkers } from '../assets/js/pages/official-map-model.js';
+import { secretaryDashboard } from '../assets/js/pages/official-dashboard-model.js';
 import { createApi } from '../assets/js/core/api.js';
 
 export function registerFacilityTests({ test, equal, ok, rejects, fixture }) {
@@ -98,4 +101,30 @@ export function registerFacilityTests({ test, equal, ok, rejects, fixture }) {
     const result = await f.apiA.alerts.logRescue(1042, { facility_id: 2, rescue_status: 'In progress' });
     equal(result.rescues[0].facility.name, 'Dalisay District Hospital'); ok(f.storeA.read().rescues.at(-1).facility_snapshot);
   });
+  test('Staff maps label inactive destinations and omit unpinned or invalid positions', () => {
+    const facilities = [{ id: 1, name: 'Unavailable school', type: 'EvacuationCenter', status: 'Inactive', map_x: 20, map_y: 30 }, { id: 2, name: 'Unpinned', type: 'Hospital', map_x: null, map_y: null }, { id: 3, name: 'Empty', type: 'Hospital', map_x: '', map_y: ' ' }];
+    const data = { alerts: [], households: [], complaints: [], facilities };
+    const markers = monitoringMarkers(data, { facility: '' }, 'rescuer').markers.filter(m => m.id.startsWith('facility-'));
+    equal(markers.length, 1); equal(markers[0].inactive, true); ok(markers[0].label.includes('Inactive'));
+  });
+  test('Operational dashboard counts only active positioned facilities and restores reactivated ones', () => {
+    const facility = { id: 1, name: 'School', type: 'EvacuationCenter', barangay_id: 1, status: 'Inactive', map_x: 20, map_y: 30 };
+    const options = { barangayId: 1, at: '2026-10-28T12:00:00Z' };
+    equal(secretaryDashboard({ facilities: [facility] }, options).mappedFacilities, 0);
+    facility.status = 'Active'; equal(secretaryDashboard({ facilities: [facility] }, options).mappedFacilities, 1);
+  });
+
+  test('Map location coordinates invert pan and zoom and clamp only to map boundaries', () => {
+    const viewport = { width: 800, height: 500, left: 100, top: 50 };
+    equal(pointFromViewport({clientX:500,clientY:300}, viewport, {scale:2,dx:-200,dy:-100}), {x:37.5,y:35});
+    equal(pointFromViewport({clientX:-100,clientY:2000}, viewport, {scale:1,dx:0,dy:0}), {x:0,y:100});
+    equal(pointFromViewport({clientX:100,clientY:50}, {...viewport,width:0}, {scale:1,dx:0,dy:0}), null);
+  });
+  test('Centering a saved facility pin preserves percent coordinates after resize', () => {
+    for(const [width,height] of [[800,500],[320,240]]) {
+      const view={width,height,left:0,top:0}, transform=centeredTransform({x:60,y:40},view,2);
+      equal(pointFromViewport({clientX:width/2,clientY:height/2},view,transform),{x:60,y:40});
+    }
+  });
+
 }

@@ -33,9 +33,9 @@
 
 **Interfaces:** Api.facilities.list({type?, active_only?}), get(id), create(input), update(id,{...patch,expected_revision}), setStatus(id,{status,expected_revision}); shared facilityStatus(row), facilityActive(row), facilityLocated(row), facilityProjection(row,user), management scope and validation helpers. Fields retain contact and map_x/map_y; add status, notes, managed_by_barangay_id, revision, actor/time metadata and history. No delete API.
 
-- [ ] Write and run failing tests for CRUD, field/type/coordinate validation, all-role/scope denial, canonical user lookup, legacy defaults/ownership, stale revision conflict and persistence/subscriptions.
-- [ ] Implement minimal domain/API changes. Add facilities to subscriptions; preserve schema version and legacy fields. Capture missing legacy rescue snapshots before facility mutations and capture snapshots on new rescue logs. Reject inactive rescue destinations inside the transaction.
-- [ ] Run full suite; verify failure atomicity, snapshot stability and new rescue guards. Commit the tested service and contract.
+- [x] Write and run failing tests for CRUD, field/type/coordinate validation, all-role/scope denial, canonical user lookup, legacy defaults/ownership, stale revision conflict and persistence/subscriptions.
+- [x] Implement minimal domain/API changes. Add facilities to subscriptions; preserve schema version and legacy fields. Capture missing legacy rescue snapshots before facility mutations and capture snapshots on new rescue logs. Reject inactive rescue destinations inside the transaction.
+- [x] Run full suite; verify failure atomicity, snapshot stability and new rescue guards. Commit the tested service and contract.
 
 ## Task 2: Shared availability rules across consumers
 
@@ -43,9 +43,9 @@
 
 **Consumes:** projected facilities, status helpers and facilities subscription from Task 1.
 
-- [ ] Add failing integration/model tests for resident active-only selection, no fallback claims of nearest, inactive staff map markers, active destination lists, snapshot/current-destination warnings and updates after reactivation.
-- [ ] Update consumers and live subscriptions, retaining existing selection/filter/zoom state. Staff maps show labeled muted inactive markers; resident/public recommendations omit them. Rescue destination picker refreshes and disables unavailable facilities, preserving its current choice with a warning until the operator changes it; API revalidates on save.
-- [ ] Run full suite and commit.
+- [x] Add failing integration/model tests for resident active-only selection, no fallback claims of nearest, inactive staff map markers, active destination lists, snapshot/current-destination warnings and updates after reactivation.
+- [x] Update consumers and live subscriptions, retaining existing selection/filter/zoom state. Staff maps show labeled muted inactive markers; resident/public recommendations omit them. Rescue destination picker refreshes and disables unavailable facilities, preserving its current choice with a warning until the operator changes it; API revalidates on save.
+- [x] Run full suite and commit.
 
 ## Task 3: Directory, forms and map pinning
 
@@ -53,15 +53,15 @@
 
 **Consumes:** Task 1 API and helpers. BCMap gains an optional draggable marker and centerOn point method; existing marker selection, zoom and pan contracts remain intact.
 
-- [ ] Write failing geometry/browser checks for inverse coordinates after pan/zoom, clamping, optional unpinned location, marker drag/keyboard moves and nested modal cancel/confirm.
-- [ ] Build the single Add/Edit form, reference-aligned cards/action menu, confirmation/status feedback and details. Only managers of the record receive edit/status controls. Retain drafts on errors and show revision conflicts. Same-tab/cross-tab refreshes update cards/details.
-- [ ] Reuse the existing map image and marker system in the nested location dialog. No arbitrary initial coordinates. Click, drag or keyboard selects a point; confirm stages it in the parent form, cancel preserves its previous point; save commits it with facility data.
-- [ ] Compare at desktop/tablet/mobile and test both management roles, both operator roles and resident availability. Run full suite/static/syntax checks and commit.
+- [x] Write failing geometry/browser checks for inverse coordinates after pan/zoom, clamping, optional unpinned location, marker drag/keyboard moves and nested modal cancel/confirm.
+- [x] Build the single Add/Edit form, reference-aligned cards/action menu, confirmation/status feedback and details. Only managers of the record receive edit/status controls. Retain drafts on errors and show revision conflicts. Same-tab/cross-tab refreshes update cards/details.
+- [x] Reuse the existing map image and marker system in the nested location dialog. No arbitrary initial coordinates. Click, drag or keyboard selects a point; confirm stages it in the parent form, cancel preserves its previous point; save commits it with facility data.
+- [x] Compare at desktop/tablet/mobile and test both management roles, both operator roles and resident availability. Run full suite/static/syntax checks and commit.
 
 ## Task 4: Review and integration
 
-- [ ] Fresh review of the whole branch; resolve blocking findings with regression tests.
-- [ ] Final automated/browser/visual checks, record reproducible QA and documented demo limitations.
+- [x] Fresh review of the whole branch; resolve blocking findings with regression tests.
+- [x] Final automated/browser/visual checks, record reproducible QA and documented demo limitations.
 - [ ] Push PR, wait for green CI, merge into main as explicitly requested, sync clean XAMPP checkout, verify Pages and clean temporary previews.
 
 Baseline: 0a845d8, 269 tests passed, clean reused checkout on codex/facilities-management.

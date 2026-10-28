@@ -39,7 +39,7 @@ Sessions use sessionStorage per tab. Shared localStorage and storage events sync
 | captain-personnel.html | Captain-only staffing, capacities, Tanod appointments, details and retained role history |
 | captain-reports.html | Captain-only reports, incident analytics, activity, operations and role-specific personnel performance |
 
-Captain and Secretary share the same Alerts, Map Monitoring, Verifications, Announcements, Feedback and Facilities implementations with same-barangay administrative authority. Facilities remains a read-only directory. Assigned Responder/Rescuer permissions remain operational. A Captain can acknowledge and resolve incidents, but cannot log another person's response or rescue.
+Captain and Secretary share the same Alerts, Map Monitoring, Verifications, Announcements, Feedback and Facilities implementations with same-barangay administrative authority. Facilities supports role-scoped management, availability and map pinning; see [the facilities API contract](docs/FACILITIES-API.md). Assigned Responder/Rescuer permissions remain operational. A Captain can acknowledge and resolve incidents, but cannot log another person's response or rescue.
 
 Acknowledgement requires an active same-barangay Responder; logging a response requires an active same-barangay Rescuer for the next handoff. If one is unavailable, the transaction fails before changing the incident, logs, audit or notifications. Existing incident history is preserved.
 

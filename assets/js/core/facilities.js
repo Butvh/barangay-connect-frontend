@@ -4,7 +4,7 @@ import { assertRole, roleOf } from './permissions.js';
 export const FACILITY_TYPES = ['EvacuationCenter', 'Hospital'];
 export const facilityStatus = row => row?.status == null ? 'Active' : row.status === 'Active' ? 'Active' : 'Inactive';
 export const facilityActive = row => Boolean(row) && facilityStatus(row) === 'Active';
-export const facilityLocated = row => Boolean(row) && ['map_x', 'map_y'].every(key => row[key] !== null && row[key] !== undefined && row[key] !== '' && typeof row[key] !== 'boolean' && Number.isFinite(Number(row[key])) && Number(row[key]) >= 0 && Number(row[key]) <= 100);
+export const facilityLocated = row => Boolean(row) && ['map_x', 'map_y'].every(key => row[key] !== null && row[key] !== undefined && String(row[key]).trim() !== '' && typeof row[key] !== 'boolean' && Number.isFinite(Number(row[key])) && Number(row[key]) >= 0 && Number(row[key]) <= 100);
 // The original shared referral (ID 2) belongs to the Sampaguita demo directory.
 // Preserve its public scope; never infer ownership for other shared records.
 export const facilityOwner = row => row.managed_by_barangay_id ?? row.barangay_id ?? (row.id === 2 ? 1 : null);

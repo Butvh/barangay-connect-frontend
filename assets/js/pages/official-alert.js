@@ -1,3 +1,4 @@
+import { facilityActive, facilityLocated } from '../core/facilities.js';
 import { Auth, Api, UI, Icons, Fmt, e, typeIcon, alertName, victims, facts, roleLabel, live, errorView } from './official-shared.js';
 import { Shell } from '../core/shell-official.js';
 import { BCMap } from '../core/map.js';
@@ -20,7 +21,7 @@ if (user) {
   }
   function logs(a, rescue = false) {
     const rows = rescue ? a.rescues : a.responses;
-    return `<section class="card official-section"><h3>${rescue ? 'Rescue log' : 'Response log'}</h3>${rows.length ? `<ul class="official-log-records">${rows.map(r => `<li>${facts(rescue ? [['Rescuer', r.rescuer?.full_name], ['Destination facility', r.facility?.name], ['Status', r.rescue_status], ['Time', Fmt.dateTime(r.rescued_at)]] : [['Responder', r.responder?.full_name], ['Response type', r.response_type], ['Status', r.response_status], ['Time', Fmt.dateTime(r.responded_at)]])}${r.notes ? `<p class="official-long-copy">${e(r.notes)}</p>` : ''}</li>`).join('')}</ul>` : `<small>${rescue ? 'Rescuer · Destination facility · Status · Time' : 'Responder · Response type · Status · Time'}</small><p>No ${rescue ? 'rescue' : 'response'} logged yet.</p>`}</section>`;
+    return `<section class="card official-section"><h3>${rescue ? 'Rescue log' : 'Response log'}</h3>${rows.length ? `<ul class="official-log-records">${rows.map(r => `<li>${facts(rescue ? [['Rescuer', r.rescuer?.full_name], ['Destination facility', r.facility?.name], ['Status', r.rescue_status], ['Time', Fmt.dateTime(r.rescued_at)]] : [['Responder', r.responder?.full_name], ['Response type', r.response_type], ['Status', r.response_status], ['Time', Fmt.dateTime(r.responded_at)]])}${rescue && r.current_facility && !facilityActive(r.current_facility) ? '<p class="banner">Destination is currently inactive. Original assignment retained.</p>' : ''}${r.notes ? `<p class="official-long-copy">${e(r.notes)}</p>` : ''}</li>`).join('')}</ul>` : `<small>${rescue ? 'Rescuer · Destination facility · Status · Time' : 'Responder · Response type · Status · Time'}</small><p>No ${rescue ? 'rescue' : 'response'} logged yet.</p>`}</section>`;
   }
   async function saved() { await render(); main.focus(); }
   async function render() {
@@ -45,5 +46,5 @@ if (user) {
       else errorView(main, err, render);
     } finally { if (version === rendering) main.removeAttribute('aria-busy'); }
   }
-  live(['alerts', 'verification', 'users'], render)(); window.addEventListener('pagehide', event => { if (!event.persisted) mapView?.destroy(); }, { once: true });
+  live(['facilities','alerts', 'verification', 'users'], render)(); window.addEventListener('pagehide', event => { if (!event.persisted) mapView?.destroy(); }, { once: true });
 }

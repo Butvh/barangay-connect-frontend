@@ -12,3 +12,5 @@
 .dashboard #history,.feedback-record .btn-small,.feedback-form #clear-rating,.login-card[aria-label="Resident sign in"] .demo-accounts .btn{min-height:44px}
 .dashboard-lower a{display:inline-flex;align-items:center;min-width:44px;min-height:44px;padding-block:var(--s3)}
 .resident-header .brand{min-width:44px;min-height:44px}
+/* Inactive staff-map facilities remain identifiable without implying availability. */
+.map-marker.marker-inactive .marker-dot{background:var(--bg);color:var(--text-muted);border-color:var(--text-muted);border-style:dashed}.map-marker.marker-inactive .marker-label{color:var(--text-secondary);background:var(--bg)}.map-marker.marker-draggable{cursor:grab;touch-action:none}.map-marker.marker-draggable:active{cursor:grabbing}.map-marker.marker-draggable .marker-label{display:block;background:var(--blue-50);border:1px solid var(--blue-600)}

@@ -1,3 +1,4 @@
+import { facilityActive, facilityLocated } from '../core/facilities.js';
 import { Auth, Api, UI, Icons, Fmt, e, roleLabel, typeIcon, alertName, victims, facts, facilityType, facilityDetail, dialog, live, destination } from './official-shared.js';
 import { Shell } from '../core/shell-official.js';
 import { BCMap } from '../core/map.js';
@@ -44,7 +45,7 @@ if (user) {
     }
     if (marker.kind === 'household') return `<h2>Household</h2>${facts([['Address', marker.record.address]])}<small>Approximate household location from the available records.</small>`;
     if (marker.kind === 'complaint') return `<h2>Complaint · ${e(marker.record.category)}</h2>${UI.badge(marker.record.status)}<p>${e(marker.record.location)}</p><p class="official-long-copy">${e(marker.record.description)}</p><small>Pin shown at the matching household location.</small>${destination(`official-feedback.html?type=complaint&id=${marker.record.id}`, 'View complaint')}`;
-    if (marker.record) return `<h2>${e(marker.record.name)}</h2><p>${e(facilityType(marker.record))}</p><p>${e(facilityDetail(marker.record))}</p><a class="btn" href="official-facilities.html?id=${marker.record.id}">View facility</a>`;
+    if (marker.record) return `<h2>${e(marker.record.name)}</h2><p>${e(facilityType(marker.record))} · ${facilityActive(marker.record) ? 'Active' : 'Inactive — unavailable'}</p><p>${e(facilityDetail(marker.record))}</p><a class="btn" href="official-facilities.html?id=${marker.record.id}">View facility</a>`;
     return '<h2>Barangay hall</h2><p>Barangay Sampaguita</p><small>Community landmark on the illustrated map.</small>';
   }
   function bindSummary(root, marker) {
@@ -89,8 +90,8 @@ if (user) {
   main.querySelectorAll('[data-open-facilities]').forEach(button => button.addEventListener('click', () => {
     const el = dialog('Facilities', `<div class="stack"><div class="field"><label for="map-facility-picker">Facility type</label><select class="select" id="map-facility-picker" data-facility-type><option value="">All facilities</option><option value="EvacuationCenter">Evacuation centers</option><option value="Hospital">Hospitals</option></select></div><div class="stack-sm" data-facility-list></div></div>`);
     const list = el.querySelector('[data-facility-list]');
-    const render = () => { const value = el.querySelector('select').value, rows = data.facilities.filter(f => !value || f.type === value); list.innerHTML = rows.length ? rows.map(f => `<a class="card official-facility-option" href="official-facilities.html?id=${f.id}"><strong>${e(f.name)}</strong><span>${e(facilityType(f))} · ${e(facilityDetail(f))}</span><span>View facility ${Icons.svg('arrow-right', { size: 20 })}</span></a>`).join('') : UI.empty({ icon: 'hospital', title: 'No facilities found', text: 'Choose another facility type.' }); };
-    el.querySelector('select').addEventListener('change', render); render();
+    const render = () => { const value = el.querySelector('select').value, rows = data.facilities.filter(f => !value || f.type === value); list.innerHTML = rows.length ? rows.map(f => `<a class="card official-facility-option" href="official-facilities.html?id=${f.id}"><strong>${e(f.name)}</strong><span>${facilityActive(f) ? 'Active' : 'Inactive · Unavailable'} · ${e(facilityType(f))} · ${e(facilityDetail(f))}</span><span>View facility ${Icons.svg('arrow-right', { size: 20 })}</span></a>`).join('') : UI.empty({ icon: 'hospital', title: 'No facilities found', text: 'Choose another facility type.' }); };
+    el.querySelector('select').addEventListener('change', render); const off = Api.subscribe('facilities', async () => { try { const rows = await Api.facilities.list(); if(el.open) { data.facilities = rows; render(); } } catch(error) { UI.toast(error.message, 'error'); } }); el.addEventListener('close', off, {once:true}); render();
   }));
   async function load() {
     const request = ++version;
@@ -104,6 +105,6 @@ if (user) {
     finally { if (request === version) canvas.removeAttribute('aria-busy'); }
   }
   main.querySelector('[data-retry]').addEventListener('click', load);
-  live(['alerts', 'feedback', 'users'], load)();
+  live(['facilities','alerts', 'feedback', 'users'], load)();
   window.addEventListener('pagehide', event => { if (!event.persisted) { version++; mapView?.destroy(); } }, { once: true });
 }
