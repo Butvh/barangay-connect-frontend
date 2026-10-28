@@ -1,7 +1,7 @@
 import { Config, ApiError, copy, zonedISO } from './config.js';
 import { createSeed } from '../data/seed.js';
 
-const ENTITIES = Object.freeze(['alerts', 'verification', 'announcements', 'feedback', 'notifications', 'users']);
+const ENTITIES = Object.freeze(['alerts', 'verification', 'announcements', 'feedback', 'notifications', 'users', 'facilities']);
 export function memoryStorage() {
   const values = new Map();
   return { getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, String(value)), removeItem: key => values.delete(key) };

@@ -241,3 +241,8 @@ at least 44 by 44 pixels. Those resident fixes addressed Issues #2 and #5
 without changing their record schema. Captain adds the optional collections and
 metadata documented above without resetting existing data. See CONTRACT.md for
 the dated QA evidence and current validation commands.
+
+## Facility management extension
+
+See [FACILITIES-API.md](FACILITIES-API.md) for facility status, management ownership, optimistic revision/history metadata, optional map coordinates, rescue snapshots and future Laravel/MySQL validation/policies. Legacy missing status means Active; IDs, shared referral visibility and rescue links are retained. No schema reset or backend implementation is included.
+

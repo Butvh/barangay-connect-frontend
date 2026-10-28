@@ -1,4 +1,5 @@
 import { registerNotificationTests } from './notifications.js';
+import { registerFacilityTests } from './facilities.js';
 import { registerCaptainIntegrationTests } from './captain-integration.js';
 import { registerCaptainPersonnelTests } from './captain-personnel.js';
 import { registerCaptainReportsTests } from './captain-reports.js';
@@ -31,6 +32,7 @@ const ok = (value, label = 'assertion failed') => { if (!value) throw new Error(
 async function rejects(run, code) { let found; try { await run(); } catch (error) { found = error; } ok(found, `expected ${code}`); equal(found.code, code); }
 const noDelay = () => Promise.resolve();
 registerNotificationTests({ test, equal, ok, rejects, fixture });
+registerFacilityTests({ test, equal, ok, rejects, fixture });
 registerCaptainIntegrationTests({ test, equal, ok, rejects, fixture });
 registerCaptainPersonnelTests({ test, equal, ok, rejects, fixture });
 registerCaptainReportsTests({ test, equal, ok, rejects, fixture });

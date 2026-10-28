@@ -7,6 +7,7 @@ import { announcementStatus, announcementPublishedAt } from './announcements.js'
 import { canAccessNotification, notificationProjection, notificationSource, notificationIsRead } from './notifications.js';
 import { personnelList, personnelGet, addExternalPersonnel, appointPersonnel, reassignPersonnel, removePersonnel } from './personnel.js';
 import { activitySnapshot, recordActivity } from './activity.js';
+import { facilityActive, facilityVisible, facilitySnapshot, facilityProjection, createFacility, updateFacility, setFacilityStatus } from './facilities.js';
 
 export { ApiError };
 const staff = ['captain', 'secretary', 'responder', 'rescuer'];
@@ -58,7 +59,7 @@ function accessibleNotification(db, user, id, at) {
 function joinedAlert(db, alert) {
   const resident = db.users.find(u => u.id === alert.resident_id) || null;
   const responses = db.alert_responses.filter(r => r.alert_id === alert.id).map(r => ({ ...r, responder: publicUser(db.users.find(u => u.id === r.responder_id)) }));
-  const rescues = db.rescues.filter(r => r.alert_id === alert.id).map(r => ({ ...r, rescuer: publicUser(db.users.find(u => u.id === r.rescuer_id)), facility: db.facilities.find(f => f.id === r.facility_id) || null }));
+  const rescues = db.rescues.filter(r => r.alert_id === alert.id).map(r => { const current = db.facilities.find(f => f.id === r.facility_id); return { ...r, rescuer: publicUser(db.users.find(u => u.id === r.rescuer_id)), facility: r.facility_snapshot || facilitySnapshot(current), current_facility: facilitySnapshot(current) }; });
   const times = [alert.created_at, alert.acknowledged_at, responses[0]?.responded_at || null, rescues[0]?.rescued_at || null, alert.resolved_at];
   return { ...alert, resident: publicUser(resident), household: db.households.find(h => h.id === alert.household_id) || null, assigned_responder: publicUser(db.users.find(u => u.id === alert.assigned_responder_id)), assigned_rescuer: publicUser(db.users.find(u => u.id === alert.assigned_rescuer_id)), responses, rescues, timeline: ALERT_STATUSES.map((status, i) => ({ status, at: times[i], current: status === alert.status })) };
 }
@@ -156,9 +157,12 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
       list: (options = {}) => read((db, user) => {
         const type = options.type === 'Evacuation Center' ? 'EvacuationCenter' : options.type;
         if (options.barangay_id && Number(options.barangay_id) !== user.barangay_id) throw new ApiError('FORBIDDEN', 'Choose your registered barangay.');
-        return db.facilities.filter(f => (f.barangay_id === null || f.barangay_id === user.barangay_id) && (!type || f.type === type));
+        return db.facilities.filter(f => facilityVisible(user, f) && (!type || f.type === type) && (!(options.active_only || roleOf(user) === 'resident') || facilityActive(f))).map(f => facilityProjection(f, user));
       }),
-      get: id => read((db, user) => { const f = get(db.facilities, id, 'Facility'); if (f.barangay_id !== null) assertBarangay(user, f); return f; }),
+      get: id => read((db, user) => { const f = get(db.facilities, id, 'Facility'); if (f.barangay_id !== null) assertBarangay(user, f); if (roleOf(user) === 'resident' && !facilityActive(f)) throw new ApiError('NOT_FOUND', 'This facility is not currently available.'); return facilityProjection(f, user); }),
+      create: (input = {}) => write(['facilities'], (db, user, at) => createFacility(db, user, input, at)),
+      update: (id, input = {}) => write(['facilities', 'alerts'], (db, user, at) => updateFacility(db, user, id, input, at)),
+      setStatus: (id, input = {}) => write(['facilities', 'alerts'], (db, user, at) => setFacilityStatus(db, user, id, input, at)),
     },
     users: {
       async register(input = {}) {
@@ -282,10 +286,11 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
       }),
       logRescue: (id, input = {}) => write(['alerts', 'notifications'], (db, user, at) => {
         const facility = get(db.facilities, input.facility_id, 'Facility'); if (facility.barangay_id !== null) assertBarangay(user, facility);
+        if (!facilityActive(facility)) throw new ApiError('INVALID_STATE', 'This destination is inactive. Choose an active facility.', { facility_id: 'Choose an active destination facility.' });
         const rescue_status = oneOf(input.rescue_status, ['In progress', 'Completed'], 'rescue_status'), notes = text(input.notes, 'notes', { required: false });
         const firstNoticeId = nextId(db.notifications);
         const a = transitionAlert(db, user, id, 'logRescue', at);
-        db.rescues.push({ id: nextId(db.rescues), alert_id: a.id, rescuer_id: user.id, facility_id: facility.id, rescue_status, notes, rescued_at: at });
+        db.rescues.push({ id: nextId(db.rescues), alert_id: a.id, rescuer_id: user.id, facility_id: facility.id, facility_snapshot: facilitySnapshot(facility), rescue_status, notes, rescued_at: at });
         for (const n of db.notifications.filter(n => n.id >= firstNoticeId)) { n.text += ` · Destination: ${facility.name}`; n.description += ` · Destination: ${facility.name}`; }
         return joinedAlert(db, a);
       }),
