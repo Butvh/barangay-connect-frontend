@@ -1,11 +1,38 @@
 import { createSeed } from '../assets/js/data/seed.js';
 import { personnelList, personnelGet, addExternalPersonnel, appointPersonnel, reassignPersonnel, removePersonnel } from '../assets/js/core/personnel.js';
 import { personnelPage } from '../assets/js/pages/captain-personnel-model.js';
+import { personnelDetails } from '../assets/js/pages/captain-personnel-details.js';
 
 export function registerCaptainPersonnelTests({ test, equal, ok, rejects, fixture }) {
   const at = '2026-10-04T14:20:00+08:00';
   const seed = () => { const db = createSeed(); return { db, captain: db.users.find(u => u.id === 7) }; };
   const input = patch => ({ full_name: 'New Staff', role: 'secretary', contact_number: '09171234567', email: 'staff@example.com', address: '1 Mabini Street', emergency_contact: 'Alex, 09181234567', effective_date: '2026-10-04', status: 'Active', notes: '', requirements: [], ...patch });
+  test('Personnel Details preserves legacy unknowns without inventing source or appointment metadata', () => {
+    const { db, captain } = seed(), row = personnelGet(db, captain, 1), before = JSON.stringify(row);
+    const html = personnelDetails(row, 'Barangay Sampaguita');
+    ok(html.includes('Ana Reyes')); ok(html.includes('ana.reyes@example.com')); ok(html.includes('Existing personnel'));
+    equal((html.match(/Barangay Sampaguita/g) || []).length, 2);
+    ok(html.includes('<dt>Source</dt><dd>Not recorded</dd>')); ok(html.includes('No appointment history recorded yet.'));
+    ok(!html.includes('External</')); ok(!html.includes('Effective Oct'));
+    ok(html.indexOf('data-done') < html.indexOf('data-detail-reassign')); ok(html.indexOf('data-detail-reassign') < html.indexOf('data-detail-remove'));
+    equal(JSON.stringify(row), before);
+  });
+  test('Personnel Details retains actual appointment changes, actor, contacts, requirements and escaped notes', () => {
+    const { db, captain } = seed();
+    const added = addExternalPersonnel(db, captain, input({ full_name: 'Alex <Staff>', notes: 'Keep <private>', requirements: [{ name: 'proof.png', type: 'image/png', size: 2048 }] }), at);
+    const row = reassignPersonnel(db, captain, added.id, { role: 'rescuer', effective_date: '2026-10-04', notes: 'New <duty>', expected_revision: added.revision }, '2026-10-04T15:00:00+08:00');
+    const html = personnelDetails(row, 'Barangay <Demo>');
+    for (const value of ['Alex &lt;Staff&gt;', 'Barangay &lt;Demo&gt;', '1 Mabini Street', '09171234567', 'Alex, 09181234567', 'proof.png', 'New &lt;duty&gt;', 'Roberto Aquino', 'Secretary to Rescuer', 'Oct 4, 2026']) ok(html.includes(value), `missing ${value}`);
+    ok(html.indexOf('Reassigned') < html.indexOf('Added')); ok(!html.includes('No appointment history'));
+    ok(!html.includes('<Staff>')); ok(!html.includes('<duty>'));
+    const inactive = personnelDetails({ ...row, status: 'Inactive', role: null }, 'Barangay Sampaguita');
+    ok(inactive.includes('Inactive')); ok(!inactive.includes('data-detail-reassign')); ok(!inactive.includes('data-detail-remove'));
+  });
+  test('Personnel Details keeps busy-incident warnings and links without changing their records', () => {
+    const { db, captain } = seed(), row = personnelGet(db, captain, 2), before = JSON.stringify(row);
+    const html = personnelDetails(row, 'Barangay Sampaguita');
+    ok(html.includes('assigned to unresolved incidents')); ok(html.includes('official-alert.html?id=1038')); equal(JSON.stringify(row), before);
+  });
   test('Personnel projects the actual same-barangay roster without credentials or invented appointment dates', () => {
     const { db, captain } = seed(); db.users.push({ ...db.users[0], id: 99, barangay_id: 2 });
     const before = JSON.stringify(db), data = personnelList(db, captain);

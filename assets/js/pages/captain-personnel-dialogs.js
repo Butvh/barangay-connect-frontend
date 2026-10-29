@@ -1,5 +1,6 @@
 import { Api, Store, UI, Fmt, e, dialog, pagination } from './official-shared.js';
 import { personnelPage, roleLabel, sourceLabel } from './captain-personnel-model.js';
+import { personnelDetails } from './captain-personnel-details.js';
 
 const roles = ['secretary', 'responder', 'rescuer'];
 const badge = (value, tone = '') => `<span class="cp-badge ${tone}">${e(value)}</span>`;
@@ -138,11 +139,12 @@ export function createPersonnelDialogs({ getData, isStale, reload, afterSave }) 
     mountForm(s, 'Remove from role?', 'This removes the person from their current assigned role.', body, 'Remove from role', input => Api.personnel.remove(row.id, input));
   }
   function detailsContent(row) {
+    if (row.source !== 'tanod') return personnelDetails(row, barangayNames.get(row.barangay_id));
     const tanod = row.source === 'tanod', appointment = row.history.filter(h => h.to_role === row.role && row.role).at(-1);
     return `${profile(row)}<section class="cp-detail-section"><h3>Personal information</h3>${facts([['Full name', row.full_name], ...(tanod ? [['Tanod ID', row.id]] : []), ['Home address', row.address], ['Barangay', barangayNames.get(row.barangay_id) || `Barangay #${row.barangay_id}`]])}</section><section class="cp-detail-section"><h3>Contact information</h3>${facts([['Email', row.email], ['Contact number', row.contact_number], ['Emergency contact', row.emergency_contact]])}</section><section class="cp-detail-section"><h3>${tanod ? 'Current assignment' : 'Role details'}</h3>${facts([['Assigned role', roleLabel(row.role)], ['Source', row.legacy && row.source !== 'tanod' ? 'Not recorded' : sourceLabel(row)], ['Status', row.status], ['Appointment date', row.appointed_at ? Fmt.date(row.appointed_at) : 'Not recorded'], ['Assigned by', appointment?.by_name]])}${tanod && !row.role ? '<p>Eligible for Secretary, Responder, or Rescuer appointment subject to available capacity.</p>' : ''}${busy(row)}</section>${row.requirements.length || row.notes ? `<section class="cp-detail-section"><h3>Requirements and notes</h3>${row.requirements.length ? `<ul class="cp-file-list">${row.requirements.map(file => `<li>${e(file.name)} · ${Math.ceil(file.size / 1024)} KB</li>`).join('')}</ul><p class="cp-form-help">File details are recorded; file contents are not stored in this demo.</p>` : ''}${row.notes ? `<p class="cp-long-copy">${e(row.notes)}</p>` : ''}</section>` : ''}<section class="cp-detail-section"><h3>${tanod ? 'Role history' : 'Appointment history'}</h3>${history(row)}</section><footer class="cp-dialog-footer">${row.role ? `<button type="button" class="btn" data-detail-reassign>Reassign role</button><button type="button" class="btn cp-danger-outline" data-detail-remove>Remove from role</button>` : tanod ? '<button type="button" class="btn btn-primary" data-detail-appoint>Appoint to role</button>' : ''}<button type="button" class="btn btn-primary" data-done>Done</button></footer>`;
   }
   function renderDetails(state, row) {
-    const signature = JSON.stringify([row, isStale()]);
+    const signature = JSON.stringify([row, isStale(), barangayNames.get(row?.barangay_id)]);
     if (state.rendered === signature) return;
     state.rendered = signature;
     const focusedAction = ['data-detail-reassign', 'data-detail-remove', 'data-detail-appoint', 'data-done'].find(attribute => document.activeElement?.hasAttribute(attribute) && state.el.contains(document.activeElement));
@@ -161,7 +163,7 @@ export function createPersonnelDialogs({ getData, isStale, reload, afterSave }) 
     const tanod = row.source === 'tanod', state = { kind: 'details', targetId: row.id, dirty: () => false };
     const el = dialog(tanod ? 'Tanod details' : 'Personnel details', `<p class="cp-dialog-subtitle">${tanod ? 'View tanod profile, assignment, and role history.' : 'View personnel information, role assignment, and appointment history.'}</p><div data-detail-body></div>`, { sheet: false });
     track(el, state); el.classList.add(tanod ? 'cp-dialog-tanod' : 'cp-dialog-details'); renderDetails(state, row);
-    Api.barangays.list().then(rows => { const b = rows.find(b => b.id === row.barangay_id); if (b) barangayNames.set(b.id, b.name); if (b && el.open) { const values = [...el.querySelectorAll('dt')]; const label = values.find(dt => dt.textContent === 'Barangay'); if (label) label.nextElementSibling.textContent = b.name; } }).catch(() => {});
+    Api.barangays.list().then(rows => { const b = rows.find(b => b.id === row.barangay_id); if (b) barangayNames.set(b.id, b.name); if (b && el.open) renderDetails(state, rowInData(row.id) || row); }).catch(() => {});
   }
   function renderDirectory(state) {
     const data = getData(); if (!data) return;
