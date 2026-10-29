@@ -1,6 +1,53 @@
 import { captainReportData, reportPage, reportsCSV } from '../assets/js/pages/captain-reports-model.js';
+import * as reportModel from '../assets/js/pages/captain-reports-model.js';
+import { personnelPanel, reportPanel } from '../assets/js/pages/captain-report-panels.js';
 
 export function registerCaptainReportsTests({ test, equal, ok, fixture }) {
+  test('Report panel keeps the selected incident, actual personnel roles and recorded destination', () => {
+    const markup = reportPanel({ id: 1044, alert_type: 'Flood', status: 'Resolved', victim_count: null, assigned_responder: { id: 2, full_name: 'Carlo Mendoza' }, assigned_rescuer: { id: 3, full_name: 'Ramon Bautista' }, responses: [{ response_status: 'Responding' }], rescues: [{ rescue_status: 'Completed', rescued_at: '2026-10-06T15:18:00+08:00', rescuer: { id: 3, full_name: 'Ramon Bautista' }, facility: { name: 'Recorded evacuation center' }, notes: 'Arrived safely.' }] }, []);
+    ok(markup.includes('official-alert.html?id=1044')); ok(markup.includes('captain-personnel.html?id=3'));
+    ok(markup.includes('Rescuer')); ok(markup.includes('Recorded evacuation center'));
+    ok(markup.includes('0 completed response logs; 1 completed rescue log')); ok(markup.includes('Unknown'));
+    ok(markup.includes('resolution time not recorded')); ok(markup.includes('data-print')); ok(markup.includes('data-export-report'));
+    ok(markup.includes('Oct 6, 2026 · 3:18 PM · Ramon Bautista'), 'Each recorded destination retains rescue time and actor');
+    ok(!markup.includes('Typhoon advisory')); ok(!markup.includes('tel:'));
+  });
+  test('Ongoing report cannot claim a rescue destination or resolved outcome', () => {
+    const markup = reportPanel({ id: 9, alert_type: 'Other', status: 'Responding', description: '<script>bad</script>', rescues: [{ rescue_status: 'En route', facility: { name: 'Not reached' } }] }, []);
+    ok(markup.includes('Current progress')); ok(markup.includes('Not yet resolved'));
+    ok(!markup.includes('is-resolved')); ok(!markup.includes('Not reached')); ok(!markup.includes('<script>'));
+    ok(markup.includes('&lt;script&gt;bad&lt;/script&gt;'));
+  });
+  test('Personnel panel keeps period and detail navigation with no invented achievements', () => {
+    const markup = personnelPanel({ id: 2, full_name: '<Ana>', role: 'secretary', status: 'Inactive', reviewed: 0, announcements: 0, activity: [] }, { period: '2026-10', maxPeriod: '2026-10', monthLabel: 'October 2026', barangayName: 'Barangay Sampaguita', activityHref: 'captain-reports.html?view=activity&actor=2' });
+    ok(markup.includes('data-person-period')); ok(markup.includes('captain-personnel.html?id=2'));
+    ok(markup.includes('No previous-month baseline')); ok(markup.includes('No dated activity recorded'));
+    ok(markup.includes('Inactive')); ok(markup.includes('&lt;Ana&gt;')); ok(!markup.includes('Consistent contributor')); ok(!markup.includes('NaN'));
+  });
+  test('Personnel panel derives role metrics and contribution shares from recorded activity', () => {
+    equal(typeof reportModel.performancePanelData, 'function', 'Personnel panel projection is available');
+    const activity = [
+      { id: '1', entity: 'alert', title: 'Incident acknowledged', at: '2026-10-02T09:00:00+08:00', actor_role: 'secretary' },
+      { id: '2', entity: 'verification', title: 'Verification approved', at: '2026-10-01T09:00:00+08:00', actor_role: 'secretary' },
+      { id: '3', entity: 'announcement', title: 'Announcement published', at: '2026-10-02T10:00:00+08:00', actor_role: 'secretary' },
+    ];
+    const row = { role: 'secretary', reviewed: 1, announcements: 1, activity };
+    const p = reportModel.performancePanelData(row, { ...row, reviewed: 2, announcements: 0, activity: [] });
+    equal(p.metrics.map(r => r.value), [1, 1, 1]);
+    equal(p.metrics.map(r => r.change), [-50, null, null]);
+    equal(p.total, 3); equal(p.groups.map(r => r.day), ['2026-10-02', '2026-10-01']);
+    equal(p.groups[0].rows.map(r => r.id), ['3', '1']);
+    equal(p.contributions.reduce((sum, r) => sum + r.count, 0), 3);
+    ok(p.contributions.every(r => Math.abs(r.percent - 100 / 3) < 0.001)); equal(activity[0].id, '1');
+  });
+  test('Personnel panel keeps zero history and operational responsibilities honest', () => {
+    equal(typeof reportModel.performancePanelData, 'function');
+    const r = reportModel.performancePanelData({ role: 'rescuer', completedRescues: 1, peopleAssisted: 0, unknownVictimIncidents: 1, activity: [] });
+    equal(r.metrics.map(m => m.value), [1, 0, 1]); equal(r.total, 0); equal(r.contributions, []);
+    ok(r.metrics.every(m => m.change === null));
+    const p = reportModel.performancePanelData({ role: 'responder', completedResponses: 1, activity: [{ entity: 'response', record_id: 1042, at: '2026-10-02T01:00:00Z' }, { entity: 'response', record_id: 1042, at: '2026-10-03T01:00:00Z' }, { entity: 'rescue', at: '2026-10-03T01:00:00Z', actor_role: 'rescuer' }] });
+    equal(p.metrics.map(m => m.value), [1, 2, 1]); equal(p.total, 2);
+  });
   const at = '2026-10-25T12:00:00+08:00';
   const alert = (id, patch = {}) => ({ id, barangay_id: 1, alert_type: 'Flood', status: 'Pending', created_at: '2026-10-03T10:00:00+08:00', responses: [], rescues: [], ...patch });
   const data = patch => ({ barangay_id: 1, at, alerts: [], users: [], ...patch });

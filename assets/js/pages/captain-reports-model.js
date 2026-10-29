@@ -33,6 +33,38 @@ const activityKey = (entity, action, recordId, at) => {
 // Shared strict date validation for labels as well as analytics (Date.parse rolls Feb 30).
 export const reportTimestamp = stamp;
 
+// Presentation-only projection of the existing scoped monthly personnel records.
+export function performancePanelData(row, before = null) {
+  const activityFor = person => (person?.activity || []).filter(event => (!event.actor_role || event.actor_role === row.role) && Number.isFinite(stamp(event.at))).slice().sort((a, b) => stamp(b.at) - stamp(a.at));
+  const activity = activityFor(row), previousActivity = activityFor(before);
+  const acknowledged = rows => rows.filter(event => event.entity === 'alert' && /^(incident|alert) acknowledged$/i.test(event.title)).length;
+  const responses = rows => rows.filter(event => event.entity === 'response');
+  const cases = rows => new Set(responses(rows).filter(event => event.record_id != null).map(event => String(event.record_id))).size;
+  const definitions = row.role === 'secretary' ? [
+    ['Verifications reviewed', row.reviewed, before?.reviewed, 'file-text', ''],
+    ['Announcements published', row.announcements, before?.announcements, 'megaphone', 'purple'],
+    ['Incidents acknowledged', acknowledged(activity), acknowledged(previousActivity), 'circle-check', 'green'],
+  ] : row.role === 'responder' ? [
+    ['Completed response logs', row.completedResponses, before?.completedResponses, 'circle-check', 'green'],
+    ['Response activities', responses(activity).length, responses(previousActivity).length, 'activity', ''],
+    ['Incidents worked on', cases(activity), cases(previousActivity), 'triangle-alert', 'purple'],
+  ] : [
+    ['Completed rescue logs', row.completedRescues, before?.completedRescues, 'life-buoy', 'green'],
+    ['Known people assisted', row.peopleAssisted, before?.peopleAssisted, 'users', ''],
+    ['Cases with unknown counts', row.unknownVictimIncidents, before?.unknownVictimIncidents, 'info', 'amber'],
+  ];
+  const metrics = definitions.map(([label, value, baseline, icon, tone]) => ({ label, value: value ?? 0, icon, tone, change: before && baseline > 0 ? (value - baseline) / baseline * 100 : null }));
+  const days = new Map(), entities = new Map();
+  for (const event of activity) {
+    const date = day(event.at);
+    if (!days.has(date)) days.set(date, []);
+    days.get(date).push(event);
+    entities.set(event.entity, (entities.get(event.entity) || 0) + 1);
+  }
+  const labels = { alert: 'Incident actions', verification: 'Verification actions', announcement: 'Announcements', response: 'Response activities', rescue: 'Rescue activities', feedback: 'Feedback actions', personnel: 'Personnel actions' };
+  return { metrics, activity, total: activity.length, groups: [...days].map(([day, rows]) => ({ day, rows })), contributions: [...entities].map(([entity, count]) => ({ entity, label: labels[entity] || 'Other recorded actions', count, percent: count / activity.length * 100 })) };
+}
+
 /**
  * Pure Captain analytics projection; never mutates the joined API snapshot.
  * `period` is a Manila YYYY-MM month (defaults to snapshot.at). Future events,

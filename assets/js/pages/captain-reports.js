@@ -1,4 +1,5 @@
 import { Auth, Api, Store, UI, Icons, Fmt, e, dialog, pagination, live, facts } from './official-shared.js';
+import { personnelPanel, reportPanel } from './captain-report-panels.js';
 import { Shell } from '../core/shell-official.js';
 import { ALERT_TYPES, ALERT_STATUSES } from '../core/alertMachine.js';
 import { captainReportData, reportPage, reportsCSV, reportTimestamp } from './captain-reports-model.js';
@@ -125,8 +126,7 @@ if (user) {
     if (kind === 'report') {
       const row = data.reports.find(row => String(row.id) === String(id)); if (!row) return null;
       const logs = data.activity.filter(event => ['alert', 'response', 'rescue'].includes(event.entity) && String(event.record_id) === String(id)).sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
-      const completed = (row.rescues || []).filter(r => r.rescue_status === 'Completed'), personnel = [...new Map([...(row.assigned_responder ? [row.assigned_responder] : []), ...(row.assigned_rescuer ? [row.assigned_rescuer] : []), ...(row.responses || []).map(r => r.responder), ...(row.rescues || []).map(r => r.rescuer)].filter(Boolean).map(person => [person.id, person])).values()];
-      return `<div class="reports-detail-top"><h3>A-${e(row.id)} · ${e(row.incident_name || row.alert_type)}</h3>${UI.badge(row.status)}</div>${facts([['Disaster type', row.alert_type], ['Reported at', date(row.created_at)], ['Location', row.location_label || row.household?.address || 'Not recorded'], ['Reporter', row.resident?.full_name || 'Not recorded'], ['Victim count', row.victim_count == null ? 'Unknown' : row.victim_count], ['Resolved at', date(row.resolved_at)]])}<section class="stack-sm"><h3>Incident description</h3><p class="reports-description">${e(row.description || 'No description was recorded.')}</p>${row.photo_name ? `<small>Recorded photo filename: ${e(row.photo_name)}. File contents are not stored in this demo.</small>` : ''}</section><section class="stack-sm"><h3>Related personnel</h3>${personnel.length ? `<div class="reports-toolbar">${personnel.map(person => `<a class="btn btn-small" href="captain-personnel.html?id=${encodeURIComponent(person.id)}">${icon('user')} ${e(person.full_name)}</a>`).join('')}</div>` : '<p>No assigned personnel recorded.</p>'}<a class="reports-link" href="official-alert.html?id=${encodeURIComponent(row.id)}">Open operational alert ${icon('arrow-right', 16)}</a></section><section class="stack-sm"><h3>Recorded history</h3>${detailHistory(logs)}</section><section class="stack-sm"><h3>Outcome</h3><p>${row.status === 'Resolved' ? `Incident marked resolved${row.resolved_at ? ` at ${e(date(row.resolved_at))}` : '; resolution time not recorded'}.` : `Current incident status: ${e(row.status)}.`} ${completed.length ? `${completed.length} Completed rescue log${completed.length === 1 ? '' : 's'} recorded.` : 'No Completed rescue log recorded.'}</p>${completed.length ? `<ul class="reports-detail-history">${completed.map(log => `<li><span class="reports-tile green">${icon('circle-check', 18)}</span><div><strong>${e(log.facility?.name || 'Destination not recorded')}</strong><small>${e(date(log.rescued_at))} · ${e(log.rescuer?.full_name || 'Rescuer not recorded')}</small><p>${e(log.notes || 'No outcome notes recorded.')}</p></div></li>`).join('')}</ul>` : ''}</section><div class="reports-toolbar"><button type="button" class="btn btn-primary" data-print>Print report</button><button type="button" class="btn" data-export-report>Export CSV</button><button type="button" class="btn btn-ghost" data-done>Close</button></div>`;
+      return reportPanel(row, logs);
     }
     if (kind === 'activity') {
       const row = data.activity.find(row => row.id === id); if (!row) return null;
@@ -134,10 +134,10 @@ if (user) {
       return `<h3>${e(row.title)}</h3>${facts([['Responsible user', row.actor], ['Role at action', row.roleLabel], ['Date and time', date(row.at)], ['Activity type', row.entity], ['Affected record', row.record_id == null ? 'Not recorded' : `#${row.record_id}`], ['Evidence', row.source === 'audit' ? 'Recorded audit event' : 'Recorded source timestamp']])}<p class="reports-description">${e(row.summary || 'No additional details were recorded.')}</p><div class="reports-toolbar">${href ? `<a class="btn btn-primary" href="${e(href)}">Open affected record</a>` : ''}<button type="button" class="btn" data-done>Close</button></div>`;
     }
     const row = data.performance[state.role].find(row => String(row.id) === String(id)); if (!row) return null;
-    const roleMetrics = row.role === 'secretary' ? [['Verifications reviewed', row.reviewed], ['Announcements published', row.announcements]] : row.role === 'responder' ? [['Completed response logs', row.completedResponses]] : [['Completed rescue logs', row.completedRescues], ['Known people assisted', row.peopleAssisted], ['Completed cases with unknown victim counts', row.unknownVictimIncidents]];
-    return `<div class="reports-detail-top"><span class="reports-avatar">${e(Fmt.initials(row.full_name))}</span><div><h3>${e(row.full_name)}</h3><p>${e(roleLabel(row.role))} · ${e(row.status)}</p></div></div><p class="reports-note">Recorded work during ${e(monthLabel(data.period))}.</p>${facts(roleMetrics)}<section class="stack-sm"><h3>Recent activity</h3>${detailHistory(row.activity.slice(0, 20))}</section><div class="reports-toolbar"><a class="btn btn-primary" href="captain-personnel.html?id=${encodeURIComponent(row.id)}">View personnel details</a><button type="button" class="btn" data-done>Close</button></div>`;
+    const previous = captainReportData(snapshot, { period: data.previousPeriod, barangayId: user.barangay_id });
+    const before = previous.performance[state.role].find(person => String(person.id) === String(id));
+    return personnelPanel(row, { before, period: data.period, maxPeriod: captainReportData(snapshot).period, monthLabel: monthLabel(data.period), barangayName: snapshot.barangays?.find(place => Number(place.id) === Number(user.barangay_id))?.name, activityHref: href('activity', { actor: row.id, range: 'month' }) });
   }
-  function detailHistory(rows) { return rows.length ? `<ol class="reports-detail-history">${rows.map(row => `<li><span class="reports-tile">${icon('clock', 18)}</span><div><strong>${e(row.title)}</strong><small>${e(date(row.at))} · ${e(row.actor)}</small><p>${e(row.summary)}</p></div></li>`).join('')}</ol>` : '<p>No dated activity is available.</p>'; }
   function openDetail(kind, id) {
     if (!data || !validSession()) return;
     const body = detailBody(kind, id);
@@ -145,14 +145,21 @@ if (user) {
     selected?.el.close();
     const origin = document.activeElement, focusAttribute = ({ report: 'data-report', activity: 'data-activity', person: 'data-person' })[kind];
     const el = dialog(({ report: 'Report details', activity: 'Activity details', person: 'Personnel performance' })[kind], '<div class="reports-dialog-content"></div>', { sheet: false });
-    el.classList.add('reports-dialog'); selected = { kind, id, el }; el.addEventListener('close', () => { if (selected?.el === el) { selected = null; syncURL(null); const target = origin?.isConnected ? origin : [...main.querySelectorAll(`[${focusAttribute}]`)].find(button => button.getAttribute(focusAttribute) === String(id)); (target || main).focus({ preventScroll: true }); } }, { once: true });
+    el.classList.add('reports-dialog'); if (kind !== 'activity') el.classList.add('report-panel-dialog', kind === 'person' ? 'performance-panel-dialog' : 'incident-panel-dialog'); selected = { kind, id, el }; el.addEventListener('close', () => { if (selected?.el === el) { selected = null; syncURL(null); const target = origin?.isConnected ? origin : [...main.querySelectorAll(`[${focusAttribute}]`)].find(button => button.getAttribute(focusAttribute) === String(id)); (target || main).focus({ preventScroll: true }); } }, { once: true });
     updateDetail(); syncURL(id);
   }
   function updateDetail() {
     if (!selected || !data) return;
     const { kind, id, el } = selected, body = detailBody(kind, id), focus = document.activeElement;
-    const focusedAction = el.contains(focus) ? ['data-print', 'data-export-report', 'data-done'].find(attribute => focus.hasAttribute(attribute)) : null;
+    const focusedAction = el.contains(focus) ? ['data-print', 'data-export-report', 'data-done', 'data-person-period'].find(attribute => focus.hasAttribute(attribute)) : null;
     el.querySelector('.reports-dialog-content').innerHTML = body || '<p role="status">This record is no longer available. Close this dialog to continue.</p>';
+    const scroll = el.querySelector('.report-panel-scroll'); if (scroll) scroll.scrollTop = selected.scrollTop || 0;
+    scroll?.addEventListener('scroll', () => { if (selected?.el === el) selected.scrollTop = scroll.scrollTop; });
+    el.querySelector('[data-person-period]')?.addEventListener('change', event => {
+      const period = event.target.value;
+      if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(period) || period > captainReportData(snapshot).period || !validSession()) return;
+      state.period = period; selected.scrollTop = 0; data = captainReportData(snapshot, { period, barangayId: user.barangay_id }); render();
+    });
     el.querySelector('[data-done]')?.addEventListener('click', () => el.close());
     el.querySelector('[data-print]')?.addEventListener('click', () => { if (validSession() && !stale) window.print(); else UI.toast('Refresh reports before printing.', 'error'); });
     el.querySelector('[data-export-report]')?.addEventListener('click', () => { if (validSession() && !stale) download([data.reports.find(row => String(row.id) === String(id))], `incident-A-${id}.csv`); else UI.toast('Refresh reports before exporting.', 'error'); });
