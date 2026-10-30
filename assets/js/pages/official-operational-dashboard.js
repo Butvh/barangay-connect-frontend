@@ -34,7 +34,7 @@ export function renderOperationalDashboard({ main, facilities, user, barangay, r
     .sort((a, b) => Date.parse(b[recordTime]) - Date.parse(a[recordTime]))[0];
   const currentFacility = rescue && response ? facilities.find(f => f.id === response.facility_id) : null;
   const destinationFacility = response?.facility || currentFacility;
-  const assignedAt = rescue ? data.currentAssignedAt : current?.acknowledged_at;
+  const assignedAt = rescue ? data.currentAssignedAt : current?.responder_assigned_at ?? current?.acknowledged_at;
   const title = rescue ? 'Rescuer Dashboard' : 'Responder Dashboard';
   const activityTitle = rescue ? 'Rescue activity log' : 'Response activity log';
   const updateLabel = rescue ? 'Update rescue status' : 'Update status';

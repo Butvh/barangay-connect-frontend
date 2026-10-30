@@ -7,6 +7,7 @@ export const Config = Object.freeze({
   session_key: 'barangay-connect:session:v1',
   timezone: 'Asia/Manila',
   demo_time: '2026-10-04T14:20:00+08:00',
+  assignment_limits: Object.freeze({ responder: 2, rescuer: 1 }),
   roles: Object.freeze(['captain', 'secretary', 'responder', 'rescuer', 'resident']),
 });
 

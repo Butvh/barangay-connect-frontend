@@ -25,8 +25,8 @@ export function incidentAssignment(alert, user) {
   const role = roleOf(user), secretary = ['secretary', 'captain'].includes(role);
   const person = secretary ? alert.assigned_rescuer || alert.assigned_responder : role === 'rescuer' ? alert.assigned_rescuer : alert.assigned_responder;
   const personRole = secretary ? alert.assigned_rescuer ? 'Rescuer' : 'Responder' : 'You';
-  // These are the assignment instants recorded by acknowledge/logResponse in the existing workflow.
-  const assigned = role === 'rescuer' ? (alert.responses || []).map(r => r.responded_at).filter(at => instant(at) !== null).sort((a, b) => instant(a) - instant(b))[0] : alert.acknowledged_at;
+  // An explicit null means no dispatch timestamp was recorded for that legacy assignment.
+  const assigned = Object.hasOwn(alert, `${role}_assigned_at`) ? alert[`${role}_assigned_at`] : role === 'rescuer' ? (alert.responses || []).map(r => r.responded_at).filter(at => instant(at) !== null).sort((a, b) => instant(a) - instant(b))[0] : alert.acknowledged_at;
   const at = secretary ? alert.created_at : assigned;
   return { person: person ? `${person.full_name} (${personRole})` : 'Unassigned', timeLabel: secretary ? 'Reported at:' : 'Assigned at:', at: instant(at) === null ? null : at };
 }

@@ -29,7 +29,7 @@ export function registerCaptainPersonnelTests({ test, equal, ok, rejects, fixtur
     ok(inactive.includes('Inactive')); ok(!inactive.includes('data-detail-reassign')); ok(!inactive.includes('data-detail-remove'));
   });
   test('Personnel Details keeps busy-incident warnings and links without changing their records', () => {
-    const { db, captain } = seed(), row = personnelGet(db, captain, 2), before = JSON.stringify(row);
+    const { db, captain } = seed(), row = personnelGet(db, captain, 3), before = JSON.stringify(row);
     const html = personnelDetails(row, 'Barangay Sampaguita');
     ok(html.includes('assigned to unresolved incidents')); ok(html.includes('official-alert.html?id=1038')); equal(JSON.stringify(row), before);
   });
@@ -116,6 +116,7 @@ export function registerCaptainPersonnelTests({ test, equal, ok, rejects, fixtur
   });
   test('Personnel role changes cannot strand assigned unresolved SOS incidents and do not erase alert history', async () => {
     const { db, captain } = seed();
+    db.alert_responses.find(row => row.alert_id === 1038).response_status = 'Responding';
     for (const id of [2, 3]) { const before = JSON.stringify(db); await rejects(() => reassignPersonnel(db, captain, id, input(), at), 'BUSY'); await rejects(() => removePersonnel(db, captain, id, input(), at), 'BUSY'); equal(JSON.stringify(db), before); equal(personnelGet(db, captain, id).busy_alert_ids, [1038]); }
     db.emergency_alerts.find(a => a.id === 1038).status = 'Resolved'; const alerts = JSON.stringify(db.emergency_alerts);
     removePersonnel(db, captain, 2, input(), at); equal(JSON.stringify(db.emergency_alerts), alerts); equal(db.alert_responses.length, 2);

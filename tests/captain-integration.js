@@ -1,23 +1,25 @@
 export function registerCaptainIntegrationTests({test,equal,ok,rejects,fixture}) {
   test('Each SOS handoff sends the newly assigned operator one assignment notification',async()=>{
     const f=fixture();await f.login(f.authA,'roberto.aquino');await f.login(f.authB,'carlo.mendoza');const before=f.storeA.read().notifications.length;
-    await f.apiA.alerts.acknowledge(1042);equal(f.storeA.read().notifications.slice(before).filter(n=>n.user_id===2).length,1);
-    const next=f.storeA.read().notifications.length;await f.apiB.alerts.logResponse(1042,{response_type:'Assessment',response_status:'Completed'});equal(f.storeA.read().notifications.slice(next).filter(n=>n.user_id===3).length,1);
+    await f.apiA.alerts.acknowledge(1042, { responder_id: 2, expected_revision: 0 });equal(f.storeA.read().notifications.slice(before).filter(n=>n.user_id===2).length,1);
+    const next=f.storeA.read().notifications.length;await f.apiB.alerts.logResponse(1042,{ rescue_required: true, response_type:'Assessment',response_status:'Completed'});equal(f.storeA.read().notifications.slice(next).filter(n=>n.user_id===3).length,0);
+    await f.apiA.alerts.resolve(1038); const assigned=f.storeA.read().notifications.length; await f.apiA.alerts.assign(1042,{role:'rescuer',personnel_id:3,expected_revision:2}); equal(f.storeA.read().notifications.slice(assigned).filter(n=>n.user_id===3).length,1);
   });
   test('SOS acknowledgement preserves the pending incident when no active local responder exists',async()=>{
     const f=fixture();await f.login(f.authA,'roberto.aquino');
     await f.storeA.transact(['users','alerts'],db=>{db.emergency_alerts.find(a=>a.id===1038).status='Resolved';});
     await f.apiA.personnel.remove(2,{effective_date:'2026-10-04',expected_revision:0,notes:'End of assignment'});
-    const before=f.storeA.read();await rejects(()=>f.apiA.alerts.acknowledge(1042),'INVALID_STATE');equal(f.storeA.read(),before);
+    const before=f.storeA.read();await rejects(()=>f.apiA.alerts.acknowledge(1042, { responder_id: 2, expected_revision: 0 }),'VALIDATION');equal(f.storeA.read(),before);
     await f.storeA.transact(['users'],db=>{db.users.push({...db.users.find(u=>u.id===2),id:20,email:'replacement@example.com',is_responder:true,personnel_status:'Active'});});
-    const alert=await f.apiA.alerts.acknowledge(1042);equal([alert.status,alert.assigned_responder_id],['Acknowledged',20]);
+    const alert=await f.apiA.alerts.acknowledge(1042, { responder_id: 20, expected_revision: 0 });equal([alert.status,alert.assigned_responder_id],['Acknowledged',20]);
   });
-  test('SOS response preserves the acknowledged incident until an active local rescuer is available',async()=>{
-    const f=fixture();await f.login(f.authA,'roberto.aquino');await f.login(f.authB,'carlo.mendoza');await f.apiA.alerts.acknowledge(1042);
+  test('SOS assessment succeeds without an active rescuer and waits for manual dispatch',async()=>{
+    const f=fixture();await f.login(f.authA,'roberto.aquino');await f.login(f.authB,'carlo.mendoza');await f.apiA.alerts.acknowledge(1042, { responder_id: 2, expected_revision: 0 });
     await f.storeA.transact(['users'],db=>{db.users.find(u=>u.id===3).personnel_status='Inactive';db.users.push({...db.users.find(u=>u.id===3),id:30,barangay_id:2,personnel_status:'Active'});});
-    const input={response_type:'Assessment',response_status:'Completed'},before=f.storeA.read();await rejects(()=>f.apiB.alerts.logResponse(1042,input),'INVALID_STATE');equal(f.storeA.read(),before);
+    const input={response_type:'Assessment',response_status:'Completed',rescue_required:true}; const assessed=await f.apiB.alerts.logResponse(1042,input);equal([assessed.status,assessed.assigned_rescuer_id],['Responding',null]);
+    await rejects(()=>f.apiA.alerts.assign(1042,{role:'rescuer',personnel_id:3,expected_revision:2}),'VALIDATION');
     await f.storeA.transact(['users'],db=>{db.users.find(u=>u.id===3).personnel_status='Active';});
-    const alert=await f.apiB.alerts.logResponse(1042,input);equal([alert.status,alert.assigned_rescuer_id],['Responding',3]);
+    await f.apiA.alerts.resolve(1038); const alert=await f.apiA.alerts.assign(1042,{role:'rescuer',personnel_id:3,expected_revision:2});equal([alert.status,alert.assigned_rescuer_id],['Responding',3]);
   });
   test('Delayed expiry audit records the effective deadline and separate processing time once',async()=>{
     const f=fixture();await f.login(f.authA,'roberto.aquino');
@@ -40,8 +42,8 @@ export function registerCaptainIntegrationTests({test,equal,ok,rejects,fixture})
     const f=fixture();await f.login(f.authA,'roberto.aquino');await f.login(f.authB,'carlo.mendoza');
     await f.apiA.verification.review(2,{decision:'Approved'}); await f.apiA.feedback.assignTanod(1,6); await f.apiA.feedback.resolve(1);
     const a=await f.apiA.announcements.create({title:'Captain update',content:'Community briefing.'}); await f.apiA.announcements.update(a.id,{title:'Updated briefing',expected_revision:a.revision}); await f.apiA.announcements.archive(a.id);
-    await f.apiA.alerts.acknowledge(1042);await rejects(()=>f.apiA.alerts.logResponse(1042,{response_type:'Assessment',response_status:'Completed'}),'FORBIDDEN');
-    await f.apiB.alerts.logResponse(1042,{response_type:'Assessment',response_status:'Responding',notes:'Assessed'});await f.login(f.authB,'ramon.bautista');await f.apiB.alerts.logRescue(1042,{facility_id:1,rescue_status:'Completed',notes:'Transported'});equal((await f.apiA.alerts.resolve(1042)).status,'Resolved');
+    await f.apiA.alerts.acknowledge(1042, { responder_id: 2, expected_revision: 0 });await rejects(()=>f.apiA.alerts.logResponse(1042,{ rescue_required: true, response_type:'Assessment',response_status:'Completed'}),'FORBIDDEN');
+    await f.apiB.alerts.logResponse(1042,{ rescue_required: true, response_type:'Assessment',response_status:'Responding',notes:'Assessed'});await f.apiA.alerts.resolve(1038);await f.apiA.alerts.assign(1042,{role:'rescuer',personnel_id:3,expected_revision:2});await f.login(f.authB,'ramon.bautista');await f.apiB.alerts.logRescue(1042,{facility_id:1,rescue_status:'Completed',notes:'Transported'});equal((await f.apiA.alerts.resolve(1042)).status,'Resolved');
     const data=await f.apiA.reports.snapshot();ok(data.activity_logs.some(x=>x.entity==='feedback'&&/resolved/i.test(x.action)));ok(data.activity_logs.some(x=>x.actor_id===7&&x.entity==='alert'));ok(data.activity_logs.every(x=>x.barangay_id===1));
   });
   test('Personnel and Reports are Captain-only including direct API calls',async()=>{

@@ -38,8 +38,9 @@ export function registerRescuerDashboardTests({ test, equal, ok, rejects, fixtur
     equal(rescuerDashboardData([alert(1, { responses: [] })], user, now).currentAssignedAt, null);
   });
   test('Rescuer projection follows real logging without loosening the existing forward-only guard', async () => {
-    const f = fixture(); await f.login(f.authB, 'ana.reyes'); await f.apiB.alerts.acknowledge(1042);
-    await f.login(f.authB, 'carlo.mendoza'); await f.apiB.alerts.logResponse(1042, { response_type: 'Assessment', response_status: 'Completed', notes: '' });
+    const f = fixture(); await f.login(f.authB, 'ana.reyes'); await f.apiB.alerts.acknowledge(1042, { responder_id: 2, expected_revision: 0 });
+    await f.login(f.authB, 'carlo.mendoza'); await f.apiB.alerts.logResponse(1042, { rescue_required: true,  response_type: 'Assessment', response_status: 'Completed', notes: '' });
+    await f.login(f.authB, 'ana.reyes'); await f.apiB.alerts.resolve(1038); await f.apiB.alerts.assign(1042, { role: 'rescuer', personnel_id: 3, expected_revision: 2 });
     await f.login(f.authB, 'ramon.bautista'); const currentUser = f.authB.current(); let data = rescuerDashboardData(await f.apiB.alerts.list(), currentUser, f.storeB.now()), before = data.completedToday;
     equal(data.currentAssignedAt, data.current.responses[0].responded_at);
     await f.apiB.alerts.logRescue(1042, { facility_id: 1, rescue_status: 'Completed', notes: 'Fictional rescue dashboard check.' });

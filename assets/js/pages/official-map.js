@@ -4,6 +4,7 @@ import { Shell } from '../core/shell-official.js';
 import { BCMap } from '../core/map.js';
 import { ALERT_STATUSES, ALERT_TYPES, canTransition } from '../core/alertMachine.js';
 import { resolveAlert } from './official-alert-actions.js';
+import { assignAlert } from './official-assignment.js';
 import { monitoringMarkers } from './official-map-model.js';
 
 let user;
@@ -41,7 +42,8 @@ if (user) {
     if (!marker) return UI.empty({ icon: 'map', title: 'Choose a marker', text: 'Select an alert, household or landmark to see details.' });
     if (marker.kind === 'alert') {
       const a = marker.record, acknowledge = canTransition(a, 'acknowledge', user), resolve = canTransition(a, 'resolve', user);
-      return `<h2>${e(alertName(a))}</h2>${UI.badge(a.status)}<p>${e(a.location_label)}</p><small>${e(a.resident?.full_name || 'Reporter not provided')} · ${e(victims(a.victim_count))}<br>${e(Fmt.dateTime(a.created_at))}</small><a class="btn" href="official-alert.html?id=${a.id}">View alert</a><div class="official-map-person"><small>${e(roleLabel(role))} ${e(user.full_name)}</small><button type="button" class="btn btn-primary" data-acknowledge${!acknowledge || busy ? ' disabled' : ''} title="${acknowledge ? 'Acknowledge this alert' : 'Only the Secretary can acknowledge a Pending alert.'}">Acknowledge</button><button type="button" class="btn" disabled title="Staff assignments are automatic in this prototype.">Assign</button><button type="button" class="btn${resolve ? ' btn-danger' : ''}" data-resolve${!resolve || busy ? ' disabled' : ''} title="${resolve ? 'Resolve this alert' : 'Only the Secretary can resolve an alert during Rescue in progress.'}">Resolve</button></div>${a.status === 'Resolved' ? '<small>This alert is resolved.</small>' : ''}`;
+      const admin = ['secretary', 'captain'].includes(role), assign = admin && (a.can_assign_rescuer ? 'rescuer' : a.can_assign_responder ? 'responder' : null);
+      return `<h2>${e(alertName(a))}</h2>${UI.badge(a.status)}<p>${e(a.location_label)}</p><small>${e(a.resident?.full_name || 'Reporter not provided')} · ${e(victims(a.victim_count))}<br>${e(Fmt.dateTime(a.created_at))}</small><a class="btn" href="official-alert.html?id=${a.id}">View alert</a><small>Responder: ${e(a.assigned_responder?.full_name || 'Not assigned')}<br>Rescuer: ${e(a.assigned_rescuer?.full_name || 'Not assigned')}</small><div class="official-map-person"><small>${e(roleLabel(role))} ${e(user.full_name)}</small><button type="button" class="btn btn-primary" data-acknowledge${!acknowledge || busy ? ' disabled' : ''} title="${acknowledge ? 'Select a responder and acknowledge this alert' : 'A barangay official can acknowledge a Pending alert.'}">Acknowledge</button>${assign ? `<button type="button" class="btn btn-primary" data-map-assign="${assign}">Assign ${assign === 'rescuer' ? 'a rescuer' : 'responder'}</button>` : ''}<button type="button" class="btn${resolve ? ' btn-danger' : ''}" data-resolve${!resolve || busy ? ' disabled' : ''} title="${resolve ? 'Resolve this alert' : 'Resolution is available to barangay officials when the workflow permits it.'}">Resolve</button></div>${a.status === 'Resolved' ? '<small>This alert is resolved.</small>' : ''}`;
     }
     if (marker.kind === 'household') return `<h2>Household</h2>${facts([['Address', marker.record.address]])}<small>Approximate household location from the available records.</small>`;
     if (marker.kind === 'complaint') return `<h2>Complaint · ${e(marker.record.category)}</h2>${UI.badge(marker.record.status)}<p>${e(marker.record.location)}</p><p class="official-long-copy">${e(marker.record.description)}</p><small>Pin shown at the matching household location.</small>${destination(`official-feedback.html?type=complaint&id=${marker.record.id}`, 'View complaint')}`;
@@ -49,12 +51,9 @@ if (user) {
     return '<h2>Barangay hall</h2><p>Barangay Sampaguita</p><small>Community landmark on the illustrated map.</small>';
   }
   function bindSummary(root, marker) {
-    root.querySelector('[data-acknowledge]')?.addEventListener('click', async event => {
-      if (busy) return; busy = true; const button = event.currentTarget; button.disabled = true; button.textContent = 'Acknowledging…';
-      try { await Api.alerts.acknowledge(marker.record.id); UI.toast(`${Fmt.alertId(marker.record.id)} acknowledged.`); }
-      catch (err) { UI.toast(err.message, 'error'); }
-      finally { busy = false; if (root.tagName === 'DIALOG') UI.closeDialog(root); await load(); summary.focus({ preventScroll: true }); }
-    });
+    const assigned = async () => { await load(); summary.focus({ preventScroll: true }); };
+    root.querySelector('[data-acknowledge]')?.addEventListener('click', () => { if (root.tagName === 'DIALOG') UI.closeDialog(root); assignAlert(marker.record, { role: 'responder', mode: 'acknowledge', saved: assigned }); });
+    root.querySelector('[data-map-assign]')?.addEventListener('click', event => { const role = event.currentTarget.dataset.mapAssign; if (root.tagName === 'DIALOG') UI.closeDialog(root); assignAlert(marker.record, { role, saved: assigned }); });
     root.querySelector('[data-resolve]')?.addEventListener('click', () => resolveAlert(marker.record, async () => { if (root.tagName === 'DIALOG') UI.closeDialog(root); await load(); summary.focus({ preventScroll: true }); }));
   }
   function select(marker, openSheet = false) {

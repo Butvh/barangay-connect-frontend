@@ -21,9 +21,9 @@ export function registerAlertsAccessTests({ test, equal, ok, rejects, fixture })
     const f = fixture(); await f.login(f.authA, 'ana.reyes'); await f.login(f.authB, 'carlo.mendoza');
     ok(!(await f.apiB.alerts.list()).some(a => a.id === 1042));
     let changes = 0; const off = f.apiB.subscribe('alerts', () => changes++);
-    await f.apiA.alerts.acknowledge(1042); ok(changes > 0); equal((await f.apiB.alerts.get(1042)).status, 'Acknowledged');
+    await f.apiA.alerts.acknowledge(1042, { responder_id: 2, expected_revision: 0 }); ok(changes > 0); equal((await f.apiB.alerts.get(1042)).status, 'Acknowledged');
     await f.login(f.authB, 'ramon.bautista'); await rejects(() => f.apiB.alerts.get(1042), 'FORBIDDEN');
-    await f.login(f.authB, 'carlo.mendoza'); await f.apiB.alerts.logResponse(1042, { response_type: 'Assessment', response_status: 'Responding', notes: 'Coordinate extraction.' });
+    await f.login(f.authB, 'carlo.mendoza'); await f.apiB.alerts.logResponse(1042, { rescue_required: true,  response_type: 'Assessment', response_status: 'Responding', notes: 'Coordinate extraction.' });await f.apiA.alerts.resolve(1038);await f.apiA.alerts.assign(1042,{role:'rescuer',personnel_id:3,expected_revision:2});
     await f.login(f.authB, 'ramon.bautista'); equal((await f.apiB.alerts.get(1042)).status, 'Responding');
     await f.apiB.alerts.logRescue(1042, { facility_id: 1, rescue_status: 'Completed', notes: 'Transported safely.' }); await f.apiA.alerts.resolve(1042);
     equal((await f.apiB.alerts.get(1042)).status, 'Resolved');
