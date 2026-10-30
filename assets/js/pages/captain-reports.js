@@ -1,6 +1,7 @@
 import { Auth, Api, Store, UI, Icons, Fmt, e, dialog, pagination, live } from './official-shared.js';
 import { personnelPanel, reportPanel } from './captain-report-panels.js';
 import { activityPageData, activityRows, activityPagination, activityDetails } from './captain-activity.js';
+import { personnelPerformanceData, personnelPerformancePage } from './captain-performance.js';
 import { Shell } from '../core/shell-official.js';
 import { ALERT_TYPES, ALERT_STATUSES } from '../core/alertMachine.js';
 import { captainReportData, reportPage, reportsCSV, reportTimestamp } from './captain-reports-model.js';
@@ -21,6 +22,7 @@ if (user) {
   const main = Shell.official({ active: 'Reports' }); main.classList.add('reports-page');
   const params = new URLSearchParams(location.search), view = Object.hasOwn(VIEWS, params.get('view')) ? params.get('view') : 'overview';
   if (view === 'activity') main.classList.add('captain-activity-page');
+  if (view === 'performance') main.classList.add('personnel-performance-page');
   const state = { q: (params.get('q') || '').slice(0, 200), type: ALERT_TYPES.includes(params.get('type')) ? params.get('type') : '', status: ALERT_STATUSES.includes(params.get('status')) ? params.get('status') : '', sort: ['newest', 'oldest', 'type'].includes(params.get('sort')) ? params.get('sort') : 'newest', page: Math.max(1, Math.trunc(Number(params.get('page'))) || 1), role: Object.hasOwn(ROLES, params.get('role')) ? params.get('role') : 'responder', entity: params.get('entity') || '', actor: params.get('actor') || '', range: ['month', 'week'].includes(params.get('range')) ? params.get('range') : '', period: /^\d{4}-(0[1-9]|1[0-2])$/.test(params.get('period') || '') ? params.get('period') : '' };
   let data = null, snapshot = null, version = 0, stale = '', active = true, selected = null, requested = params.get('id');
   main.innerHTML = UI.skeleton(4);
@@ -97,9 +99,7 @@ if (user) {
     return panel('Recorded activity', `<p class="reports-note">Includes source records and new audit events. Earlier actions without a recorded actor or timestamp are not reconstructed.</p><form class="reports-filters activity-filters" data-filter-form>${searchField('activity-search', 'Search activity', 'Search activity')}${selectField('activity-entity', 'Activity type', 'entity', types.map(type => [type, type.charAt(0).toUpperCase() + type.slice(1)]), state.entity, 'All types')}${selectField('activity-actor', 'Responsible user', 'actor', actors, state.actor, 'All users')}${selectField('activity-range', 'Date range', 'range', [['month', 'Selected month'], ['week', 'Past 7 days']], state.range, 'All dates')}<small class="activity-search-help">Search by action, person, or record ID…</small></form><div class="activity-filter-actions"><button type="button" class="activity-captain-filter" data-captain-filter aria-pressed="${state.actor === String(user.id)}">${icon('shield-check', 18)} Captain actions</button><button type="button" class="reports-link" data-clear-activity>${icon('loader-circle', 18)} Clear filters</button></div><div class="activity-results-toolbar"><p role="status">${p.total} ${p.total === 1 ? 'activity' : 'activities'} found</p>${selectField('activity-sort', 'Sort by', 'sort', [['newest', 'Newest first'], ['oldest', 'Oldest first']], state.sort === 'oldest' ? 'oldest' : 'newest')}</div>${activityRows(p.rows)}${activityPagination(p)}`, '', 'captain-activity-panel');
   }
   function performancePage() {
-    const role = state.role, rows = data.performance[role], count = key => rows.reduce((sum, row) => sum + row[key], 0);
-    const metrics = role === 'secretary' ? [mini(count('reviewed'), 'Verifications reviewed'), mini(count('announcements'), 'Announcements published'), mini(rows.length, 'Personnel with available records')] : role === 'responder' ? [mini(count('completedResponses'), 'Completed response logs'), mini(rows.length, 'Personnel with available records'), mini(data.metrics.responseSampleSize, 'Incidents with response time', 'Across all responders')] : [mini(count('completedRescues'), 'Completed rescue logs'), mini(data.metrics.peopleAssisted, 'Known people assisted', 'Deduplicated across personnel'), mini(data.metrics.unknownVictimIncidents, 'Completed cases with unknown counts')];
-    return panel('Performance by role', `${roleTabs()}<div id="reports-performance-results" role="tabpanel" aria-labelledby="reports-role-${role}" tabindex="0"><div class="reports-mini-metrics">${metrics.join('')}</div>${peopleList(rows)}<p class="reports-note">${e(monthLabel(data.period))}. ${role === 'secretary' ? 'Reviews use recorded decisions and review dates. Publications use the recorded author and publication date.' : role === 'responder' ? 'Completed responses use actual Completed response logs and their recorded dates.' : 'Completed rescues use actual Completed rescue logs. Known people counts exclude unknown counts.'} Historical staff remain visible when work was recorded. Select a person for their activity and record links.</p></div>`);
+    return panel('Performance by role', personnelPerformancePage(personnelPerformanceData(snapshot, { role: state.role }, data)), '', 'pp-panel');
   }
   function render() {
     if (!data || !active || !validSession()) return;

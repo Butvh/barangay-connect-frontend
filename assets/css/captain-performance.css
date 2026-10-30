@@ -1,0 +1,76 @@
+/* Only the Personnel Performance subpage; existing detail panels stay unchanged. */
+.official-main.reports-page.personnel-performance-page{gap:14px}
+.personnel-performance-page .pp-panel{padding:20px 22px 22px;gap:14px;border-color:#e0e8f2;box-shadow:0 6px 20px rgba(30,90,168,.035)}
+.personnel-performance-page .pp-panel h2{font-size:20px;line-height:26px}
+.pp-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.pp-tabs button{display:flex;align-items:center;justify-content:center;gap:14px;min-height:44px;padding:8px 12px;border:1px solid #deebfb;border-radius:8px;background:#f2f7fd;color:#164785;font-weight:500}
+.pp-tabs button:hover{background:#e6f0fd}
+.pp-tabs button[aria-selected=true]{background:#1f5cb5;border-color:#1f5cb5;color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+.pp-tab-count{display:grid;place-items:center;min-width:28px;height:28px;padding:0 6px;border-radius:50%;background:#dceafb;font-size:12px;line-height:16px}
+.pp-tabs [aria-selected=true] .pp-tab-count{background:rgba(255,255,255,.2)}
+.pp-summaries{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:2px}
+.pp-summary{position:relative;display:flex;align-items:center;gap:20px;min-height:104px;padding:16px 14px;border:1px solid #dceafb;border-radius:10px;background:#f0f6ff;overflow:hidden}
+.pp-summary-1{background:#f2fbf7;border-color:#dcefe7}
+.pp-summary-2{background:#fff7f0;border-color:#ffe5d5}
+.pp-summary-icon{position:relative;z-index:1;display:grid;place-items:center;width:54px;height:54px;flex:none;border-radius:50%;color:#1e5aa8;background:#dfecff}
+.pp-summary-1 .pp-summary-icon{background:#e1f5ec;color:#168251}
+.pp-summary-2 .pp-summary-icon{background:#ffead9;color:#c7540c}
+.pp-summary-copy{position:relative;z-index:1;display:flex;flex-direction:column;min-width:0}
+.pp-summary-copy>strong{font-size:28px;line-height:32px;font-weight:650;color:#101e3a}
+.pp-summary-copy>span{line-height:21px;color:#17243b}
+.pp-summary-copy>small{color:#576b8c;line-height:18px}
+.pp-comparison{position:relative;z-index:1;display:flex;align-items:flex-end;flex-direction:column;gap:3px;margin-left:auto;max-width:112px;text-align:right;flex-shrink:0}
+.pp-comparison small{font-size:11px;line-height:16px;color:#576b8c}
+.pp-change{border-radius:20px;padding:2px 8px;background:#e0f4e9;color:#176b40;font-size:12px;white-space:nowrap}
+.pp-change-down{background:#fff1d6;color:#8a5300}
+.pp-decoration{position:absolute;bottom:12px;right:18px;color:#8cb5eb;opacity:.2;pointer-events:none}
+.pp-summary-0 .pp-summary-copy,.pp-summary-2 .pp-summary-copy{padding-right:48px}
+.pp-decoration-bars{display:flex;align-items:flex-end;gap:5px;height:56px;opacity:.24;color:#f08042}
+.pp-decoration-bars i{display:block;width:12px;height:28%;border-radius:4px;background:currentColor}
+.pp-decoration-bars i:nth-child(2){height:48%}.pp-decoration-bars i:nth-child(3){height:70%}.pp-decoration-bars i:nth-child(4){height:100%}
+.pp-chart-overview{display:grid;grid-template-columns:1.58fr 1fr;gap:16px;margin-top:18px}
+.pp-trend,.pp-overview{min-width:0;padding:14px 18px;border:1px solid #e3ebf5;border-radius:10px}
+.personnel-performance-page .pp-panel h3{font-size:16px;line-height:24px;font-weight:600;color:#17243b}
+.pp-trend figure{margin:14px 0 0}
+.pp-chart{height:118px;display:grid;grid-template-columns:22px minmax(0,1fr);gap:0}
+.pp-chart-axis{display:flex;justify-content:space-between;flex-direction:column;height:106px;transform:translateY(-7px);font-size:11px;line-height:14px;color:#576b8c}
+.pp-chart-plot{position:relative;min-width:0}
+.pp-chart-grid{position:absolute;inset:0 0 26px;display:flex;flex-direction:column;justify-content:space-between;border-left:1px solid #e0e8f2}
+.pp-chart-grid i{height:1px;background:#e8edf4;width:100%}
+.pp-chart-columns{position:relative;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));height:100%}
+.pp-chart-column{display:flex;flex-direction:column;align-items:center;min-width:0}
+.pp-chart-track{display:flex;align-items:flex-end;justify-content:center;width:100%;height:92px}
+.pp-chart-bar{position:relative;display:block;width:48%;max-width:60px;background:#d4e5fb;border-radius:4px 4px 0 0}
+.pp-chart-column.is-selected .pp-chart-bar{background:#1f5cb5}
+.pp-chart-bar strong{position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);display:grid;place-items:center;min-width:32px;height:30px;padding:0 7px;border:1px solid #e0e8f2;border-radius:7px;background:white;color:#164785;font-size:13px;line-height:18px;box-shadow:0 2px 3px rgba(23,32,51,.04)}
+.pp-chart-month{font-size:12px;line-height:18px;color:#576b8c;margin-top:6px}
+.pp-chart-column.is-selected .pp-chart-month{color:#17243b;font-weight:600}
+.pp-overview-heading{display:flex;align-items:center;gap:12px;padding-bottom:10px}
+.pp-overview-heading>span{display:grid;place-items:center;width:38px;height:38px;flex:none;border-radius:50%;background:#e6f0fd;color:#1e5aa8}
+.personnel-performance-page .pp-overview-heading h3{font-size:14px;line-height:20px;font-weight:400}
+.pp-overview-heading h3 small{display:block;color:#17243b;font-size:13px;line-height:20px}
+.pp-overview dl{margin:0}
+.pp-overview dl>div{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid #edf1f6;padding:10px 0}
+.pp-overview dl>div:last-child{padding-bottom:2px}
+.pp-overview dt{font-size:13px;line-height:18px;color:#576b8c}
+.pp-overview dd{margin:0;font-weight:600;color:#17243b}
+.pp-personnel{margin-top:22px}
+.pp-personnel-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.pp-personnel-heading small{color:#667b9c}
+.pp-personnel ul{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.pp-person{display:grid;grid-template-columns:48px minmax(100px,1fr) minmax(100px,1fr) minmax(130px,240px) 18px;align-items:center;gap:22px;width:100%;min-height:72px;padding:10px 18px;border:1px solid #e3ebf5;border-radius:10px;background:#fff;text-align:left;color:#17243b}
+.pp-person:hover{background:#f5f9ff;border-color:#b8d3f4}
+.pp-avatar{display:grid;place-items:center;width:48px;height:48px;border-radius:50%;background:#d8e9ff;color:#164785;font-size:16px;font-weight:600}
+.pp-person-name,.pp-person-metric{display:flex;flex-direction:column;gap:2px;min-width:0;overflow-wrap:anywhere}
+.pp-person-name small,.pp-person-metric small{font-size:13px;line-height:18px;color:#576b8c}
+.pp-status{display:inline-flex;align-items:center;justify-self:start;gap:7px;max-width:100%;border-radius:20px;padding:6px 14px;background:#f1f3f7;color:#475467;font-size:12px;line-height:18px;overflow-wrap:anywhere}
+.pp-status i{display:inline-block;width:8px;height:8px;border-radius:50%;background:currentColor;flex:none}
+.pp-status.is-active{background:#e3f7ed;color:#176b40}
+.pp-note{display:flex;gap:8px;align-items:flex-start;margin-top:16px;color:#667b9c;font-size:12px;line-height:18px}
+.pp-note svg{margin-top:1px;color:#8497b5}
+.pp-empty{padding:18px;border:1px solid #e3ebf5;border-radius:10px;color:#576b8c}
+@media(min-width:768px) and (max-width:1450px){.pp-summary-1{display:grid;grid-template-columns:46px minmax(0,1fr);gap:4px 12px}.pp-summary-1 .pp-summary-icon{grid-column:1;grid-row:1/3}.pp-summary-1 .pp-comparison{grid-column:2;flex-direction:row;align-items:center;justify-content:flex-start;flex-wrap:wrap;max-width:none;margin-left:0;text-align:left}}
+@media(max-width:1450px){.pp-summary{gap:12px}.pp-summary-icon{width:46px;height:46px}.pp-summary-copy>span{font-size:13px;line-height:19px}.pp-summary-copy>small{font-size:11px;line-height:16px}.pp-comparison{max-width:82px}.pp-summary-0 .pp-summary-copy,.pp-summary-2 .pp-summary-copy{padding-right:20px}.pp-decoration{right:10px;opacity:.12}.pp-person{gap:16px;grid-template-columns:48px minmax(100px,1fr) minmax(80px,.8fr) minmax(130px,200px) 18px}}
+@media(max-width:1100px){.pp-summaries{gap:10px}.pp-summary{align-items:flex-start;gap:10px;padding:14px 12px}.pp-summary-icon{width:38px;height:38px}.pp-summary-icon svg{width:24px;height:24px}.pp-summary-copy>strong{font-size:26px;line-height:30px}.pp-summary-1{grid-template-columns:38px minmax(0,1fr)}.pp-summary-0 .pp-summary-copy,.pp-summary-2 .pp-summary-copy{padding-right:0}.pp-decoration{display:none}.pp-chart-overview{grid-template-columns:1.3fr 1fr}.pp-trend,.pp-overview{padding:14px}.pp-person{grid-template-columns:40px minmax(95px,1fr) auto minmax(100px,150px) 18px;gap:12px}.pp-avatar{width:40px;height:40px}}
+@media(max-width:767px){.personnel-performance-page .pp-panel{padding:16px;gap:12px}.pp-tabs button{gap:8px;padding:8px 6px;font-size:12px}.pp-tabs button>svg{width:18px;height:18px}.pp-tab-count{min-width:22px;height:22px;padding:0 4px;font-size:11px}.pp-chart-overview{grid-template-columns:1fr}.pp-summaries{grid-template-columns:1fr}.pp-summary{align-items:center;min-height:96px;padding:16px;gap:18px}.pp-summary-icon{width:48px;height:48px}.pp-summary-copy>span{font-size:14px;line-height:21px}.pp-summary-copy>small{font-size:12px;line-height:18px}.pp-comparison{margin-left:auto;align-items:flex-end;text-align:right;max-width:108px}.pp-decoration{display:flex}.pp-summary-0 .pp-summary-copy,.pp-summary-2 .pp-summary-copy{padding-right:42px}.pp-person{grid-template-columns:40px minmax(0,1fr) 18px;gap:6px 12px;padding:12px}.pp-avatar{grid-row:1/3}.pp-person-name{grid-column:2;grid-row:1}.pp-status{grid-column:2;grid-row:2;padding:2px 9px}.pp-person-metric{grid-column:2;grid-row:3;flex-direction:row;align-items:baseline;gap:6px}.pp-person>svg{grid-column:3;grid-row:1/4}.pp-note{font-size:11px;line-height:17px}}
+@media(max-width:440px){.pp-tabs button{display:grid;grid-template-columns:1fr;justify-items:center;gap:4px;font-size:11px}.pp-tabs button>svg{display:none}.pp-tab-count{min-width:20px;height:20px}.pp-summary{gap:12px}.pp-summary-1{display:grid;grid-template-columns:42px minmax(0,1fr);gap:4px 12px}.pp-summary-1 .pp-summary-icon{grid-column:1;grid-row:1/3}.pp-summary-1 .pp-comparison{grid-column:2;flex-direction:row;align-items:center;justify-content:flex-start;flex-wrap:wrap;max-width:none;margin-left:0;text-align:left}.pp-summary-icon{width:42px;height:42px}.pp-summary-copy>span{font-size:13px}.pp-chart-month{font-size:11px}.pp-personnel-heading{align-items:baseline}.personnel-performance-page .pp-personnel-heading h3{font-size:14px}.pp-personnel-heading small{font-size:11px}}

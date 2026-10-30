@@ -149,13 +149,17 @@ export function captainReportData(snapshot = {}, options = {}) {
   }
   for (const row of audit) add(`audit-${row.id}`, row.entity || 'activity', row.action || 'Activity recorded', row.at, row.actor_id, row.actor_name || person(row.actor_id), row.actor_role, row.record_id, row.summary, row.href || '', 'audit');
   activity.sort((a, b) => stamp(b.at) - stamp(a.at) || a.id.localeCompare(b.id));
-  const performance = {};
-  for (const role of ['secretary', 'responder', 'rescuer']) {
+  const personnelIds = (role, selected = period) => {
     const ids = new Set(users.filter(row => row[`is_${role}`]).map(row => String(row.id)));
     for (const row of personnel) if (row.role === role || (row.history || []).some(h => h.role === role || h.to_role === role || h.from_role === role)) ids.add(String(row.user_id ?? row.id));
     // Administrative work is shared with Captains; it cannot prove a Secretary role.
-    for (const row of audit) if (row.actor_role === role && row.actor_id != null && inPeriod(row.at)) ids.add(String(row.actor_id));
-    for (const row of alerts) for (const log of role === 'responder' ? row.responses || [] : role === 'rescuer' ? row.rescues || [] : []) if (log[`${role}_id`] != null && inPeriod(log[role === 'responder' ? 'responded_at' : 'rescued_at'])) ids.add(String(log[`${role}_id`]));
+    for (const row of audit) if (row.actor_role === role && row.actor_id != null && inPeriod(row.at, selected)) ids.add(String(row.actor_id));
+    for (const row of alerts) for (const log of role === 'responder' ? row.responses || [] : role === 'rescuer' ? row.rescues || [] : []) if (log[`${role}_id`] != null && inPeriod(log[role === 'responder' ? 'responded_at' : 'rescued_at'], selected)) ids.add(String(log[`${role}_id`]));
+    return ids;
+  };
+  const performance = {};
+  for (const role of ['secretary', 'responder', 'rescuer']) {
+    const ids = personnelIds(role);
     performance[role] = [...ids].map(id => {
       const record = personnel.find(row => String(row.user_id ?? row.id) === id), u = user(id);
       const ownResponses = alerts.flatMap(row => unique(row.responses || []).filter(r => String(r.responder_id) === id && r.response_status === 'Completed' && inPeriod(r.responded_at)).map(r => ({ ...r, alert: row })));
@@ -167,9 +171,24 @@ export function captainReportData(snapshot = {}, options = {}) {
     }).sort((a, b) => a.full_name.localeCompare(b.full_name));
   }
   const trendMonths = []; let cursor = period; for (let i = 0; i < 6 && cursor; i++) { trendMonths.unshift(cursor); cursor = previous(cursor); }
+  // Count dated work once, rather than rebuilding all report projections for six months.
+  const workByMonth = new Map(trendMonths.map(selected => [selected, { completedResponses: 0, completedRescues: 0, reviewed: 0 }]));
+  for (const row of alerts) for (const [key, collection, actor, status, date] of [
+    ['completedResponses', row.responses, 'responder_id', 'response_status', 'responded_at'],
+    ['completedRescues', row.rescues, 'rescuer_id', 'rescue_status', 'rescued_at'],
+  ]) for (const log of unique(collection || [])) {
+    if (log[actor] == null || log[status] !== 'Completed' || !happened(log[date])) continue;
+    const work = workByMonth.get(month(log[date])); if (work) work[key]++;
+  }
+  const secretariesByMonth = new Map(trendMonths.map(selected => [selected, personnelIds('secretary', selected)]));
+  for (const row of verifications) {
+    if (!['Approved', 'Rejected'].includes(row.review_status) || !happened(row.reviewed_at)) continue;
+    const selected = month(row.reviewed_at), work = workByMonth.get(selected);
+    if (work && secretariesByMonth.get(selected).has(String(row.reviewed_by)) && [null, 'secretary'].includes(recordedRole('verification', row.id, row.reviewed_by, row.reviewed_at))) work.reviewed++;
+  }
   const trend = trendMonths.map(selected => {
     const reports = alerts.filter(row => inPeriod(row.created_at, selected)), times = reports.map(firstResponse).filter(value => value !== null), rescues = alerts.filter(row => completedIn(row, selected));
-    return { period: selected, incidents: reports.length, resolved: alerts.filter(row => row.status === 'Resolved' && inPeriod(row.resolved_at, selected)).length, averageResponseMinutes: mean(times), responseSampleSize: times.length, peopleAssisted: rescues.filter(row => knownCount(row.victim_count)).reduce((sum, row) => sum + Number(row.victim_count), 0), unknownVictimIncidents: rescues.filter(row => !knownCount(row.victim_count)).length };
+    return { period: selected, ...workByMonth.get(selected), incidents: reports.length, resolved: alerts.filter(row => row.status === 'Resolved' && inPeriod(row.resolved_at, selected)).length, averageResponseMinutes: mean(times), responseSampleSize: times.length, peopleAssisted: rescues.filter(row => knownCount(row.victim_count)).reduce((sum, row) => sum + Number(row.victim_count), 0), unknownVictimIncidents: rescues.filter(row => !knownCount(row.victim_count)).length };
   });
   const categories = ALERT_TYPES.map(type => ({ type, count: incidents.filter(row => row.alert_type === type).length, previous: previousIncidents.filter(row => row.alert_type === type).length }));
   const metrics = { incidents: incidents.length, previousIncidents: previousIncidents.length, incidentChange: change(incidents.length, previousIncidents.length), incidentComparison: previousIncidents.length ? `${Math.abs(change(incidents.length, previousIncidents.length)).toFixed(0)}% ${incidents.length >= previousIncidents.length ? 'more' : 'fewer'} than last month` : incidents.length ? 'New this month' : 'No incidents in either month', averageResponseMinutes: mean(responseTimes), responseSampleSize: responseTimes.length, responseExcluded: incidents.length - responseTimes.length, peopleAssisted, unknownVictimIncidents: completedRescues.filter(row => !knownCount(row.victim_count)).length, completedRescueIncidents: completedRescues.length, completedVerifications: reviewed.length, approvedVerifications: reviewed.filter(row => row.review_status === 'Approved').length, rejectedVerifications: reviewed.filter(row => row.review_status === 'Rejected').length, resolvedFeedback: resolvedFeedback.length, feedbackResolvedThisMonth: missingFeedbackDates ? null : monthlyFeedback, recordedFeedbackResolutions: new Set(feedbackAudit.map(row => String(row.record_id))).size, invalidIncidentDates: alerts.filter(row => !Number.isFinite(stamp(row.created_at))).length, uncategorizedIncidents: incidents.filter(row => !ALERT_TYPES.includes(row.alert_type)).length, active: alerts.filter(row => row.status !== 'Resolved').length, resolved: incidents.filter(row => row.status === 'Resolved').length };
