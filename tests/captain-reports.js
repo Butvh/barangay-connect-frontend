@@ -1,8 +1,43 @@
 import { captainReportData, reportPage, reportsCSV } from '../assets/js/pages/captain-reports-model.js';
 import * as reportModel from '../assets/js/pages/captain-reports-model.js';
 import { personnelPanel, reportPanel } from '../assets/js/pages/captain-report-panels.js';
+import { activityPageData, activityRows, activityDetails, activityPagination } from '../assets/js/pages/captain-activity.js';
 
 export function registerCaptainReportsTests({ test, equal, ok, fixture }) {
+  test('Activity filters combine search, type, responsible user and Manila date range without mutating records', () => {
+    const rows = [
+      { id: 'a', entity: 'alert', actor_id: 7, actor: 'Captain', title: 'Alert resolved', record_id: 1038, summary: 'Mabini Street', at: '2026-10-01T00:00:00+08:00' },
+      { id: 'b', entity: 'alert', actor_id: 1, actor: 'Ana', title: 'Alert acknowledged', record_id: 1038, at: '2026-09-30T23:59:00+08:00' },
+      { id: 'c', entity: 'rescue', actor_id: 7, actor: 'Captain', title: 'Rescue completed', record_id: 1038, at: '2026-10-04T09:00:00+08:00' },
+    ], before = JSON.stringify(rows), context = { period: '2026-10', at: '2026-10-04T14:20:00+08:00' };
+    equal(activityPageData(rows, { q: ' 1038 ', entity: 'alert', actor: '7', range: 'month' }, context).rows.map(r => r.id), ['a']);
+    equal(activityPageData(rows, { q: 'mabini', range: 'week' }, context).total, 1);
+    equal(activityPageData(rows, { q: 'missing' }, context).total, 0);
+    equal(activityPageData(rows, { range: 'month' }, context).rows.map(r => r.id), ['c', 'a']);
+    equal(JSON.stringify(rows), before);
+  });
+  test('Activity sorting and ten-row pagination retain deterministic order and clamp empty or stale pages', () => {
+    const rows = Array.from({ length: 23 }, (_, i) => ({ id: String(i + 1), at: `2026-10-${String(i + 1).padStart(2, '0')}T10:00:00+08:00` }));
+    const p = activityPageData(rows, { sort: 'oldest', page: 2 });
+    equal(p.rows.map(r => r.id), Array.from({ length: 10 }, (_, i) => String(i + 11))); equal(p.total, 23); equal(p.pages, 3);
+    equal(activityPageData(rows, { page: 99 }).page, 3); equal(activityPageData([], { page: 2 }).page, 1);
+    const html = activityPagination(p); ok(html.includes('Showing 11–20 of 23 activities')); ok(html.includes('data-page="3"')); ok(html.includes('aria-current="page"'));
+  });
+  test('Activity details distinguish audit evidence from source timestamps and keep safe record navigation', () => {
+    const row = { id: 'audit-4', entity: 'alert', title: 'Alert resolved', actor: 'Ana Reyes', roleLabel: 'Secretary', record_id: 1038, at: '2026-10-12T08:33:00+08:00', source: 'audit', summary: 'Recorded <update>', href: 'official-alert.html?id=1038' };
+    const html = activityDetails(row, 'A-1038 · Other · Mabini Street');
+    for (const value of ['Review audit information and the linked record.', 'Activity information', 'Linked record', 'Event description', 'Ana Reyes', 'Secretary', '#1038', 'Recorded audit event', 'Recorded &lt;update&gt;', 'A-1038 · Other · Mabini Street']) ok(html.includes(value), `missing ${value}`);
+    equal((html.match(/href="official-alert.html\?id=1038"/g) || []).length, 2); ok(!html.includes('<update>'));
+    const source = activityDetails({ ...row, actor: 'Not recorded', roleLabel: 'Not recorded', source: 'record', summary: '', href: 'javascript:alert(1)' });
+    ok(source.includes('Recorded source timestamp')); ok(source.includes('No additional details were recorded.')); ok(!source.includes('Recorded audit event')); ok(!source.includes('<a '));
+    ok(!source.includes('data-open-affected')); ok(source.includes('data-done'));
+    ok(activityDetails({ ...row, entity: 'constructor' }).includes('Activity #1038'));
+  });
+  test('Activity rows keep date/time and chevrons without adding category badges or inventing actors', () => {
+    const html = activityRows([{ id: 'a', entity: 'rescue', title: 'Rescue · Completed', summary: '<Full note>', actor: 'Not recorded', actor_role: null, at: '2026-10-04T15:19:00+08:00' }]);
+    ok(html.includes('Oct 4, 2026')); ok(html.includes('3:19 PM')); ok(html.includes('chevron-right')); ok(html.includes('&lt;Full note&gt;'));
+    ok(!html.includes('badge')); ok(html.includes('By Not recorded')); ok(!html.includes('By Captain'));
+  });
   test('Report panel keeps the selected incident, actual personnel roles and recorded destination', () => {
     const markup = reportPanel({ id: 1044, alert_type: 'Flood', status: 'Resolved', victim_count: null, assigned_responder: { id: 2, full_name: 'Carlo Mendoza' }, assigned_rescuer: { id: 3, full_name: 'Ramon Bautista' }, responses: [{ response_status: 'Responding' }], rescues: [{ rescue_status: 'Completed', rescued_at: '2026-10-06T15:18:00+08:00', rescuer: { id: 3, full_name: 'Ramon Bautista' }, facility: { name: 'Recorded evacuation center' }, notes: 'Arrived safely.' }] }, []);
     ok(markup.includes('official-alert.html?id=1044')); ok(markup.includes('captain-personnel.html?id=3'));
