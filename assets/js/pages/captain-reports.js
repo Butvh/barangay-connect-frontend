@@ -1,5 +1,6 @@
-import { Auth, Api, Store, UI, Icons, Fmt, e, dialog, pagination, live, facts } from './official-shared.js';
+import { Auth, Api, Store, UI, Icons, Fmt, e, dialog, pagination, live } from './official-shared.js';
 import { personnelPanel, reportPanel } from './captain-report-panels.js';
+import { activityPageData, activityRows, activityPagination, activityDetails } from './captain-activity.js';
 import { Shell } from '../core/shell-official.js';
 import { ALERT_TYPES, ALERT_STATUSES } from '../core/alertMachine.js';
 import { captainReportData, reportPage, reportsCSV, reportTimestamp } from './captain-reports-model.js';
@@ -12,7 +13,6 @@ const minutes = value => value === null || value === undefined ? 'Unavailable' :
 const monthLabel = value => /^\d{4}-\d{2}$/.test(value || '') ? new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric', timeZone: 'Asia/Manila' }).format(new Date(`${value}-01T00:00:00+08:00`)) : 'Selected month';
 const shortMonth = value => new Intl.DateTimeFormat('en-US', { month: 'short', timeZone: 'Asia/Manila' }).format(new Date(`${value}-01T00:00:00+08:00`));
 const icon = (name, size = 20) => Icons.svg(name, { size });
-const safeHref = value => /^(?:official-(?:alerts?|verifications?|feedback|announcements|map|facilities)|captain-(?:reports|personnel))\.html(?:\?[^#]*)?$/.test(String(value || '')) ? String(value) : null;
 let user;
 try { user = Auth.requireRole(['captain']); }
 catch (error) { if (!['AUTH', 'FORBIDDEN'].includes(error.code)) document.querySelector('#app').innerHTML = UI.empty({ title: 'Unable to open reports', text: error.message }); }
@@ -20,6 +20,7 @@ catch (error) { if (!['AUTH', 'FORBIDDEN'].includes(error.code)) document.queryS
 if (user) {
   const main = Shell.official({ active: 'Reports' }); main.classList.add('reports-page');
   const params = new URLSearchParams(location.search), view = Object.hasOwn(VIEWS, params.get('view')) ? params.get('view') : 'overview';
+  if (view === 'activity') main.classList.add('captain-activity-page');
   const state = { q: (params.get('q') || '').slice(0, 200), type: ALERT_TYPES.includes(params.get('type')) ? params.get('type') : '', status: ALERT_STATUSES.includes(params.get('status')) ? params.get('status') : '', sort: ['newest', 'oldest', 'type'].includes(params.get('sort')) ? params.get('sort') : 'newest', page: Math.max(1, Math.trunc(Number(params.get('page'))) || 1), role: Object.hasOwn(ROLES, params.get('role')) ? params.get('role') : 'responder', entity: params.get('entity') || '', actor: params.get('actor') || '', range: ['month', 'week'].includes(params.get('range')) ? params.get('range') : '', period: /^\d{4}-(0[1-9]|1[0-2])$/.test(params.get('period') || '') ? params.get('period') : '' };
   let data = null, snapshot = null, version = 0, stale = '', active = true, selected = null, requested = params.get('id');
   main.innerHTML = UI.skeleton(4);
@@ -32,7 +33,7 @@ if (user) {
   }
   function href(target, extra = {}) { const p = new URLSearchParams(); if (target !== 'overview') p.set('view', target); if (state.period) p.set('period', state.period); for (const [key, value] of Object.entries(extra)) if (value !== '' && value !== null && value !== undefined) p.set(key, value); return `captain-reports.html${p.size ? `?${p}` : ''}`; }
   function syncURL(id = selected?.id) {
-    const extra = view === 'all' ? { q: state.q, type: state.type, status: state.status, sort: state.sort === 'newest' ? '' : state.sort, page: state.page > 1 ? state.page : '' } : view === 'activity' ? { q: state.q, entity: state.entity, actor: state.actor, range: state.range, page: state.page > 1 ? state.page : '' } : {};
+    const extra = view === 'all' ? { q: state.q, type: state.type, status: state.status, sort: state.sort === 'newest' ? '' : state.sort, page: state.page > 1 ? state.page : '' } : view === 'activity' ? { q: state.q, entity: state.entity, actor: state.actor, range: state.range, sort: state.sort === 'oldest' ? state.sort : '', page: state.page > 1 ? state.page : '' } : {};
     if (view === 'performance' || view === 'overview') extra.role = state.role === 'responder' ? '' : state.role;
     if (id) extra.id = id; history.replaceState(null, '', href(view, extra));
   }
@@ -42,6 +43,7 @@ if (user) {
   function mini(value, label, note = '') { return `<div class="reports-mini-metric"><strong>${e(value)}</strong><span>${e(label)}</span>${note ? `<small>${e(note)}</small>` : ''}</div>`; }
   function heading() {
     const [title, description] = VIEWS[view], dated = ['overview', 'incidents', 'operations', 'performance'].includes(view);
+    if (view === 'activity') return `<header class="captain-activity-heading"><a class="reports-link reports-back" href="${e(href('overview'))}">${icon('chevron-left', 16)} Back to reports</a><h1>${e(title)}</h1><p>${e(description)}</p></header>${stale ? `<div class="banner banner-error" role="alert"><p class="grow">${e(stale)}</p><button type="button" class="btn btn-small" data-retry>Try again</button></div>` : ''}`;
     return `<div class="reports-heading-row"><header class="official-heading"><h1>${e(title)}</h1><p>${e(description)}</p></header>${dated ? `<div class="reports-heading-actions"><label class="reports-period" for="reports-period">Period <input class="input" id="reports-period" type="month" value="${e(data.period)}" max="${e(captainReportData(snapshot).period)}"></label></div>` : ''}</div>${view !== 'overview' ? `<a class="reports-link reports-back" href="${e(href('overview'))}">${icon('chevron-left', 16)} Back to reports</a>` : ''}${stale ? `<div class="banner banner-error" role="alert"><p class="grow">${e(stale)}</p><button type="button" class="btn btn-small" data-retry>Try again</button></div>` : ''}`;
   }
   function chart(rows, { title, key = 'count', label = 'type', unit = '', display = value => value, compact = false } = {}) {
@@ -91,9 +93,8 @@ if (user) {
     const types = [...new Set(data.activity.map(row => row.entity))].sort(), actors = [...new Map([[String(user.id), user.full_name], ...data.activity.filter(row => row.actor_id !== null).map(row => [String(row.actor_id), row.actor])]).entries()].sort((a, b) => a[1].localeCompare(b[1]));
     if (state.entity && !types.includes(state.entity)) state.entity = '';
     if (state.actor && !actors.some(([id]) => id === state.actor)) state.actor = '';
-    const q = state.q.toLowerCase(), rows = data.activity.filter(row => (!state.entity || row.entity === state.entity) && (!state.actor || String(row.actor_id) === state.actor) && (!state.range || (state.range === 'month' ? new Date(Date.parse(row.at) + 8 * 3600000).toISOString().slice(0, 7) === data.period : Date.parse(row.at) >= Date.parse(data.at) - 7 * 86400000)) && (!q || [row.title, row.summary, row.actor, row.record_id].some(value => String(value || '').toLowerCase().includes(q))));
-    const pages = Math.max(1, Math.ceil(rows.length / 10)); state.page = Math.min(pages, state.page);
-    return panel('Recorded activity', `<p class="reports-note">Includes source records and new audit events. Earlier actions without a recorded actor or timestamp are not reconstructed.</p><form class="reports-filters" data-filter-form>${searchField('activity-search', 'Search activity', 'Action, person, or record ID…')}${selectField('activity-entity', 'Activity type', 'entity', types.map(type => [type, type.charAt(0).toUpperCase() + type.slice(1)]), state.entity, 'All types')}${selectField('activity-actor', 'Responsible user', 'actor', actors, state.actor, 'All users')}${selectField('activity-range', 'Date range', 'range', [['month', 'Selected month'], ['week', 'Past 7 days']], state.range, 'All dates')}</form><div><button type="button" class="btn btn-small" data-captain-filter>Captain actions</button></div>${activityList(rows.slice((state.page - 1) * 10, state.page * 10))}${pagination({ page: state.page, pages, total: rows.length, size: 10, noun: 'activities' })}`);
+    const p = activityPageData(data.activity, state, data); state.page = p.page;
+    return panel('Recorded activity', `<p class="reports-note">Includes source records and new audit events. Earlier actions without a recorded actor or timestamp are not reconstructed.</p><form class="reports-filters activity-filters" data-filter-form>${searchField('activity-search', 'Search activity', 'Search activity')}${selectField('activity-entity', 'Activity type', 'entity', types.map(type => [type, type.charAt(0).toUpperCase() + type.slice(1)]), state.entity, 'All types')}${selectField('activity-actor', 'Responsible user', 'actor', actors, state.actor, 'All users')}${selectField('activity-range', 'Date range', 'range', [['month', 'Selected month'], ['week', 'Past 7 days']], state.range, 'All dates')}<small class="activity-search-help">Search by action, person, or record ID…</small></form><div class="activity-filter-actions"><button type="button" class="activity-captain-filter" data-captain-filter aria-pressed="${state.actor === String(user.id)}">${icon('shield-check', 18)} Captain actions</button><button type="button" class="reports-link" data-clear-activity>${icon('loader-circle', 18)} Clear filters</button></div><div class="activity-results-toolbar"><p role="status">${p.total} ${p.total === 1 ? 'activity' : 'activities'} found</p>${selectField('activity-sort', 'Sort by', 'sort', [['newest', 'Newest first'], ['oldest', 'Oldest first']], state.sort === 'oldest' ? 'oldest' : 'newest')}</div>${activityRows(p.rows)}${activityPagination(p)}`, '', 'captain-activity-panel');
   }
   function performancePage() {
     const role = state.role, rows = data.performance[role], count = key => rows.reduce((sum, row) => sum + row[key], 0);
@@ -118,7 +119,9 @@ if (user) {
     main.querySelectorAll('[data-page]').forEach(button => button.addEventListener('click', () => { state.page = Number(button.dataset.page); render(); main.querySelector('[data-filter-form] input')?.focus({ preventScroll: true }); }));
     const form = main.querySelector('[data-filter-form]');
     if (form) { const filter = () => { for (const [key, value] of new FormData(form).entries()) state[key] = String(value).trim(); state.page = 1; render(); }; form.addEventListener('submit', event => { event.preventDefault(); filter(); }); form.querySelector('input')?.addEventListener('input', event => { if (!event.isComposing) filter(); }); form.querySelector('input')?.addEventListener('compositionend', filter); form.querySelectorAll('select').forEach(select => select.addEventListener('change', filter)); }
-    main.querySelector('[data-captain-filter]')?.addEventListener('click', () => { state.actor = String(user.id); state.page = 1; render(); });
+    main.querySelector('[data-captain-filter]')?.addEventListener('click', () => { state.actor = state.actor === String(user.id) ? '' : String(user.id); state.page = 1; render(); });
+    main.querySelector('[data-clear-activity]')?.addEventListener('click', () => { state.q = ''; state.entity = ''; state.actor = ''; state.range = ''; state.page = 1; render(); main.querySelector('#activity-search')?.focus({ preventScroll: true }); });
+    main.querySelector('#activity-sort')?.addEventListener('change', event => { state.sort = event.target.value; state.page = 1; render(); });
     main.querySelector('[data-export-all]')?.addEventListener('click', () => { if (validSession() && !stale) download(reportPage(data.reports, state).filtered, 'barangay-reports.csv'); else UI.toast('Refresh reports before exporting.', 'error'); });
   }
   function download(rows, filename) { const url = URL.createObjectURL(new Blob([reportsCSV(rows)], { type: 'text/csv;charset=utf-8' })), a = document.createElement('a'); a.href = url; a.download = filename; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
@@ -130,8 +133,8 @@ if (user) {
     }
     if (kind === 'activity') {
       const row = data.activity.find(row => row.id === id); if (!row) return null;
-      const href = safeHref(row.href);
-      return `<h3>${e(row.title)}</h3>${facts([['Responsible user', row.actor], ['Role at action', row.roleLabel], ['Date and time', date(row.at)], ['Activity type', row.entity], ['Affected record', row.record_id == null ? 'Not recorded' : `#${row.record_id}`], ['Evidence', row.source === 'audit' ? 'Recorded audit event' : 'Recorded source timestamp']])}<p class="reports-description">${e(row.summary || 'No additional details were recorded.')}</p><div class="reports-toolbar">${href ? `<a class="btn btn-primary" href="${e(href)}">Open affected record</a>` : ''}<button type="button" class="btn" data-done>Close</button></div>`;
+      const report = ['alert', 'response', 'rescue'].includes(row.entity) ? data.reports.find(report => String(report.id) === String(row.record_id)) : null;
+      return activityDetails(row, report ? `A-${report.id} · ${report.alert_type} · ${report.location_label || 'Location not recorded'}` : null);
     }
     const row = data.performance[state.role].find(row => String(row.id) === String(id)); if (!row) return null;
     const previous = captainReportData(snapshot, { period: data.previousPeriod, barangayId: user.barangay_id });
@@ -145,7 +148,7 @@ if (user) {
     selected?.el.close();
     const origin = document.activeElement, focusAttribute = ({ report: 'data-report', activity: 'data-activity', person: 'data-person' })[kind];
     const el = dialog(({ report: 'Report details', activity: 'Activity details', person: 'Personnel performance' })[kind], '<div class="reports-dialog-content"></div>', { sheet: false });
-    el.classList.add('reports-dialog'); if (kind !== 'activity') el.classList.add('report-panel-dialog', kind === 'person' ? 'performance-panel-dialog' : 'incident-panel-dialog'); selected = { kind, id, el }; el.addEventListener('close', () => { if (selected?.el === el) { selected = null; syncURL(null); const target = origin?.isConnected ? origin : [...main.querySelectorAll(`[${focusAttribute}]`)].find(button => button.getAttribute(focusAttribute) === String(id)); (target || main).focus({ preventScroll: true }); } }, { once: true });
+    el.classList.add('reports-dialog'); if (kind !== 'activity') el.classList.add('report-panel-dialog', kind === 'person' ? 'performance-panel-dialog' : 'incident-panel-dialog'); else el.classList.add('activity-details-dialog'); selected = { kind, id, el }; el.addEventListener('close', () => { if (selected?.el === el) { selected = null; syncURL(null); const target = origin?.isConnected ? origin : [...main.querySelectorAll(`[${focusAttribute}]`)].find(button => button.getAttribute(focusAttribute) === String(id)); (target || main).focus({ preventScroll: true }); } }, { once: true });
     updateDetail(); syncURL(id);
   }
   function updateDetail() {
@@ -153,7 +156,7 @@ if (user) {
     const { kind, id, el } = selected, body = detailBody(kind, id), focus = document.activeElement;
     const focusedAction = el.contains(focus) ? ['data-print', 'data-export-report', 'data-done', 'data-person-period'].find(attribute => focus.hasAttribute(attribute)) : null;
     el.querySelector('.reports-dialog-content').innerHTML = body || '<p role="status">This record is no longer available. Close this dialog to continue.</p>';
-    const scroll = el.querySelector('.report-panel-scroll'); if (scroll) scroll.scrollTop = selected.scrollTop || 0;
+    const scroll = el.querySelector('.report-panel-scroll,.activity-detail-scroll'); if (scroll) scroll.scrollTop = selected.scrollTop || 0;
     scroll?.addEventListener('scroll', () => { if (selected?.el === el) selected.scrollTop = scroll.scrollTop; });
     el.querySelector('[data-person-period]')?.addEventListener('change', event => {
       const period = event.target.value;
