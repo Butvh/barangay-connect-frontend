@@ -16,8 +16,12 @@ export function transition(alert, action, user, at) {
   const rule = RULES[action];
   if (!rule) throw new ApiError('INVALID_STATE', 'That alert action is not available.');
   assertRole(user, rule.role === 'secretary' ? ['secretary', 'captain'] : [rule.role]);
-  if (alert.status !== rule.from) throw new ApiError('INVALID_STATE', `${action} requires ${rule.from}; this alert is ${alert.status}. Refresh the alert.`);
-  const result = { ...alert, status: rule.to };
+  const stages = action === 'logResponse' ? ['Acknowledged', 'Responding', 'Rescue in progress'] : action === 'logRescue' ? ['Responding', 'Rescue in progress'] : action === 'resolve' ? ['Responding', 'Rescue in progress'] : [rule.from];
+  if (!stages.includes(alert.status)) throw new ApiError('INVALID_STATE', `${action} is not available while this alert is ${alert.status}. Refresh the alert.`);
+  if (action === 'logResponse' && !alert.active_responder_assignment) throw new ApiError('INVALID_STATE', 'An active responder assignment is required to log a response.');
+  if (action === 'logRescue' && !alert.active_rescuer_assignment) throw new ApiError('INVALID_STATE', 'An active rescuer assignment is required to log a rescue.');
+  if (action === 'resolve' && alert.status === 'Responding' && !(alert.rescue_required === false && alert.response_completed && !alert.active_rescuer_assignment)) throw new ApiError('INVALID_STATE', 'Complete the response and record that rescue is not needed, or continue the required rescue operation.');
+  const result = { ...alert, status: action === 'logResponse' && alert.status === 'Rescue in progress' ? alert.status : rule.to };
   if (action === 'acknowledge') Object.assign(result, { acknowledged_at: at, acknowledged_by: user.id });
   if (action === 'resolve') result.resolved_at = at;
   return result;

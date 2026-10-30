@@ -13,7 +13,7 @@ function history(row) {
 }
 function busy(row) {
   if (!row?.busy_alert_ids?.length) return '';
-  return `<div class="banner banner-error"><div><p>This person is assigned to unresolved incidents. Resolve these incidents before changing the role.</p><div class="cp-busy-links">${row.busy_alert_ids.map(id => `<a href="official-alert.html?id=${Number(id)}">${e(Fmt.alertId(id))}</a>`).join('')}</div></div></div>`;
+  return `<div class="banner banner-error"><div><p>This person is assigned to unresolved incidents. Complete, reassign, or cancel these responsibilities before changing the role.</p><div class="cp-busy-links">${row.busy_alert_ids.map(id => `<a href="official-alert.html?id=${Number(id)}">${e(Fmt.alertId(id))}</a>`).join('')}</div></div></div>`;
 }
 
 /** Centered native dialogs share one live list projection and never overwrite an open draft. */

@@ -8,6 +8,7 @@ import { canAccessNotification, notificationProjection, notificationSource, noti
 import { personnelList, personnelGet, addExternalPersonnel, appointPersonnel, reassignPersonnel, removePersonnel } from './personnel.js';
 import { activitySnapshot, recordActivity } from './activity.js';
 import { facilityActive, facilityVisible, facilitySnapshot, facilityProjection, createFacility, updateFacility, setFacilityStatus } from './facilities.js';
+import { assignmentOptions, assignmentFlags, assignmentInput, assignmentRecords, assignPersonnel, endAssignment, assignmentForWrite, assignmentReason, checkAssignmentRevision, bumpAssignmentRevision, recordAssignmentActivity } from './assignments.js';
 
 export { ApiError };
 const staff = ['captain', 'secretary', 'responder', 'rescuer'];
@@ -56,12 +57,12 @@ function accessibleNotification(db, user, id, at) {
   if (row.dismissed_at) throw new ApiError('NOT_FOUND', 'This notification was dismissed.');
   return row;
 }
-function joinedAlert(db, alert) {
-  const resident = db.users.find(u => u.id === alert.resident_id) || null;
+function joinedAlert(db, alert, user) {
+  const resident = db.users.find(u => u.id === alert.resident_id) || null, flags = assignmentFlags(db, alert);
   const responses = db.alert_responses.filter(r => r.alert_id === alert.id).map(r => ({ ...r, responder: publicUser(db.users.find(u => u.id === r.responder_id)) }));
   const rescues = db.rescues.filter(r => r.alert_id === alert.id).map(r => { const current = db.facilities.find(f => f.id === r.facility_id); return { ...r, rescuer: publicUser(db.users.find(u => u.id === r.rescuer_id)), facility: r.facility_snapshot || facilitySnapshot(current), current_facility: facilitySnapshot(current) }; });
   const times = [alert.created_at, alert.acknowledged_at, responses[0]?.responded_at || null, rescues[0]?.rescued_at || null, alert.resolved_at];
-  return { ...alert, resident: publicUser(resident), household: db.households.find(h => h.id === alert.household_id) || null, assigned_responder: publicUser(db.users.find(u => u.id === alert.assigned_responder_id)), assigned_rescuer: publicUser(db.users.find(u => u.id === alert.assigned_rescuer_id)), responses, rescues, timeline: ALERT_STATUSES.map((status, i) => ({ status, at: times[i], current: status === alert.status })) };
+  return { ...alert, assignment_revision: alert.assignment_revision || 0, ...flags, assignments: ['secretary', 'captain'].includes(roleOf(user)) ? flags.assignments : undefined, resident: publicUser(resident), household: db.households.find(h => h.id === alert.household_id) || null, assigned_responder: publicUser(db.users.find(u => u.id === alert.assigned_responder_id)), assigned_rescuer: publicUser(db.users.find(u => u.id === alert.assigned_rescuer_id)), responses, rescues, timeline: ALERT_STATUSES.map((status, i) => ({ status, at: times[i], current: status === alert.status })) };
 }
 function alertDetails(input, household, partial = false) {
   const patch = {};
@@ -110,20 +111,16 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
     const alert = get(db.emergency_alerts, id, 'Alert'); assertBarangay(user, alert);
     if (action === 'logResponse' && alert.assigned_responder_id !== user.id) throw new ApiError('FORBIDDEN', 'Only the assigned Responder can log this response.');
     if (action === 'logRescue' && alert.assigned_rescuer_id !== user.id) throw new ApiError('FORBIDDEN', 'Only the assigned Rescuer can log this rescue.');
-    const next = transition(alert, action, user, at);
-    const nextRole = action === 'acknowledge' ? 'responder' : action === 'logResponse' ? 'rescuer' : null;
-    if (nextRole) {
-      const operator = db.users.find(u => u.barangay_id === alert.barangay_id && roleOf(u) === nextRole);
-      if (!operator) throw new ApiError('INVALID_STATE', `No active ${nextRole} is available in this barangay. Appoint an active ${nextRole} before continuing this alert.`);
-      next[`assigned_${nextRole}_id`] = operator.id;
-    }
-    Object.assign(alert, next);
+    const next = transition({ ...alert, ...assignmentFlags(db, alert) }, action, user, at);
+    if (action === 'resolve') for (const role of ['responder', 'rescuer']) assignmentForWrite(db, alert, role);
+    alert.status = next.status;
+    if (action === 'acknowledge') Object.assign(alert, { acknowledged_at: at, acknowledged_by: user.id });
+    else { bumpAssignmentRevision(alert); if (action === 'resolve') alert.resolved_at = at; }
     if (alert.resident_id) notification(db, alert.resident_id, 'alert_status', `A-${alert.id} · ${alert.status}`, `resident-alert.html?id=${alert.id}`, at);
     const recipients = new Set(db.users.filter(u => u.barangay_id === alert.barangay_id && ['secretary', 'captain'].includes(roleOf(u))).map(u => u.id));
     for (const [field, role] of [['assigned_responder_id', 'responder'], ['assigned_rescuer_id', 'rescuer']]) {
       const assigned = db.users.find(u => u.id === alert[field]);
-      // The new operator receives the dedicated handoff notice below.
-      if (role !== nextRole && assigned?.barangay_id === alert.barangay_id && roleOf(assigned) === role) recipients.add(assigned.id);
+      if (assigned?.barangay_id === alert.barangay_id && roleOf(assigned) === role) recipients.add(assigned.id);
     }
     for (const recipient of recipients) notification(db, recipient, 'alert_status', `A-${alert.id} · ${alert.status}`, `official-alert.html?id=${alert.id}`, at);
     return alert;
@@ -145,7 +142,7 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
     reports: { snapshot: () => read((db,user) => {
       assertRole(user,['captain']); const scoped = row => row.barangay_id === user.barangay_id;
       const people = db.users.filter(scoped);
-      return { alerts: recent(db.emergency_alerts.filter(scoped)).map(a => joinedAlert(db,a)),
+      return { alerts: recent(db.emergency_alerts.filter(scoped)).map(a => joinedAlert(db,a,user)),
         verifications: db.verify_residency.filter(v => people.some(u => u.id === v.user_id)).map(v => {const resident=db.users.find(u=>u.id===v.user_id);return {...v,resident:publicUser(resident),household:db.households.find(h=>h.id===resident?.household_id)||null};}),
         feedback: db.community_feedback.filter(scoped).map(row=>({...row,resident:publicUser(db.users.find(u=>u.id===row.resident_id)),assigned_tanod:publicUser(db.users.find(u=>u.id===row.assigned_tanod_id))})),
         announcements: db.announcements.filter(scoped).map(row=>announcementProjection(db,row,user,clock())),
@@ -250,9 +247,9 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
         }
         if (roleOf(user) === 'resident' && options.resident_id && Number(options.resident_id) !== user.id) throw new ApiError('FORBIDDEN', 'View your own alerts.');
         const q = String(options.q || '').trim().toLowerCase();
-        return recent(db.emergency_alerts.filter(a => canReadAlert(user, a) && (!options.resident_id || a.resident_id === Number(options.resident_id)) && (!options.status || a.status === options.status) && (!options.alert_type || a.alert_type === options.alert_type) && (!q || [a.id, `A-${a.id}`, a.location_label, db.users.find(u => u.id === a.resident_id)?.full_name].some(v => String(v || '').toLowerCase().includes(q))))).map(a => joinedAlert(db, a));
+        return recent(db.emergency_alerts.filter(a => canReadAlert(user, a) && (!options.resident_id || a.resident_id === Number(options.resident_id)) && (!options.status || a.status === options.status) && (!options.alert_type || a.alert_type === options.alert_type) && (!q || [a.id, `A-${a.id}`, a.location_label, db.users.find(u => u.id === a.resident_id)?.full_name].some(v => String(v || '').toLowerCase().includes(q))))).map(a => joinedAlert(db, a, user));
       }),
-      get: id => read((db, user) => { const a = get(db.emergency_alerts, id, 'Alert'); assertReadAlert(user, a); return joinedAlert(db, a); }),
+      get: id => read((db, user) => { const a = get(db.emergency_alerts, id, 'Alert'); assertReadAlert(user, a); return joinedAlert(db, a, user); }),
       create: (input = {}) => write(['alerts', 'notifications'], (db, user, at) => {
         assertRole(user, ['resident']);
         if (latestVerification(db, user.id)?.review_status !== 'Approved') throw new ApiError('FORBIDDEN', 'Residency approval is required before sending SOS.');
@@ -261,28 +258,60 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
         // Decide after the fresh transactional read so concurrent tabs cannot
         // create another own active SOS or overwrite the first submission.
         const active = recent(db.emergency_alerts.filter(a => a.resident_id === user.id && a.barangay_id === user.barangay_id && a.status !== 'Resolved'))[0];
-        if (active) return joinedAlert(db, active);
+        if (active) return joinedAlert(db, active, user);
         const row = { id: nextId(db.emergency_alerts), resident_id: user.id, household_id: user.household_id, barangay_id: user.barangay_id, acknowledged_by: null, assigned_responder_id: null, assigned_rescuer_id: null, ...details, status: 'Pending', created_at: at, acknowledged_at: null, resolved_at: null };
-        db.emergency_alerts.push(row); notifyOfficials(db, user.barangay_id, 'alert_new', `New ${row.alert_type} alert · A-${row.id} · ${row.location_label}`, `official-alert.html?id=${row.id}`, at); return joinedAlert(db, row);
+        db.emergency_alerts.push(row); notifyOfficials(db, user.barangay_id, 'alert_new', `New ${row.alert_type} alert · A-${row.id} · ${row.location_label}`, `official-alert.html?id=${row.id}`, at); return joinedAlert(db, row, user);
       }),
       addDetails: (id, patch = {}) => write(['alerts'], (db, user) => {
         assertRole(user, ['resident']); const row = get(db.emergency_alerts, id, 'Alert'); assertOwner(user, row);
         if (row.status === 'Resolved') throw new ApiError('INVALID_STATE', 'This alert is resolved.');
         const allowed = ['alert_type', 'description', 'photo_name', 'location_label', 'victim_count', 'map_x', 'map_y'];
         if (Object.keys(patch).some(k => !allowed.includes(k))) throw new ApiError('VALIDATION', 'Only optional alert details can be edited.');
-        Object.assign(row, alertDetails(patch, db.households.find(h => h.id === row.household_id), true)); return joinedAlert(db, row);
+        Object.assign(row, alertDetails(patch, db.households.find(h => h.id === row.household_id), true)); return joinedAlert(db, row, user);
       }),
-      acknowledge: id => write(['alerts', 'notifications'], (db, user, at) => {
+      assignmentOptions: (id, role) => read((db, user) => assignmentOptions(db, user, id, role)),
+      acknowledge: (id, input = {}) => write(['alerts', 'notifications'], (db, user, at) => {
         const a = transitionAlert(db, user, id, 'acknowledge', at);
-        if (a.assigned_responder_id) notification(db, a.assigned_responder_id, 'alert_status', `A-${a.id} acknowledged. Your response is requested.`, `official-alert.html?id=${a.id}`, at);
-        return joinedAlert(db, a);
+        const assignment = assignPersonnel(db, user, a, 'responder', input, at);
+        recordAssignmentActivity(db, a, assignment, user, at, assignment.override_reason ? 'Responder assigned with emergency override' : 'Responder assigned', assignment.override_reason || '');
+        notification(db, assignment.user_id, 'alert_status', `A-${a.id} acknowledged. Your response is requested.`, `official-alert.html?id=${a.id}`, at);
+        return joinedAlert(db, a, user);
+      }),
+      assign: (id, input = {}) => write(['alerts', 'notifications'], (db, user, at) => {
+        assertRole(user, ['secretary', 'captain']); const a = get(db.emergency_alerts, id, 'Alert'); assertBarangay(user, a);
+        assignmentInput(input);
+        if (a.status === 'Pending') throw new ApiError('INVALID_STATE', 'Acknowledge and assign a responder together first.');
+        const row = assignPersonnel(db, user, a, input.role, input, at);
+        recordAssignmentActivity(db, a, row, user, at, `${row.role === 'rescuer' ? 'Rescuer' : 'Responder'} assigned${row.override_reason ? ' with emergency override' : ''}`, row.override_reason || '');
+        notification(db, row.user_id, 'alert_status', row.role === 'rescuer' ? `A-${a.id} requires extraction and transport.` : `A-${a.id}. Your response is requested.`, `official-alert.html?id=${a.id}`, at);
+        notifyOfficials(db, a.barangay_id, 'alert_status', `${row.personnel_name} assigned to A-${a.id}.`, `official-alert.html?id=${a.id}`, at); return joinedAlert(db, a, user);
+      }),
+      reassign: (id, input = {}) => write(['alerts', 'notifications'], (db, user, at) => {
+        assertRole(user, ['captain']); const a = get(db.emergency_alerts, id, 'Alert'); assertBarangay(user, a);
+        assignmentInput(input);
+        const row = assignPersonnel(db, user, a, input.role, input, at, true);
+        recordAssignmentActivity(db, a, row, user, at, `${row.role === 'rescuer' ? 'Rescuer' : 'Responder'} reassigned${row.override_reason ? ' with emergency override' : ''}`, `${input.reason}${row.override_reason ? ` · Override: ${row.override_reason}` : ''}`);
+        notification(db, row.user_id, 'alert_status', row.role === 'rescuer' ? `A-${a.id} requires extraction and transport.` : `A-${a.id}. Your response is requested.`, `official-alert.html?id=${a.id}`, at);
+        notifyOfficials(db, a.barangay_id, 'alert_status', `${row.personnel_name} assigned to A-${a.id}.`, `official-alert.html?id=${a.id}`, at); return joinedAlert(db, a, user);
+      }),
+      cancelAssignment: (id, input = {}) => write(['alerts', 'notifications'], (db, user, at) => {
+        assertRole(user, ['captain']); const a = get(db.emergency_alerts, id, 'Alert'); assertBarangay(user, a); checkAssignmentRevision(a, input);
+        if (!['responder', 'rescuer'].includes(input.role) || a.status === 'Resolved') throw new ApiError('INVALID_STATE', 'Choose an active responsibility to cancel.');
+        const reason = assignmentReason(input.reason), row = endAssignment(db, a, input.role, 'cancelled', user, at, reason);
+        if (!row) throw new ApiError('INVALID_STATE', 'This responsibility is no longer active.'); bumpAssignmentRevision(a);
+        recordAssignmentActivity(db, a, row, user, at, `${input.role === 'rescuer' ? 'Rescuer' : 'Responder'} assignment cancelled`, reason);
+        notifyOfficials(db, a.barangay_id, 'alert_status', `Assignment cancelled for A-${a.id}. Select replacement personnel.`, `official-alert.html?id=${a.id}`, at); return joinedAlert(db, a, user);
       }),
       logResponse: (id, input = {}) => write(['alerts', 'notifications'], (db, user, at) => {
-        const response_type = oneOf(input.response_type, RESPONSE_TYPES, 'response_type'), response_status = oneOf(input.response_status, ['Responding', 'Completed'], 'response_status'), notes = text(input.notes, 'notes', { required: false });
         const a = transitionAlert(db, user, id, 'logResponse', at);
-        db.alert_responses.push({ id: nextId(db.alert_responses), alert_id: a.id, responder_id: user.id, response_type, response_status, notes, responded_at: at });
-        if (a.assigned_rescuer_id) notification(db, a.assigned_rescuer_id, 'alert_status', `A-${a.id} requires extraction and transport.`, `official-alert.html?id=${a.id}`, at);
-        return joinedAlert(db, a);
+        const response_type = oneOf(input.response_type, RESPONSE_TYPES, 'response_type'), response_status = oneOf(input.response_status, ['Responding', 'Completed'], 'response_status'), notes = text(input.notes, 'notes', { required: false });
+        if (typeof input.rescue_required !== 'boolean') throw new ApiError('VALIDATION', 'Record whether rescue or evacuation is needed.', { rescue_required: 'Choose Yes or No.' });
+        if (input.rescue_required === false && assignmentFlags(db, a).active_rescuer_assignment) throw new ApiError('INVALID_STATE', 'An active rescue is already assigned. Coordinate its completion or cancellation before recording that rescue is unnecessary.');
+        const assignment = assignmentForWrite(db, a, 'responder');
+        db.alert_responses.push({ id: nextId(db.alert_responses), alert_id: a.id, assignment_id: assignment.id, responder_id: user.id, response_type, response_status, rescue_required: input.rescue_required, notes, responded_at: at });
+        if (response_status === 'Completed') endAssignment(db, a, 'responder', 'completed', user, at, 'Completed response log');
+        if (input.rescue_required) notifyOfficials(db, a.barangay_id, 'alert_status', `A-${a.id} needs rescue or evacuation. Choose a rescuer.`, `official-alert.html?id=${a.id}`, at);
+        return joinedAlert(db, a, user);
       }),
       logRescue: (id, input = {}) => write(['alerts', 'notifications'], (db, user, at) => {
         const facility = get(db.facilities, input.facility_id, 'Facility'); if (facility.barangay_id !== null) assertBarangay(user, facility);
@@ -290,11 +319,13 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
         const rescue_status = oneOf(input.rescue_status, ['In progress', 'Completed'], 'rescue_status'), notes = text(input.notes, 'notes', { required: false });
         const firstNoticeId = nextId(db.notifications);
         const a = transitionAlert(db, user, id, 'logRescue', at);
-        db.rescues.push({ id: nextId(db.rescues), alert_id: a.id, rescuer_id: user.id, facility_id: facility.id, facility_snapshot: facilitySnapshot(facility), rescue_status, notes, rescued_at: at });
+        const assignment = assignmentForWrite(db, a, 'rescuer');
+        db.rescues.push({ id: nextId(db.rescues), alert_id: a.id, assignment_id: assignment.id, rescuer_id: user.id, facility_id: facility.id, facility_snapshot: facilitySnapshot(facility), rescue_status, notes, rescued_at: at });
+        if (rescue_status === 'Completed') endAssignment(db, a, 'rescuer', 'completed', user, at, 'Completed rescue log');
         for (const n of db.notifications.filter(n => n.id >= firstNoticeId)) { n.text += ` · Destination: ${facility.name}`; n.description += ` · Destination: ${facility.name}`; }
-        return joinedAlert(db, a);
+        return joinedAlert(db, a, user);
       }),
-      resolve: id => write(['alerts', 'notifications'], (db, user, at) => joinedAlert(db, transitionAlert(db, user, id, 'resolve', at))),
+      resolve: id => write(['alerts', 'notifications'], (db, user, at) => { const a = transitionAlert(db, user, id, 'resolve', at); for (const role of ['responder', 'rescuer']) endAssignment(db, a, role, 'closed', user, at, 'Incident resolved'); return joinedAlert(db, a, user); }),
     },
     announcements: {
       list: () => read((db, user) => { const at = clock(); return recent(db.announcements.filter(row => row.barangay_id === user.barangay_id && (['secretary', 'captain'].includes(roleOf(user)) || announcementStatus(row, at) === 'Active'))).map(row => announcementProjection(db, row, user, at)); }),
@@ -368,8 +399,9 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
       clearRead: ({ recipient_id, expected_role } = {}) => write(['notifications'], (db, user, at) => { if ((recipient_id !== undefined && recipient_id !== user.id) || (expected_role !== undefined && expected_role !== roleOf(user))) throw new ApiError('FORBIDDEN', 'Your account changed. Reopen Notifications before clearing read updates.'); let count = 0; for (const n of db.notifications) if (!n.dismissed_at && notificationIsRead(n) && canAccessNotification(db, user, n, at)) { n.dismissed_at = at; count++; } return count; }),
     },
     dashboard: { officialStats: () => read((db, user) => {
-      assertRole(user, staff); const alerts = db.emergency_alerts.filter(a => a.barangay_id === user.barangay_id), day = clock().slice(0, 10);
-      return { active_alerts: alerts.filter(a => a.status !== 'Resolved').length, pending_verifications: db.verify_residency.filter(v => v.review_status === 'Pending' && db.users.find(u => u.id === v.user_id)?.barangay_id === user.barangay_id && latestVerification(db, v.user_id)?.id === v.id).length, open_feedback: db.community_feedback.filter(f => f.barangay_id === user.barangay_id && f.type !== 'general' && f.status !== 'Resolved').length, resolved_today: alerts.filter(a => a.resolved_at?.slice(0, 10) === day).length, assigned_today: alerts.filter(a => a.assigned_responder_id === user.id && a.acknowledged_at?.slice(0, 10) === day).length, active_rescues: alerts.filter(a => a.assigned_rescuer_id === user.id && a.status !== 'Resolved').length };
+      assertRole(user, staff); const alerts = db.emergency_alerts.filter(a => a.barangay_id === user.barangay_id), day = clock().slice(0, 10), role = roleOf(user);
+      const active = alerts.filter(a => ['responder', 'rescuer'].includes(role) ? a[`assigned_${role}_id`] === user.id && assignmentFlags(db, a)[`active_${role}_assignment`] : a.status !== 'Resolved');
+      return { active_alerts: active.length, pending_verifications: db.verify_residency.filter(v => v.review_status === 'Pending' && db.users.find(u => u.id === v.user_id)?.barangay_id === user.barangay_id && latestVerification(db, v.user_id)?.id === v.id).length, open_feedback: db.community_feedback.filter(f => f.barangay_id === user.barangay_id && f.type !== 'general' && f.status !== 'Resolved').length, resolved_today: alerts.filter(a => a.resolved_at?.slice(0, 10) === day).length, assigned_today: assignmentRecords(db).filter(r => r.barangay_id === user.barangay_id && r.user_id === user.id && r.assigned_at?.slice(0, 10) === day).length, active_rescues: alerts.filter(a => a.assigned_rescuer_id === user.id && assignmentFlags(db, a).active_rescuer_assignment).length };
     }) },
     subscribe: (entity, handler) => store.subscribe(entity, handler),
   };

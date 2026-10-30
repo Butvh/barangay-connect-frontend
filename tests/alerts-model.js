@@ -32,8 +32,8 @@ export function registerAlertsModelTests({ test, equal, ok, fixture }) {
     ok(incidentAssignment(a, secretary).person.includes('Ramon Bautista (Rescuer)'));
     equal(incidentAssignment(a, secretary).at, a.created_at);
     await f.login(f.authA, 'carlo.mendoza'); const responder = incidentAssignment(a, f.authA.current()); equal(responder.person, 'Carlo Mendoza (You)'); equal(responder.at, a.acknowledged_at); equal(responder.timeLabel, 'Assigned at:');
-    await f.login(f.authA, 'ramon.bautista'); const rescuer = incidentAssignment({ ...a, responses: [{ responded_at: 'invalid' }, { responded_at: '2026-10-03T16:45:00+08:00' }, ...a.responses] }, f.authA.current()); equal(rescuer.at, '2026-10-03T16:25:00+08:00');
+    await f.login(f.authA, 'ramon.bautista'); const rescuer = incidentAssignment({ ...a, responses: [{ responded_at: 'invalid' }, { responded_at: '2026-10-03T16:45:00+08:00' }, ...a.responses] }, f.authA.current()); equal(rescuer.at, null);
     equal(incidentAssignment({ ...a, responses: [] }, f.authA.current()).at, null);
-    equal(incidentAssignment({ ...a, acknowledged_at: null }, { ...f.authA.current(), is_rescuer: false, is_responder: true }).at, null);
+    equal(incidentAssignment({ ...a, acknowledged_at: null, responder_assigned_at: null }, { ...f.authA.current(), is_rescuer: false, is_responder: true }).at, null);
   });
 }

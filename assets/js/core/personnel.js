@@ -1,4 +1,5 @@
 import { ApiError, copy } from './config.js';
+import { assignmentRecords, assignmentWorkload, assignmentLimit } from './assignments.js';
 
 export const PERSONNEL_ROLES = Object.freeze(['secretary', 'responder', 'rescuer']);
 export const PERSONNEL_LIMITS = Object.freeze({ secretary: 3, responder: 6, rescuer: 6 });
@@ -43,8 +44,8 @@ function requirements(value = []) {
   });
 }
 function busyAlerts(db, userId, oldRole) {
-  const key = oldRole === 'responder' ? 'assigned_responder_id' : oldRole === 'rescuer' ? 'assigned_rescuer_id' : null;
-  return key ? (db.emergency_alerts || []).filter(a => a.status !== 'Resolved' && a[key] != null && same(a[key], userId)).map(a => a.id) : [];
+  if (!['responder', 'rescuer'].includes(oldRole)) return [];
+  return assignmentRecords(db).filter(r => same(r.user_id, userId) && r.role === oldRole && r.status === 'active' && db.emergency_alerts.some(a => a.id === r.alert_id && a.status !== 'Resolved')).map(r => r.alert_id);
 }
 function project(db, person) {
   const stored = (db.personnel_records || []).find(r => same(r.user_id ?? r.id, person.id));
@@ -60,6 +61,8 @@ function project(db, person) {
     notes: stored?.notes || '', history, revision: stored?.revision || 0, created_at: stored?.created_at || person.created_at || null,
     added_externally_at: stored?.added_externally_at || null, legacy: stored?.legacy ?? !stored,
     busy_alert_ids: busyAlerts(db, person.id, currentRole),
+    assignment_workload: ['responder', 'rescuer'].includes(currentRole) ? assignmentWorkload(db, person.id, currentRole) : null,
+    assignment_limit: assignmentLimit(currentRole) ?? null,
   };
 }
 function managedPeople(db, actor) {
@@ -88,12 +91,13 @@ function fresh(row, input) {
   if (input.expected_revision !== undefined && input.expected_revision !== row.revision) throw new ApiError('CONFLICT', 'This personnel record changed. Close this form and review the latest details before trying again.');
 }
 function notBusy(row) {
-  if (row.busy_alert_ids.length) throw new ApiError('BUSY', `${row.full_name} is assigned to unresolved incident${row.busy_alert_ids.length > 1 ? 's' : ''} ${row.busy_alert_ids.map(id => `A-${id}`).join(', ')}. Resolve those incidents before changing this role.`);
+  if (row.busy_alert_ids.length) throw new ApiError('BUSY', `${row.full_name} is assigned to unresolved incident${row.busy_alert_ids.length > 1 ? 's' : ''} ${row.busy_alert_ids.map(id => `A-${id}`).join(', ')}. Complete, reassign, or cancel those responsibilities before changing this role.`);
 }
 function recordChange(db, actor, person, before, { action, to_role, effective_date, notes, status: nextStatus }, at) {
   const row = { ...before, role: to_role, status: nextStatus, notes, appointed_at: to_role ? effective_date : before.appointed_at, revision: before.revision + 1 };
   row.history = [...before.history, { action, by: actor.id, by_name: actor.full_name, at, effective_date, from_role: before.role, to_role, status: nextStatus, notes }];
   delete row.busy_alert_ids;
+  delete row.assignment_workload; delete row.assignment_limit;
   db.personnel_records ||= [];
   const index = db.personnel_records.findIndex(r => same(r.user_id ?? r.id, person.id));
   if (index < 0) db.personnel_records.push(row); else db.personnel_records[index] = row;

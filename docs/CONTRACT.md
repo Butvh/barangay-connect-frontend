@@ -1,5 +1,12 @@
 # Frontend integration contract
 
+**October 30, 2026 — manual emergency dispatch supersedes earlier automatic
+handoff descriptions below.** See [ASSIGNMENTS-API.md](ASSIGNMENTS-API.md) for
+the current adapter, required payloads, capacities, explicit rescue assessment,
+Captain overrides/transfers, legacy history, permissions and Laravel contract.
+Acknowledgment requires a selected responder; response logging never selects
+a rescuer. Assignment timestamps and responsibility states now drive workload.
+
 CONTRACT (async unless marked sync; errors throw ApiError {code: AUTH|FORBIDDEN|INVALID_STATE|VALIDATION|NOT_FOUND|CONFLICT|CAPACITY|BUSY, message, fields?}; demo calls use a 150 to 350 ms delay)
 
 Current Captain behavior is documented in the October 25, 2026 section below.
@@ -21,9 +28,9 @@ before returning joined records; browser-side checks are demo-adapter
 authorization, not a substitute for server authorization.
 
 Operational Alerts omit reporter facts and show the current user's real
-assignment. Responder assignment time is acknowledged_at; Rescuer time is
-the earliest valid responded_at, matching the existing logResponse assignment
-transaction and dashboard contract. Missing assignment times are not inferred
+assignment. Assignment time is responder_assigned_at / rescuer_assigned_at
+from the actual manual handoff. Legacy responder time can use acknowledged_at;
+unknown legacy rescue assignment time remains null. Missing times are not inferred
 from created_at. Resolved records retain their actual assignees. Existing
 forward status transitions remain unchanged. Handoffs now require an active
 local operator before any incident mutation, as described in the Captain section. Mobile previews
@@ -50,9 +57,9 @@ location/maximize artwork and BCMap are reused without changing their owners.
 
 The Rescuer projection filters by assigned_rescuer_id and barangay_id, preserves
 API order for the first non-Resolved assignment and recent alerts, and only
-counts the current rescuer's rescue records. Assigned today uses the first valid
-responded_at: logResponse assigns the rescuer in that same transaction. It
-does not use acknowledgement time. Missing response time stays unrecorded.
+counts the current rescuer's rescue records. Assigned today uses the recorded
+rescuer_assigned_at from manual dispatch. Unknown legacy dispatch times stay
+unrecorded; neither response nor acknowledgment time is substituted by the API.
 Today is Asia/Manila.
 The assignment breakdown counts Resolved or own Completed rescue records as
 finished. Completed rescues counts actual Completed rescue records today; the
@@ -64,9 +71,10 @@ distance/ETA, GPS or routing fields. Check-ins shows an em dash and an
 unavailable explanation; priority stays unavailable/Unrated. Pickup and
 drop-off actions are disabled and explained in visible help. Update rescue
 status reuses the canonical Log rescue dialog and is enabled only for the
-assigned rescuer while the alert is Responding. A saved record still advances
-the alert to Rescue in progress; it does not add repeat logging or let a
-rescuer resolve the alert. Only a recorded Completed rescue marks the final
+assigned rescuer while its responsibility is active in Responding or Rescue
+in progress. A saved record advances or retains Rescue in progress. Repeated
+progress logs are allowed until completion; rescuers cannot resolve incidents.
+Only a recorded Completed rescue marks the final
 progress step; the three travel steps remain unrecorded. No transport is
 inferred from In progress. Facilities use capacity/contact, not invented
 travel estimates or a Command center type. Facility rows select the actual
@@ -91,9 +99,10 @@ synthetic count, travel estimate, GPS position or successful backup request
 is displayed or persisted. Only existing hospitals/evacuation centers appear.
 
 The Responder-only projection scopes records to the current assigned user
-and barangay. Current assignment preserves API order, excluding Resolved.
-Assigned today uses acknowledged_at (the existing automatic assignment
-instant), counted by Asia/Manila date. Its breakdown counts completed own
+and barangay. Current assignment preserves API order and includes only active
+responsibilities; a Completed response releases its slot before incident closure.
+Assigned today uses the recorded manual responder assignment timestamp
+(legacy DTOs fall back to acknowledged_at), counted by Asia/Manila date. Its breakdown counts completed own
 responses or Resolved assignments. Completed responses counts the current
 responder's Completed records for that Manila date. Activity is derived from
 real report/assignment/response timestamps and refreshes on alert events.
@@ -113,7 +122,7 @@ The map reuses BCMap, controls, markers, privacy and approximate coordinates.
 No Secretary/Rescuer UI, tokens, permissions, seed or P2-owned file is changed.
 
 Auth (sync): Auth.current(), Auth.login(email, password) (async), Auth.logout(), Auth.requireRole(roles[]) where roles are 'captain'|'secretary'|'responder'|'rescuer'|'resident', Auth.roleOf(user) (Captain precedence, then effective staff role before resident; Inactive/Unassigned metadata revokes staff access), Auth.homeFor(user) returns the dashboard URL.
-Api.barangays.list() · Api.facilities.list({type, barangay_id}) / get(id) · Api.users.register({...}) / get(id) / update(id, patch) · Api.verification.submit(user_id, {document_type, file_name}) / list({status}) / get(id) / review(id, {decision:'Approved'|'Rejected', reason}) / expireOverdue() · Api.alerts.list({status, alert_type, q, resident_id}) / get(id) (joined: resident, household, assigned_responder, assigned_rescuer, responses[], rescues[] with facility, timeline[{status, at, current}]) / create({alert_type, description, location_label, map_x, map_y, victim_count, photo_name}) / addDetails(id, patch) / acknowledge(id) / logResponse(id, {response_type, response_status, notes}) / logRescue(id, {facility_id, rescue_status, notes}) / resolve(id) · Api.announcements.list() / get(id) / create({title, content, expires_at?}) / update(id, patch) / archive(id) / retract(id, {reason}) / expireOverdue() · Api.feedback.list({type, status, resident_id}) / get(id) / create(type, payload) / assignTanod(id, tanod_id) / resolve(id) · Api.notifications.list() / get(id) / markRead(id) / markUnread(id) / dismiss(id) / markAllRead() / clearRead({recipient_id?, expected_role?}?) · Api.dashboard.officialStats() · Api.subscribe(entity, handler) returns an unsubscribe function (entity is 'alerts'|'verification'|'announcements'|'feedback'|'notifications'|'users'; fires on same-tab and cross-tab changes).
+Api.barangays.list() · Api.facilities.list({type, barangay_id}) / get(id) · Api.users.register({...}) / get(id) / update(id, patch) · Api.verification.submit(user_id, {document_type, file_name}) / list({status}) / get(id) / review(id, {decision:'Approved'|'Rejected', reason}) / expireOverdue() · Api.alerts.list({status, alert_type, q, resident_id}) / get(id) (joined: resident, household, assigned_responder, assigned_rescuer, responses[], rescues[] with facility, timeline[{status, at, current}]) / create({alert_type, description, location_label, map_x, map_y, victim_count, photo_name}) / addDetails(id, patch) / assignmentOptions(id,role) / acknowledge(id,{responder_id,expected_revision,override?}) / assign(id,{role,personnel_id,expected_revision,override?}) / reassign(id,{role,personnel_id,reason,expected_revision,override?}) / cancelAssignment(id,{role,reason,expected_revision}) / logResponse(id, {response_type, response_status, rescue_required, notes}) / logRescue(id, {facility_id, rescue_status, notes}) / resolve(id) · Api.announcements.list() / get(id) / create({title, content, expires_at?}) / update(id, patch) / archive(id) / retract(id, {reason}) / expireOverdue() · Api.feedback.list({type, status, resident_id}) / get(id) / create(type, payload) / assignTanod(id, tanod_id) / resolve(id) · Api.notifications.list() / get(id) / markRead(id) / markUnread(id) / dismiss(id) / markAllRead() / clearRead({recipient_id?, expected_role?}?) · Api.dashboard.officialStats() · Api.subscribe(entity, handler) returns an unsubscribe function (entity is 'alerts'|'verification'|'announcements'|'feedback'|'notifications'|'users'; fires on same-tab and cross-tab changes).
 Demo adapter rules inside Api (via alertMachine and permissions): every write checks the current stored user's role and current state, and creates the notifications for F-X1 to F-X5. Production must enforce these rules on the server.
 UI (Person 2): UI.escape(s), UI.openDialog(el), UI.closeDialog(el), UI.toast(msg, type), UI.tabs(root), UI.menu(trigger, panel), UI.skeleton(n), UI.empty({icon, title, text, action}), UI.badge(status) returns HTML (icon plus label), UI.confirm({title, text, confirmLabel, danger}) returns a Promise<boolean>. Icons.svg(name, {size}) returns an SVG string. Fmt.dateTime(iso) "Oct 4, 2026 · 2:10 PM", Fmt.date(iso) "Oct 4, 2026", Fmt.short(iso) "Oct 4 · 2:10 PM", Fmt.alertId(n), Fmt.countdown(deadline_iso).
 Shells: Shell.official({role, active}) and Shell.resident({active}) render the navigation and return the <main> element to fill.
@@ -257,7 +266,7 @@ facility and legend dialogs, with a selected-alert sheet on mobile. A collapsed
 Map records list provides a non-drag alternative and access to overlapping
 pins. Buttons/markers have at least 44 px targets on tablet/mobile. Acknowledge
 and Resolve use the same API permission checks and confirmation as Alert Detail;
-Assign remains disabled because assignments are automatic in this prototype.
+Assignment uses the same manual picker and fresh capacity checks as Alert Detail.
 
 The frozen API has no whole-barangay household enumeration or complaint
 coordinates. The household layer therefore uses households joined to the

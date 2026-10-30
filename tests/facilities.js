@@ -93,9 +93,10 @@ export function registerFacilityTests({ test, equal, ok, rejects, fixture }) {
     equal(f.storeA.read().rescues.length, 2);
   });
   test('Inactive rescue destinations are rejected at save time without advancing the alert', async () => {
-    const f = await manager(); hasWrites(f); await f.apiA.alerts.acknowledge(1042);
-    await f.login(f.authA, 'carlo.mendoza'); await f.apiA.alerts.logResponse(1042, { response_type: 'Assessment', response_status: 'Completed' });
+    const f = await manager(); hasWrites(f); await f.apiA.alerts.acknowledge(1042, { responder_id: 2, expected_revision: 0 });
+    await f.login(f.authA, 'carlo.mendoza'); await f.apiA.alerts.logResponse(1042, { rescue_required: true,  response_type: 'Assessment', response_status: 'Completed' });
     await f.login(f.authA, 'ana.reyes'); await f.apiA.facilities.setStatus(1, { status: 'Inactive', expected_revision: 0 });
+    await f.apiA.alerts.resolve(1038); await f.apiA.alerts.assign(1042, { role: 'rescuer', personnel_id: 3, expected_revision: 2 });
     await f.login(f.authA, 'ramon.bautista'); const before = f.storeA.read();
     await rejects(() => f.apiA.alerts.logRescue(1042, { facility_id: 1, rescue_status: 'In progress' }), 'INVALID_STATE'); equal(f.storeA.read(), before);
     const result = await f.apiA.alerts.logRescue(1042, { facility_id: 2, rescue_status: 'In progress' });

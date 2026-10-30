@@ -16,7 +16,7 @@ export function registerResidentNotificationTests({test,equal,ok,fixture}) {
     equal(residentNotificationGroups(rows.filter(r=>!r.is_read)).map(g=>g.rows.map(r=>r.id)),[[],[2]]);
   });
   test('Resident groups follow authorized live records and persistent read and clear actions',async()=>{
-    const f=fixture();await f.login(f.authA,'ana.reyes');await f.apiA.alerts.acknowledge(1042);await f.apiA.announcements.create({title:'Community update',content:'School open'});await f.login(f.authB,'maria.santos');
+    const f=fixture();await f.login(f.authA,'ana.reyes');await f.apiA.alerts.acknowledge(1042, { responder_id: 2, expected_revision: 0 });await f.apiA.announcements.create({title:'Community update',content:'School open'});await f.login(f.authB,'maria.santos');
     const groups=residentNotificationGroups(await f.apiB.notifications.list());
     equal(groups.map(g=>g.rows.length),[1,1]);
     ok(groups.every(g=>g.rows.every(n=>n.user_id===4)));

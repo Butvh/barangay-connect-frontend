@@ -1,4 +1,5 @@
 import { registerNotificationTests } from './notifications.js';
+import { registerAssignmentTests } from './assignments.js';
 import { registerFacilityTests } from './facilities.js';
 import { registerCaptainIntegrationTests } from './captain-integration.js';
 import { registerCaptainPersonnelTests } from './captain-personnel.js';
@@ -32,6 +33,7 @@ const ok = (value, label = 'assertion failed') => { if (!value) throw new Error(
 async function rejects(run, code) { let found; try { await run(); } catch (error) { found = error; } ok(found, `expected ${code}`); equal(found.code, code); }
 const noDelay = () => Promise.resolve();
 registerNotificationTests({ test, equal, ok, rejects, fixture });
+registerAssignmentTests({ test, equal, ok, rejects, fixture });
 registerFacilityTests({ test, equal, ok, rejects, fixture });
 registerCaptainIntegrationTests({ test, equal, ok, rejects, fixture });
 registerCaptainPersonnelTests({ test, equal, ok, rejects, fixture });
@@ -171,8 +173,9 @@ test('an active alert belonging to another resident does not block a newly appro
 });
 
 test('a new SOS is allowed after the previous own alert is resolved', async () => {
-  const f = fixture(); await f.login(f.authA, 'ana.reyes'); await f.apiA.alerts.acknowledge(1042);
-  await f.login(f.authA, 'carlo.mendoza'); await f.apiA.alerts.logResponse(1042, { response_type: 'Assessment', response_status: 'Completed' });
+  const f = fixture(); await f.login(f.authA, 'ana.reyes'); await f.apiA.alerts.acknowledge(1042, { responder_id: 2, expected_revision: 0 });
+  await f.login(f.authA, 'carlo.mendoza'); await f.apiA.alerts.logResponse(1042, { rescue_required: true,  response_type: 'Assessment', response_status: 'Completed' });
+  await f.login(f.authA, 'ana.reyes'); await f.apiA.alerts.resolve(1038); await f.apiA.alerts.assign(1042, { role: 'rescuer', personnel_id: 3, expected_revision: 2 });
   await f.login(f.authA, 'ramon.bautista'); await f.apiA.alerts.logRescue(1042, { facility_id: 1, rescue_status: 'Completed' });
   await f.login(f.authA, 'ana.reyes'); await f.apiA.alerts.resolve(1042);
   await f.login(f.authA, 'maria.santos'); const alert = await f.apiA.alerts.create({});
@@ -312,8 +315,9 @@ function fixture() {
 
 for (const [action, rule] of Object.entries(RULES)) for (const status of ALERT_STATUSES) for (const role of ['secretary', 'responder', 'rescuer', 'resident']) {
   test(`machine: ${role} ${action} at ${status}`, async () => {
-    const input = { id: 1, status }; const user = { id: 1, [`is_${role}`]: true };
-    if (role === rule.role && status === rule.from) { const next = transition(input, action, user, Config.demo_time); equal(next.status, rule.to); equal(input.status, status, 'input was mutated'); }
+    const input = { id: 1, status, active_responder_assignment: true, active_rescuer_assignment: true, rescue_required: true }; const user = { id: 1, [`is_${role}`]: true };
+    const stages = action === 'logResponse' ? ['Acknowledged', 'Responding', 'Rescue in progress'] : action === 'logRescue' ? ['Responding', 'Rescue in progress'] : [rule.from];
+    if (role === rule.role && stages.includes(status)) { const next = transition(input, action, user, Config.demo_time); equal(next.status, action === 'logResponse' && status === 'Rescue in progress' ? status : rule.to); equal(input.status, status, 'input was mutated'); }
     else await rejects(() => transition(input, action, user, Config.demo_time), role !== rule.role ? 'FORBIDDEN' : 'INVALID_STATE');
   });
 }
@@ -336,8 +340,9 @@ test('F-X1/F-X2 full workflow, timeline, destination and cross-tab notifications
   equal(alert.status, 'Pending'); equal(alert.victim_count, null); equal(alert.resident.full_name, 'Maria Santos');
   equal((await f.apiB.alerts.get(alert.id)).id, alert.id); ok(sameTab > 0 && crossTab > 0);
   ok((await f.apiB.notifications.list()).some(n => n.kind === 'alert_new' && n.link.endsWith(`id=${alert.id}`)));
-  const ack = await f.apiB.alerts.acknowledge(alert.id); equal(ack.assigned_responder.id, 2);
-  await f.login(f.authB, 'carlo.mendoza'); await f.apiB.alerts.logResponse(alert.id, { response_type: 'First aid', response_status: 'Completed', notes: 'Assessed.' });
+  const ack = await f.apiB.alerts.acknowledge(alert.id, { responder_id: 2, expected_revision: 0 }); equal(ack.assigned_responder.id, 2);
+  await f.login(f.authB, 'carlo.mendoza'); await f.apiB.alerts.logResponse(alert.id, { rescue_required: true,  response_type: 'First aid', response_status: 'Completed', notes: 'Assessed.' });
+  await f.login(f.authB, 'ana.reyes'); await f.apiB.alerts.resolve(1038); await f.apiB.alerts.assign(alert.id, { role: 'rescuer', personnel_id: 3, expected_revision: 2 });
   await f.login(f.authB, 'ramon.bautista'); await f.apiB.alerts.logRescue(alert.id, { facility_id: 2, rescue_status: 'In progress', notes: 'Transport.' });
   await f.login(f.authB, 'ana.reyes'); await f.apiB.alerts.resolve(alert.id);
   const final = await f.apiA.alerts.get(alert.id); equal(final.status, 'Resolved'); equal(final.timeline.filter(t => t.at).length, 5); equal(final.timeline.filter(t => t.current).map(t => t.status), ['Resolved']); equal(final.rescues[0].facility.name, 'Dalisay District Hospital');
@@ -345,11 +350,11 @@ test('F-X1/F-X2 full workflow, timeline, destination and cross-tab notifications
   offA(); offB(); const before = crossTab; await f.storeA.reset(); equal(crossTab, before);
 });
 test('each invalid API transition preserves records and revision', async () => {
-  const f = fixture(); await f.login(f.authA, 'maria.santos'); const before = f.storeA.read(); await rejects(() => f.apiA.alerts.acknowledge(1042), 'FORBIDDEN'); equal(f.storeA.read(), before);
-  await f.login(f.authA, 'carlo.mendoza'); await rejects(() => f.apiA.alerts.logResponse(1042, { response_type: 'Assessment', response_status: 'Completed', notes: '' }), 'FORBIDDEN');
+  const f = fixture(); await f.login(f.authA, 'maria.santos'); const before = f.storeA.read(); await rejects(() => f.apiA.alerts.acknowledge(1042, { responder_id: 2, expected_revision: 0 }), 'FORBIDDEN'); equal(f.storeA.read(), before);
+  await f.login(f.authA, 'carlo.mendoza'); await rejects(() => f.apiA.alerts.logResponse(1042, { rescue_required: true,  response_type: 'Assessment', response_status: 'Completed', notes: '' }), 'FORBIDDEN');
 });
 test('simultaneous acknowledgement commits only once', async () => {
-  const f = fixture(); await f.login(f.authA, 'ana.reyes'); const result = await Promise.allSettled([f.apiA.alerts.acknowledge(1042), f.apiA.alerts.acknowledge(1042)]); equal(result.filter(r => r.status === 'fulfilled').length, 1); equal((await f.apiA.alerts.get(1042)).status, 'Acknowledged');
+  const f = fixture(); await f.login(f.authA, 'ana.reyes'); const result = await Promise.allSettled([f.apiA.alerts.acknowledge(1042, { responder_id: 2, expected_revision: 0 }), f.apiA.alerts.acknowledge(1042, { responder_id: 2, expected_revision: 0 })]); equal(result.filter(r => r.status === 'fulfilled').length, 1); equal((await f.apiA.alerts.get(1042)).status, 'Acknowledged');
 });
 test('unverified resident cannot SOS or read another resident alert', async () => {
   const f = fixture(); await f.login(f.authA, 'jose.dela.cruz'); await rejects(() => f.apiA.alerts.create({}), 'FORBIDDEN'); await rejects(() => f.apiA.alerts.get(1042), 'FORBIDDEN'); await rejects(() => f.apiA.alerts.list({ resident_id: 4 }), 'FORBIDDEN');

@@ -30,8 +30,9 @@ export function mountLiveChecks(root) {
   button('Sign out this tab', async () => Auth.logout());
   const latest = async () => (await Api.alerts.list())[0];
   button('Create test SOS', () => Api.alerts.create({ alert_type: 'Flood', description: 'Browser cross-tab check', victim_count: null }));
-  button('Acknowledge latest', async () => Api.alerts.acknowledge((await latest()).id));
-  button('Log response latest', async () => Api.alerts.logResponse((await latest()).id, { response_type: 'Assessment', response_status: 'Completed', notes: 'Browser cross-tab check' }));
+  button('Assign Carlo and acknowledge latest', async () => { const a = await latest(); return Api.alerts.acknowledge(a.id, { responder_id: 2, expected_revision: a.assignment_revision }); });
+  button('Assign Ramon to latest', async () => { const a = await latest(); return Api.alerts.assign(a.id, { role: 'rescuer', personnel_id: 3, expected_revision: a.assignment_revision }); });
+  button('Log response latest', async () => Api.alerts.logResponse((await latest()).id, { rescue_required: true,  response_type: 'Assessment', response_status: 'Completed', notes: 'Browser cross-tab check' }));
   button('Log rescue latest', async () => Api.alerts.logRescue((await latest()).id, { facility_id: 1, rescue_status: 'In progress', notes: 'Browser cross-tab check' }));
   button('Resolve latest', async () => Api.alerts.resolve((await latest()).id));
   button('Publish test announcement', () => Api.announcements.create({ title: 'Browser test advisory', content: 'Fictional integration check.' }));

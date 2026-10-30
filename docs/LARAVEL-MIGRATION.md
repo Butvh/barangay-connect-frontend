@@ -151,10 +151,12 @@ fields instead of mass-assigning the entire request.
 | SubmitVerification | Own non-approved residency; document_type 1–100 and file_name 1–200 in the demo. A real file upload needs separately agreed MIME, size, scanning and private-access rules. Seven-day deadline is server-generated. |
 | ReviewVerification | Captain/Secretary, same barangay, pending and not past deadline; decision Approved or Rejected; rejection reason trimmed 1–1,000 when rejected. Recheck inside the transaction; do not overwrite another review. |
 | CreateSOS / AddAlertDetails | Approved Resident for create; owner/non-resolved for details. Exact disaster enum; description optional ≤2,000; location label ≤200 with household fallback; victim_count null or integer 0–9,999; photo_name optional ≤200; coordinates 0–100. Detail patch whitelist excludes status, roles and assignments. |
-| AcknowledgeAlert | Captain/Secretary, same barangay, Pending. Require and assign an active eligible barangay Responder before any write; reject atomically if unavailable. |
-| LogResponse | Assigned active barangay Responder, Acknowledged; response_type First aid/Assessment/Evacuation assistance/Other; response_status Responding/Completed; optional notes ≤2,000. Require and assign an active local Rescuer before any write. |
-| LogRescue | Assigned barangay Rescuer, Responding; existing shared Hospital or same-barangay EvacuationCenter; rescue_status In progress/Completed; optional notes ≤2,000. |
-| ResolveAlert | Captain/Secretary, same barangay, Rescue in progress. Set resolved_at on server; preserve logs. |
+| AcknowledgeAlert | Captain/Secretary, same barangay, Pending; explicit responder_id and expected_revision. Atomically acknowledge and assign that eligible active local Responder with capacity 2; never select automatically. |
+| AssignAlert / AssignmentOptions | Captain/Secretary, same barangay; explicit role/personnel_id/revision. Rescuer dispatch requires a current rescue-needed assessment and capacity 1. Query actual active responsibilities. Recheck personnel, incident, capacity and revision inside one locked transaction. |
+| ReassignAlert / CancelAssignment | Captain only; active responsibility, current revision and reason 1–1,000. Preserve prior assignment, logs and actor/time. Capacity override additionally requires explicit confirmed:true and override reason; audit it. |
+| LogResponse | Assigned active local Responder responsibility, Acknowledged/Responding/Rescue in progress; response_type First aid/Assessment/Evacuation assistance/Other; response_status Responding/Completed; required rescue_required boolean; optional notes ≤2,000. Never assign a Rescuer. Completed releases only this responsibility. |
+| LogRescue | Assigned active local Rescuer responsibility, Responding/Rescue in progress; active shared Hospital or same-barangay EvacuationCenter; rescue_status In progress/Completed; optional notes ≤2,000. Snapshot destination; Completed releases only this responsibility. |
+| ResolveAlert | Captain/Secretary, same barangay, Rescue in progress, or Responding with completed no-rescue response and no active rescue. Set resolved_at; close remaining responsibilities without inventing Completed logs. |
 | PublishAnnouncement | Captain/Secretary; title 1–200 and content 1–5,000; derive author, barangay and timestamp. |
 | CreateFeedback | Resident; exact complaint/suggestion/general enum. Complaint/Suggestion category 1–100, description 1–2,000, optional location ≤200; General rating integer 1–5 and comment 1–2,000, status null. |
 | AssignTanod / ResolveFeedback | Captain/Secretary, same barangay; no General actions. Assignment requires Pending and same-barangay Tanod. Resolve accepts Pending/Assigned and rejects already Resolved. |
@@ -166,9 +168,13 @@ fields instead of mass-assigning the entire request.
 
 The frontend's status enum and a log's status are distinct. Completed response
 or rescue entries do not jump to Resolved. Preserve exact forward transitions,
-automatic timestamps and notification behavior, and reject concurrent repeats.
+server timestamps and notification behavior. Repeated progress logs are allowed
+while that responsibility is active; duplicate/stale dispatches are rejected.
 Use transactions with row locks for lifecycle decisions. Queue/broadcast work
 must run after commit so readers never receive an update for rolled-back data.
+See [ASSIGNMENTS-API.md](ASSIGNMENTS-API.md) for the current endpoint payloads,
+assignment schema, permissions, legacy provenance and deterministic locking
+order. Browser storage checks are demo behavior, not production authorization.
 
 ### Adapter and error mapping
 

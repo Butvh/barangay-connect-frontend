@@ -32,9 +32,9 @@ export function registerResponderDashboardTests({ test, equal, ok, fixture }) {
     const data = responderDashboardData([], user, now); equal(data.current, null); equal(data.assignedToday, 0); equal(data.completedToday, 0); equal(data.activity, []); equal(data.recent, []);
   });
   test('Responder projection follows real assignment and response API writes', async () => {
-    const f = fixture(); await f.login(f.authB, 'ana.reyes'); await f.apiB.alerts.acknowledge(1042); await f.login(f.authB, 'carlo.mendoza'); const currentUser = f.authB.current();
+    const f = fixture(); await f.login(f.authB, 'ana.reyes'); await f.apiB.alerts.acknowledge(1042, { responder_id: 2, expected_revision: 0 }); await f.login(f.authB, 'carlo.mendoza'); const currentUser = f.authB.current();
     let data = responderDashboardData(await f.apiB.alerts.list(), currentUser, f.storeB.now()); ok(data.active.some(a => a.id === 1042)); const before = data.completedToday;
-    await f.apiB.alerts.logResponse(1042, { response_type: 'First aid', response_status: 'Completed', notes: 'Fictional dashboard verification.' });
+    await f.apiB.alerts.logResponse(1042, { rescue_required: true,  response_type: 'First aid', response_status: 'Completed', notes: 'Fictional dashboard verification.' });
     data = responderDashboardData(await f.apiB.alerts.list(), currentUser, f.storeB.now()); equal(data.completedToday, before + 1); ok(data.activity.some(a => a.alert.id === 1042 && a.title === 'First aid · Completed'));
   });
 }
