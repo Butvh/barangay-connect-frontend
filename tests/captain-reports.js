@@ -2,6 +2,7 @@ import { captainReportData, reportPage, reportsCSV } from '../assets/js/pages/ca
 import * as reportModel from '../assets/js/pages/captain-reports-model.js';
 import { personnelPanel, reportPanel } from '../assets/js/pages/captain-report-panels.js';
 import { activityPageData, activityRows, activityDetails, activityPagination } from '../assets/js/pages/captain-activity.js';
+import { personnelPerformanceData, personnelPerformancePage } from '../assets/js/pages/captain-performance.js';
 
 export function registerCaptainReportsTests({ test, equal, ok, fixture }) {
   test('Activity filters combine search, type, responsible user and Manila date range without mutating records', () => {
@@ -86,6 +87,71 @@ export function registerCaptainReportsTests({ test, equal, ok, fixture }) {
   const at = '2026-10-25T12:00:00+08:00';
   const alert = (id, patch = {}) => ({ id, barangay_id: 1, alert_type: 'Flood', status: 'Pending', created_at: '2026-10-03T10:00:00+08:00', responses: [], rescues: [], ...patch });
   const data = patch => ({ barangay_id: 1, at, alerts: [], users: [], ...patch });
+  test('Performance subpage counts actual role records and six dated months without inventing history', () => {
+    const snapshot = data({ users: [{ id: 2, barangay_id: 1, full_name: 'Carlo', is_responder: true }, { id: 9, barangay_id: 1, full_name: 'No activity', is_responder: true }], alerts: [alert(1, { responses: [
+      { id: 1, responder_id: 2, response_status: 'Completed', responded_at: '2026-09-30T16:00:00Z' },
+      { id: 2, responder_id: 2, response_status: 'Completed', responded_at: '2026-09-03T09:00:00+08:00' },
+      { id: 3, responder_id: 2, response_status: 'Responding', responded_at: at },
+      { id: 4, responder_id: 2, response_status: 'Completed', responded_at: 'invalid' },
+      { id: 5, responder_id: 2, response_status: 'Completed', responded_at: '2026-10-30T09:00:00+08:00' },
+    ] }), alert(2, { barangay_id: 2, responses: [{ id: 6, responder_id: 2, response_status: 'Completed', responded_at: at }] })] });
+    const before = JSON.stringify(snapshot), p = personnelPerformanceData(snapshot, { period: '2026-10', role: 'responder', barangayId: 1 });
+    equal(p.metrics.map(m => m.value), [2, 1, 1]); equal(p.metrics[1].change, 0);
+    equal(p.trend.map(m => m.period), ['2026-05', '2026-06', '2026-07', '2026-08', '2026-09', '2026-10']);
+    equal(p.trend.map(m => m.value), [0, 0, 0, 0, 1, 1]); equal(p.rows.length, 2);
+    equal(p.rows.find(r => r.id === 9).completedResponses, 0); equal(JSON.stringify(snapshot), before);
+  });
+  test('Performance subpage handles year boundaries, empty history and historical personnel', () => {
+    const snapshot = data({ at: '2027-01-25T12:00:00+08:00', users: [{ id: 2, barangay_id: 1, is_rescuer: true }], alerts: [alert(1, { responses: [{ id: 1, responder_id: 2, response_status: 'Completed', responded_at: '2027-01-02T12:00:00+08:00' }] })] });
+    const p = personnelPerformanceData(snapshot, { period: '2027-01', role: 'responder' });
+    equal(p.trend.map(m => m.period), ['2026-08', '2026-09', '2026-10', '2026-11', '2026-12', '2027-01']);
+    equal(p.metrics[1].change, null); equal(p.rows[0].status, 'Historical');
+    const empty = personnelPerformanceData(data({}), { role: 'constructor' });
+    equal(empty.role, 'responder'); equal(empty.metrics.map(m => m.value), [0, 0, 0]); ok(empty.trend.every(m => m.value === 0));
+  });
+  test('Performance subpage compares recorded completions against the actual previous month', () => {
+    const snapshot = data({ alerts: [alert(1, { responses: [
+      { id: 1, responder_id: 2, response_status: 'Completed', responded_at: '2026-09-20T12:00:00+08:00' },
+      { id: 2, responder_id: 2, response_status: 'Completed', responded_at: '2026-10-20T12:00:00+08:00' },
+      { id: 3, responder_id: 2, response_status: 'Completed', responded_at: '2026-10-21T12:00:00+08:00' },
+    ] })] });
+    const p = personnelPerformanceData(snapshot, { role: 'responder' }); equal(p.metrics[1].previous, 1); equal(p.metrics[1].change, 100);
+    const html = personnelPerformancePage(p); ok(html.includes('↑ 100%')); ok(html.includes('vs. last month (1)'));
+    const november = personnelPerformanceData({ ...snapshot, at: '2026-11-25T12:00:00+08:00' }, { period: '2026-11' });
+    equal(november.metrics[1].change, -100); ok(personnelPerformancePage(november).includes('↓ 100%'));
+  });
+  test('Performance trend totals match monthly projections with historical roles and Captain decisions', () => {
+    const reviewed_at = '2026-09-20T12:00:00+08:00';
+    const snapshot = data({ users: [{ id: 1, barangay_id: 1, is_secretary: true }, { id: 7, barangay_id: 1, is_captain: true }], personnel: { records: [{ user_id: 4, barangay_id: 1, role: 'rescuer', history: [{ from_role: 'secretary' }] }] }, verifications: [
+      { id: 1, resident: { barangay_id: 1 }, review_status: 'Approved', reviewed_by: 1, reviewed_at },
+      { id: 2, resident: { barangay_id: 1 }, review_status: 'Approved', reviewed_by: 7, reviewed_at },
+      { id: 3, resident: { barangay_id: 1 }, review_status: 'Rejected', reviewed_by: 4, reviewed_at },
+      { id: 4, resident: { barangay_id: 1 }, review_status: 'Approved', reviewed_by: 99, reviewed_at },
+    ], activity_logs: [{ id: 1, barangay_id: 1, entity: 'verification', record_id: 4, action: 'Verification approved', actor_id: 99, actor_role: 'secretary', at: reviewed_at }], alerts: [alert(1, { responses: [{ id: 1, responder_id: 20, response_status: 'Completed', responded_at: reviewed_at }], rescues: [{ id: 1, rescuer_id: 4, rescue_status: 'Completed', rescued_at: at }] })] });
+    const projection = captainReportData(snapshot);
+    for (const role of ['responder', 'rescuer', 'secretary']) {
+      const key = { responder: 'completedResponses', rescuer: 'completedRescues', secretary: 'reviewed' }[role];
+      const p = personnelPerformanceData(snapshot, { role }, projection);
+      for (const row of p.trend) equal(row.value, captainReportData(snapshot, { period: row.period }).performance[role].reduce((sum, person) => sum + person[key], 0));
+    }
+    equal(projection.trend.at(-2).reviewed, 3);
+  });
+  test('Performance subpage retains rescue deduplication and Secretary review/publication metrics', () => {
+    const snapshot = data({ users: [{ id: 1, barangay_id: 1, is_secretary: true }, { id: 3, barangay_id: 1, is_rescuer: true }], verifications: [{ id: 1, resident: { barangay_id: 1 }, review_status: 'Approved', reviewed_by: 1, reviewed_at: at }], announcements: [{ id: 1, barangay_id: 1, posted_by: 1, created_at: at }], alerts: [alert(1, { victim_count: 4, rescues: [1, 2].map(id => ({ id, rescuer_id: 3, rescue_status: 'Completed', rescued_at: at })) }), alert(2, { victim_count: null, rescues: [{ id: 3, rescuer_id: 3, rescue_status: 'Completed', rescued_at: at }] })] });
+    const rescue = personnelPerformanceData(snapshot, { role: 'rescuer' });
+    equal(rescue.metrics.map(m => m.value), [1, 3, 4]); equal(rescue.trend.at(-1).value, 3); ok(rescue.metrics[2].note.includes('1 completed case'));
+    const secretary = personnelPerformanceData(snapshot, { role: 'secretary' });
+    equal(secretary.metrics.map(m => m.value), [1, 1, 1]); equal(secretary.trend.at(-1).value, 1);
+    equal(secretary.counts, { responder: 0, rescuer: 1, secretary: 1 });
+  });
+  test('Performance subpage rendering escapes names, exposes chart values and preserves detail/tab controls', () => {
+    const p = personnelPerformanceData(data({ users: [{ id: 2, barangay_id: 1, full_name: '<Carlo>', is_responder: true }] }), { role: 'responder' });
+    const html = personnelPerformancePage(p);
+    for (const value of ['data-person="2"', 'data-role="responder"', 'id="reports-role-responder"', 'aria-selected="true"', 'aria-controls="reports-performance-results"', 'aria-labelledby="reports-role-responder"', 'Monthly overview', 'Completed responses trend', 'No previous-month baseline', '&lt;Carlo&gt;', 'Active']) ok(html.includes(value), `missing ${value}`);
+    ok(!html.includes('<Carlo>')); equal((html.match(/role="tab"/g) || []).length, 3);
+    ok(html.includes('<caption>Completed responses trend</caption>')); ok(html.includes('<td>0</td>'));
+    ok(personnelPerformancePage(personnelPerformanceData(data({}), {})).includes('No personnel records are available for this role.'));
+  });
   test('Captain reports use Manila month boundaries and exclude invalid or future dates', () => {
     const p = captainReportData(data({ alerts: [alert(1, { created_at: '2026-09-30T16:00:00Z' }), alert(2, { created_at: '2026-09-30T15:59:59Z' }), alert(3, { created_at: 'invalid' }), alert(4, { created_at: '2026-10-30T00:00:00+08:00' })] }));
     equal(p.metrics.incidents, 1); equal(p.metrics.previousIncidents, 1); equal(p.metrics.invalidIncidentDates, 1); equal(p.period, '2026-10');
