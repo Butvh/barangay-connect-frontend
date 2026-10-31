@@ -17,3 +17,8 @@ if (!process.exitCode) {
   if (sos.error) console.error(sos.error.message);
   process.exitCode = sos.status ?? 1;
 }
+if (!process.exitCode) {
+  const detail = spawnSync(process.execPath, ['tests/official-alert-detail.mjs'], { cwd: root, stdio: 'inherit' });
+  if (detail.error) console.error(detail.error.message);
+  process.exitCode = detail.status ?? 1;
+}
