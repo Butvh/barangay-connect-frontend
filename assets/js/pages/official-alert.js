@@ -1,50 +1,29 @@
-import { facilityActive, facilityLocated } from '../core/facilities.js';
-import { Auth, Api, UI, Icons, Fmt, e, typeIcon, alertName, victims, facts, roleLabel, live, errorView } from './official-shared.js';
+import { Auth, Api, UI, Fmt, e, live, errorView } from './official-shared.js';
 import { Shell } from '../core/shell-official.js';
 import { BCMap } from '../core/map.js';
-import { canTransition } from '../core/alertMachine.js';
 import { logAlert, resolveAlert } from './official-alert-actions.js';
 import { assignAlert, cancelAlertAssignment } from './official-assignment.js';
+import { alertDetail } from './official-alert-view.js';
 
 let user;
 try { Auth.requireRole(['captain', 'secretary', 'responder', 'rescuer']); user = Auth.current(); }
 catch (error) { if (!['AUTH', 'FORBIDDEN'].includes(error.code)) document.querySelector('#app').innerHTML = UI.empty({ icon: 'triangle-alert', title: 'Unable to open the alert', text: error.message, action: { href: 'login.html', label: 'Back to sign in' } }); }
 if (user) {
-  const main = Shell.official({ active: 'Alerts' }), id = Number(new URLSearchParams(location.search).get('id')), role = Auth.roleOf(user);
+  const main = Shell.official({ active: 'Alerts' }), id = Number(new URLSearchParams(location.search).get('id'));
   let mapView, current, rendering = 0;
+  main.classList.add('alert-detail-page');
   main.setAttribute('aria-busy', 'true'); main.innerHTML = '<p class="sr-only" role="status">Loading alert…</p>' + UI.skeleton(3);
-  const allowed = (a, action) => canTransition(a, action, user) && (action !== 'logResponse' || a.assigned_responder_id === user.id) && (action !== 'logRescue' || a.assigned_rescuer_id === user.id);
-  function actionCard(a) {
-    const action = ['acknowledge', 'logResponse', 'logRescue', 'resolve'].find(action => allowed(a, action));
-    const label = { acknowledge: 'Acknowledge', logResponse: 'Log response', logRescue: 'Log rescue', resolve: 'Resolve' };
-    const admin = ['secretary', 'captain'].includes(role), buttons = [];
-    if (action) buttons.push(`<button class="btn ${action === 'resolve' ? 'btn-danger' : 'btn-primary'}" type="button" data-workflow="${action}">${label[action]}</button>`);
-    if (admin && a.can_assign_responder) buttons.push('<button type="button" class="btn btn-primary" data-assign="responder">Assign responder</button>');
-    if (admin && a.can_assign_rescuer) buttons.push('<button type="button" class="btn btn-primary" data-assign="rescuer">Assign a rescuer</button>');
-    const waiting = a.status === 'Resolved' ? 'This alert is resolved.' : a.status === 'Pending' ? 'Awaiting acknowledgement and responder selection by a barangay official.' : a.rescue_required && !a.assigned_rescuer_id ? 'Rescue assistance is needed. Awaiting manual rescuer assignment.' : a.response_completed ? 'The response responsibility is completed. Awaiting the remaining incident actions.' : a.status === 'Acknowledged' ? 'Awaiting the assigned responder’s assessment.' : 'Continue monitoring the assigned operation.';
-    const assignments = ['responder', 'rescuer'].map(kind => {
-      const person = a[`assigned_${kind}`], active = a[`active_${kind}_assignment`];
-      return `<div class="assignment-summary-row"><div class="assignment-summary-copy"><small>Assigned ${kind}</small><strong>${e(person?.full_name || 'Not assigned yet')}</strong>${person ? `<small>${e(a[`${kind}_assignment_status`] || 'Not recorded')} · ${a[`${kind}_assigned_at`] ? e(Fmt.dateTime(a[`${kind}_assigned_at`])) : 'Assignment time not recorded'}${a[`${kind}_assigned_by_name`] ? ` · By ${e(a[`${kind}_assigned_by_name`])}` : ''}</small>` : ''}</div>${role === 'captain' && active ? `<div class="assignment-summary-actions"><button type="button" class="btn btn-small" data-reassign="${kind}">Reassign ${kind}</button><button type="button" class="btn btn-small" data-cancel-assignment="${kind}">Cancel ${kind} assignment</button></div>` : ''}</div>`;
-    }).join('');
-    const history = admin && a.assignments?.length ? `<details class="assignment-history"><summary>Assignment history (${a.assignments.length})</summary><ol>${a.assignments.map(row => `<li><strong>${e(row.personnel_name)} · ${e(row.role)}</strong><small>${e(row.status)} · ${row.assigned_at ? e(Fmt.dateTime(row.assigned_at)) : 'Original assignment time not recorded'} · By ${e(row.assigned_by_name || 'Not recorded')}</small>${row.ended_at ? `<small>Ended ${e(Fmt.dateTime(row.ended_at))} · ${e(row.end_reason || '')}</small>` : ''}${row.override_reason ? `<small>Captain override: ${e(row.override_reason)}</small>` : ''}</li>`).join('')}</ol></details>` : '';
-    return `<section class="card official-person-action official-assignment-summary"><p>${e(roleLabel(role))} ${e(user.full_name)}</p>${buttons.length ? `<div class="actions">${buttons.join('')}</div>` : `<small>${e(waiting)}</small>`}${assignments}${history}</section>`;
-  }
-  function logs(a, rescue = false) {
-    const rows = rescue ? a.rescues : a.responses;
-    return `<section class="card official-section"><h3>${rescue ? 'Rescue log' : 'Response log'}</h3>${rows.length ? `<ul class="official-log-records">${rows.map(r => `<li>${facts(rescue ? [['Rescuer', r.rescuer?.full_name], ['Destination facility', r.facility?.name], ['Status', r.rescue_status], ['Time', Fmt.dateTime(r.rescued_at)]] : [['Responder', r.responder?.full_name], ['Response type', r.response_type], ['Rescue or evacuation needed', typeof r.rescue_required === 'boolean' ? (r.rescue_required ? 'Yes' : 'No') : 'Not recorded'], ['Status', r.response_status], ['Time', Fmt.dateTime(r.responded_at)]])}${rescue && r.current_facility && !facilityActive(r.current_facility) ? '<p class="banner">Destination is currently inactive. Original assignment retained.</p>' : ''}${r.notes ? `<p class="official-long-copy">${e(r.notes)}</p>` : ''}</li>`).join('')}</ul>` : `<small>${rescue ? 'Rescuer · Destination facility · Status · Time' : 'Responder · Response type · Status · Time'}</small><p>No ${rescue ? 'rescue' : 'response'} logged yet.</p>`}</section>`;
-  }
   async function saved() { await render(); main.focus(); }
   async function render() {
     const version = ++rendering;
     try {
-      const a = await Api.alerts.get(id), resident = ['secretary', 'captain'].includes(role) && a.resident ? await Api.users.get(a.resident.id) : null; if (version !== rendering) return;
+      const a = await Api.alerts.get(id); if (version !== rendering) return;
       current = a; mapView?.destroy(); document.title = `${Fmt.alertId(a.id)} · ${a.status} — Barangay Connect`;
-      main.innerHTML = `<header class="official-heading"><h1>Alert Detail</h1></header><div class="official-alert-heading"><h2>${Icons.svg(typeIcon(a.alert_type))}${e(alertName(a))}</h2><div>${UI.badge(a.status)}<a class="btn" href="official-alerts.html">Back to alerts</a></div></div>${actionCard(a)}<div class="official-detail-grid"><div class="official-section"><section class="card official-section"><h2>Emergency details</h2>${facts([['Reporter', a.resident?.full_name || 'Not provided'], ['Household', a.household?.address || 'Not provided'], ['Location', a.location_label], ['Victims', a.victim_count ?? 'Not confirmed'], ['Reported', Fmt.dateTime(a.created_at)]])}${resident?.verification ? `<div class="official-verification-line"><small>Verification</small>${UI.badge(resident.verification.review_status)}</div>` : ""}<p class="official-long-copy">${e(a.description || 'No description provided.')}</p><div class="official-photo-placeholder">${Icons.svg('camera')}<span>${a.photo_name ? `Photo preview · ${e(a.photo_name)}` : 'No photo provided.'}</span><small>Photos are represented by file names in this demo.</small></div></section><div class="official-detail-logs">${logs(a)}${logs(a, true)}</div></div><aside class="card official-section official-timeline"><h2>Status timeline</h2><ol>${a.timeline.map(t => `<li${t.current ? ' aria-current="step" class="current"' : ''}>${UI.badge(t.status)}<span>${t.current ? 'Current · ' : ''}${t.at ? `<time datetime="${e(t.at)}">${e(Fmt.short(t.at))}</time>` : 'Not reached'}</span></li>`).join('')}</ol><div class="official-mini-map" id="alert-map"></div><small>Approximate incident location.</small></aside></div>`;
-      main.querySelectorAll('[data-workflow]').forEach(button => button.addEventListener('click', async event => {
-        const action = event.currentTarget.dataset.workflow, button = event.currentTarget;
-        if (action === 'acknowledge') {
-          assignAlert(current, { role: 'responder', mode: 'acknowledge', saved });
-        } else if (action === 'resolve') resolveAlert(current, saved);
+      main.innerHTML = alertDetail(a, user);
+      main.querySelectorAll('[data-workflow]').forEach(button => button.addEventListener('click', event => {
+        const action = event.currentTarget.dataset.workflow;
+        if (action === 'acknowledge') assignAlert(current, { role: 'responder', mode: 'acknowledge', saved });
+        else if (action === 'resolve') resolveAlert(current, saved);
         else logAlert(current, action === 'logRescue' ? 'rescue' : 'response', saved);
       }));
       main.querySelectorAll('[data-assign]').forEach(button => button.addEventListener('click', () => assignAlert(current, { role: button.dataset.assign, saved })));
@@ -57,5 +36,5 @@ if (user) {
       else errorView(main, err, render);
     } finally { if (version === rendering) main.removeAttribute('aria-busy'); }
   }
-  live(['facilities','alerts', 'verification', 'users'], render)(); window.addEventListener('pagehide', event => { if (!event.persisted) mapView?.destroy(); }, { once: true });
+  live(['facilities', 'alerts', 'verification', 'users'], render)(); window.addEventListener('pagehide', event => { if (!event.persisted) mapView?.destroy(); }, { once: true });
 }
