@@ -891,3 +891,7 @@ production. DATA-MODEL.md describes records and LARAVEL-MIGRATION.md describes
 the proposed server policy and endpoint mapping. Current verification commands
 are `node scripts/check.mjs` and `node scripts/run-tests.mjs`; earlier dated
 counts in this contract remain historical verification notes.
+
+### Resident SOS creation result
+
+`Api.alerts.create(payload)` returns the owner-scoped alert DTO plus `was_created: boolean`. It is true only when this transaction created the alert, false when duplicate prevention reused the resident's existing active SOS. This response-only flag is never persisted. The Resident shows Alert sent only for a newly created Pending SOS; revisits and reused records open `resident-alert.html?id=…` directly. A future Laravel adapter must preserve this distinction (for example 201/200 mapped to this flag). Verification, ownership, assignments and lifecycle permissions are unchanged.

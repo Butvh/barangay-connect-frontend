@@ -12,3 +12,8 @@ if (!process.exitCode) {
   if (pages.error) console.error(pages.error.message);
   process.exitCode = pages.status ?? 1;
 }
+if (!process.exitCode) {
+  const sos = spawnSync(process.execPath, ['tests/resident-sos-pages.mjs'], { cwd: root, stdio: 'inherit' });
+  if (sos.error) console.error(sos.error.message);
+  process.exitCode = sos.status ?? 1;
+}

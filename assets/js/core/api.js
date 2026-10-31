@@ -258,9 +258,9 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
         // Decide after the fresh transactional read so concurrent tabs cannot
         // create another own active SOS or overwrite the first submission.
         const active = recent(db.emergency_alerts.filter(a => a.resident_id === user.id && a.barangay_id === user.barangay_id && a.status !== 'Resolved'))[0];
-        if (active) return joinedAlert(db, active, user);
+        if (active) return { ...joinedAlert(db, active, user), was_created: false };
         const row = { id: nextId(db.emergency_alerts), resident_id: user.id, household_id: user.household_id, barangay_id: user.barangay_id, acknowledged_by: null, assigned_responder_id: null, assigned_rescuer_id: null, ...details, status: 'Pending', created_at: at, acknowledged_at: null, resolved_at: null };
-        db.emergency_alerts.push(row); notifyOfficials(db, user.barangay_id, 'alert_new', `New ${row.alert_type} alert · A-${row.id} · ${row.location_label}`, `official-alert.html?id=${row.id}`, at); return joinedAlert(db, row, user);
+        db.emergency_alerts.push(row); notifyOfficials(db, user.barangay_id, 'alert_new', `New ${row.alert_type} alert · A-${row.id} · ${row.location_label}`, `official-alert.html?id=${row.id}`, at); return { ...joinedAlert(db, row, user), was_created: true };
       }),
       addDetails: (id, patch = {}) => write(['alerts'], (db, user) => {
         assertRole(user, ['resident']); const row = get(db.emergency_alerts, id, 'Alert'); assertOwner(user, row);
