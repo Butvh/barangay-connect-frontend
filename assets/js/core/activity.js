@@ -15,7 +15,7 @@ export function recordActivity(db, before, user, role, at) {
     const previous = old ? JSON.parse(old) : null;
     let action, system = false, eventAt = at;
     if (entity === 'alert') action = previous ? previous.status !== row.status ? `Alert ${row.status.toLowerCase()}` : 'Alert details updated' : 'Alert submitted';
-    if (entity === 'verification') { action = previous ? `Verification ${row.review_status.toLowerCase()}` : 'Verification submitted'; system = row.review_status === 'Expired'; if (system) eventAt = row.deadline_at; }
+    if (entity === 'verification') { action = `Verification ${(row.history?.at(-1)?.action || (previous ? row.review_status : 'Submitted')).toLowerCase()}`; system = row.review_status === 'Expired'; if (system) eventAt = row.deadline_at; }
     if (entity === 'feedback') action = previous ? previous.status !== row.status ? `Feedback ${String(row.status).toLowerCase()}` : 'Feedback updated' : 'Feedback submitted';
     if (entity === 'announcement') { const last = row.history?.at(-1); action = `Announcement ${last?.action?.toLowerCase() || (previous ? 'updated' : 'published')}`; system = last?.action === 'Expired'; if (system) eventAt = last.at; }
     if (entity === 'personnel') action = row.history?.at(-1)?.action || 'Personnel updated';

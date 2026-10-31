@@ -22,3 +22,8 @@ if (!process.exitCode) {
   if (detail.error) console.error(detail.error.message);
   process.exitCode = detail.status ?? 1;
 }
+if (!process.exitCode) {
+  const verification = spawnSync(process.execPath, ['tests/verification-pages.mjs'], { cwd: root, stdio: 'inherit' });
+  if (verification.error) console.error(verification.error.message);
+  process.exitCode = verification.status ?? 1;
+}

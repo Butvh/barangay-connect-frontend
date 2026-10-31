@@ -1,4 +1,4 @@
-export const VERIFICATION_STATUSES = Object.freeze(['Pending', 'Approved', 'Rejected', 'Expired']);
+export { VERIFICATION_STATUSES } from '../core/verification.js';
 const day = at => { const ms = Date.parse(at); return Number.isFinite(ms) ? new Date(ms + 8 * 3600000).toISOString().slice(0, 10) : ''; };
 export const reviewable = (record, at) => record?.review_status === 'Pending' && Number.isFinite(Date.parse(record.deadline_at)) && Date.parse(record.deadline_at) >= Date.parse(at);
 export function verificationStats(rows, at) {

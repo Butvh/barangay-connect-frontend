@@ -3,7 +3,7 @@ import { installSelects } from './select.js';
 const escape = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const focusBefore = new WeakMap();
 const statusMap = {
-Pending:['amber','clock'],Acknowledged:['blue','circle-check'],Responding:['teal','loader-circle'],'Rescue in progress':['teal','triangle-alert'],Resolved:['green','circle-check'],Approved:['green','circle-check'],Submitted:['green','circle-check'],Rejected:['red','triangle-alert'],Expired:['gray','clock'],Assigned:['blue','users'],'Under review':['blue','clock'],Implemented:['green','circle-check']
+Pending:['amber','clock'],'Resubmission requested':['amber','clock'],Acknowledged:['blue','circle-check'],Responding:['teal','loader-circle'],'Rescue in progress':['teal','triangle-alert'],Resolved:['green','circle-check'],Approved:['green','circle-check'],Submitted:['green','circle-check'],Rejected:['red','triangle-alert'],Expired:['gray','clock'],Assigned:['blue','users'],'Under review':['blue','clock'],Implemented:['green','circle-check']
 };
 
 if (typeof document !== 'undefined') installSelects(document);

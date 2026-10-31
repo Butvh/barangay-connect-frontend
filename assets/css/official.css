@@ -409,12 +409,14 @@ html:has(.official-app):has(dialog[open]),html:has(.official-login):has(dialog[o
 .official-verification-detail .official-facts{grid-template-columns:1fr;gap:var(--s4)}
 .official-verification-detail .official-facts>div{display:grid;grid-template-columns:160px minmax(0,1fr);gap:var(--s4);align-items:start}
 .official-verification-detail .official-facts dd{font-size:var(--body);line-height:var(--body-lh)}
-.official-review-decision{display:flex;flex-direction:column;gap:var(--s3);border-top:1px solid var(--divider);padding-top:var(--s4)}
+.official-review-decision{display:flex;flex-direction:column;gap:var(--s3);border-top:1px solid var(--divider);padding-top:var(--s4);container-type:inline-size}
 .official-review-decision h3{font-size:var(--body-l);line-height:var(--body-l-lh)}
 .official-review-decision label{font-size:var(--caption);line-height:var(--caption-lh);color:var(--text-secondary)}
-.official-review-decision .textarea{resize:none;min-height:112px;field-sizing:content;max-height:320px}
+.official-review-decision .textarea{resize:none;min-height:80px;field-sizing:content;max-height:320px}
 .official-review-decision .error-text:empty{display:none}
-.official-review-actions{flex-wrap:nowrap}.official-review-actions .btn{flex:1;min-width:0;min-height:48px}
+.official-review-actions{flex-wrap:nowrap;gap:10px}.official-review-actions .btn{flex:1;min-width:0;min-height:48px;padding-inline:var(--s2)}
+@media(max-width:767px){.official-review-actions{flex-direction:column}.official-review-actions .btn{width:100%}}
+@container(max-width:550px){.official-review-actions{flex-direction:column}.official-review-actions .btn{width:100%}}
 .official-document-label{display:inline-flex;align-items:center;padding:var(--s2) var(--s3);background:var(--bg);border-radius:var(--radius);font-size:var(--caption);line-height:var(--caption-lh);white-space:nowrap}
 .official-document-preview{background:var(--bg);padding:var(--s8);min-height:500px;border-radius:var(--radius);display:flex;flex-direction:column;gap:var(--s4);overflow-wrap:anywhere}
 .official-document-preview>p{font-size:var(--body-l);line-height:var(--body-l-lh)}
