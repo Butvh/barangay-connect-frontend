@@ -58,4 +58,3 @@
 - Fresh independent whole-diff review identified the map query parameter mismatch. Regression was changed to the destination contract, observed failing, then fixed to `?alert=ID`. Browser verification of non-default A-1038 selected A-1038 on the map.
 - Ruling: preserve the existing demo's filename-only photo storage rather than inventing image URLs or modifying the API. Missing reporter contact/channel and legacy assignment provenance use explicit fallbacks.
 - Ruling: preserve the official shell dimensions; only the detail content adopts the supplied arrangement.
-

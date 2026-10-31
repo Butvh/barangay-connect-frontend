@@ -74,4 +74,3 @@ export function alertDetail(a, user) {
     ${personnel(a, role)}
   </aside></div>`;
 }
-
