@@ -17,3 +17,48 @@
 
 /* Informational pins inherit blue; emergency banners retain their white icons. */
 .p1-profile-summary use[href="assets/img/icons.svg#map-pin"],.nearby-alert-inner use[href="assets/img/icons.svg#map-pin"]{color:var(--blue-600)}
+
+/* Resident SOS tracking uses the status/phase variants from Figma. */
+.resident-alert-title{display:flex;align-items:center;flex-wrap:wrap;gap:16px}
+.resident-alert-title .badge-blue{background:var(--blue-100)}
+.resident-alert-title .badge-teal svg{color:var(--teal-600)}
+.response-progress-card{gap:16px}
+.response-progress-card>.stack-sm>p{font-size:14px;line-height:20px}
+.resident-sos-timeline li{gap:16px;padding:12px;min-height:88px}
+.resident-sos-timeline li>div{min-width:0}
+.resident-sos-timeline li::after{left:31px;top:56px;border-left-style:dotted}
+.resident-sos-timeline [data-tone=amber]{--stage-bg:var(--amber-100);--stage-color:var(--amber-700)}
+.resident-sos-timeline [data-tone=blue]{--stage-bg:var(--blue-100);--stage-color:var(--blue-600)}
+.resident-sos-timeline [data-tone=teal]{--stage-bg:var(--teal-50);--stage-color:var(--teal-600)}
+.resident-sos-timeline [data-tone=green]{--stage-bg:var(--green-50);--stage-color:var(--green-600)}
+.timeline.resident-sos-timeline li.current{background:color-mix(in srgb,var(--stage-bg) 35%,var(--surface));border-radius:8px}
+.resident-sos-timeline li.current .timeline-icon{background:var(--stage-bg);color:var(--stage-color)}
+.resident-sos-timeline li.completed .timeline-icon{background:var(--green-50);color:var(--green-600)}
+.resident-sos-timeline li.completed::after{border-color:var(--green-600)}
+.resident-sos-timeline li.current[data-tone=amber]::after{border-color:var(--amber-500)}
+.resident-sos-timeline h3{font-weight:var(--medium)}
+.response-progress-card .assignment-rows{padding-top:16px;gap:8px}
+.response-progress-card .assignment-rows svg{color:var(--text-muted)}
+.resident-alert-main .alert-layout>.stack{gap:16px}
+.resident-alert-main .mini-map{margin-top:0}
+.alert-location>svg{color:var(--blue-600)}
+.resident-alert-actions{margin-top:24px;gap:16px}
+
+/* A successful new submission retains its own two-column confirmation. */
+.report-sent-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,432px);gap:32px;align-items:start}
+.report-sent-confirm{display:flex;flex-direction:column;align-items:flex-start;gap:24px;padding:32px;background:var(--green-50)}
+.report-sent-confirm>svg{color:var(--green-600)}
+.report-sent-confirm h2{font-size:32px;line-height:40px}
+.report-sent-confirm p{color:var(--text);font-size:16px;line-height:24px}
+.report-sent-confirm .actions{gap:16px;width:100%}
+.report-sent-confirm .actions .btn:first-child{width:248px}
+.report-sent-confirm .actions .btn:last-child{width:232px}
+.report-sent-next{display:flex;flex-direction:column;gap:16px;background:var(--blue-50)}
+.report-sent-next>.row{align-items:flex-start}
+.report-sent-next>.row>svg{color:var(--blue-600)}
+.report-sent-next p{font-size:16px;line-height:24px}
+.report-sent-next>.row p{color:var(--text)}
+.report-sent-next .mini-map{margin-top:0;border-radius:0}
+.report-sent-next .mini-map .bc-map-viewport{border-radius:0}
+@media(max-width:1023px){.report-sent-layout{grid-template-columns:1fr;gap:24px}.report-sent-next .mini-map{max-width:100%;width:100%}}
+@media(max-width:767px){.resident-sos-timeline li{min-height:88px}.report-sent-confirm{padding:24px}.report-sent-confirm h2{font-size:24px;line-height:32px}.report-sent-confirm .actions .btn{width:100%;flex:auto}.resident-alert-title{gap:12px}}

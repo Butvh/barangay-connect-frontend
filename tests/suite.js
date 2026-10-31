@@ -19,6 +19,8 @@ import { verificationPage, verificationStats, reviewable } from '../assets/js/pa
 import { feedbackPage, feedbackCounts, feedbackRequestId } from '../assets/js/pages/official-feedback-model.js';
 import { Icons } from '../assets/js/core/icons.js';
 import { reportRequest, reportScreen, initialReportLocation } from '../assets/js/pages/resident-report-model.js';
+import * as residentSosModel from '../assets/js/pages/resident-report-model.js';
+import { registerResidentSosTests } from './resident-sos.js';
 import { latestHomeAnnouncement } from '../assets/js/pages/resident-dashboard-model.js';
 import { registerAnnouncementTests } from './announcements.js';
 import { registerFeedbackSummaryTests } from './feedback-summary.js';
@@ -32,6 +34,7 @@ const equal = (a, b, label = 'values differ') => { if (JSON.stringify(a) !== JSO
 const ok = (value, label = 'assertion failed') => { if (!value) throw new Error(label); };
 async function rejects(run, code) { let found; try { await run(); } catch (error) { found = error; } ok(found, `expected ${code}`); equal(found.code, code); }
 const noDelay = () => Promise.resolve();
+registerResidentSosTests({ test, equal, ok, fixture, model: residentSosModel });
 registerNotificationTests({ test, equal, ok, rejects, fixture });
 registerAssignmentTests({ test, equal, ok, rejects, fixture });
 registerFacilityTests({ test, equal, ok, rejects, fixture });
@@ -130,7 +133,8 @@ test('report requests reject missing, malformed and ambiguous alert IDs before d
 });
 
 test('report confirmation is pending-only and resolved alerts never reopen an editable form', async () => {
-  equal(reportScreen({ status: 'Pending' }, false), 'sent');
+  equal(reportScreen({ status: 'Pending' }, false), 'active');
+  equal(reportScreen({ status: 'Pending' }, false, { justSubmitted: true }), 'sent');
   for (const status of ['Acknowledged', 'Responding', 'Rescue in progress']) {
     equal(reportScreen({ status }, false), 'active');
     equal(reportScreen({ status }, true), 'details');
