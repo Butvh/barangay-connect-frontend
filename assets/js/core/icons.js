@@ -5,6 +5,6 @@ const disasterIcons = new Map([
 ]);
 export const Icons={
   disaster(type){return disasterIcons.get(type)||'triangle-alert';},
-  svg(name,{size=24}={}){const safe=names.has(name)?name:'info';const n=[16,18,20,24,28,32,36,40,48,56,64].includes(Number(size))?Number(size):24;return '<svg class="icon" width="'+n+'" height="'+n+'" aria-hidden="true" focusable="false"><use href="assets/img/icons.svg#'+safe+'"></use></svg>';}
+  svg(name,{size=24}={}){const safe=names.has(name)?name:'info';const n=[16,18,20,24,28,32,36,40,48,56,64].includes(Number(size))?Number(size):24;return '<svg class="icon" width="'+n+'" height="'+n+'" aria-hidden="true" focusable="false"><use href="assets/img/icons.svg'+(safe==='arrow-right'?'?v=20261031':'')+'#'+safe+'"></use></svg>';}
 };
 
