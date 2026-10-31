@@ -15,3 +15,10 @@
 .bc-select-options [aria-selected=true]{color:var(--blue-700);font-weight:500}
 .bc-select-options [aria-disabled=true]{color:var(--text-muted);opacity:.6;cursor:not-allowed;background:transparent}
 .bc-select-group{padding:8px 16px 4px;color:var(--text-muted);font-weight:600;font-size:12px}
+.verification-history{border-top:1px solid var(--divider);padding-top:16px;min-width:0;text-align:left}
+.verification-history summary{cursor:pointer;color:var(--blue-600);font-weight:500;padding:8px 0}
+.verification-history ol{list-style:none;padding:0;margin:8px 0 0;display:grid;gap:12px}
+.verification-history li{border-left:2px solid var(--blue-100);padding-left:12px;overflow-wrap:anywhere}
+.verification-history small{display:block;margin-top:4px;color:var(--text-secondary)}
+.verification-history li p{margin:4px 0;font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
+.verification-correction{white-space:pre-wrap;overflow-wrap:anywhere}

@@ -21,6 +21,7 @@ import { Icons } from '../assets/js/core/icons.js';
 import { reportRequest, reportScreen, initialReportLocation } from '../assets/js/pages/resident-report-model.js';
 import * as residentSosModel from '../assets/js/pages/resident-report-model.js';
 import { registerResidentSosTests } from './resident-sos.js';
+import { registerVerificationResubmissionTests } from './verification-resubmission.js';
 import { latestHomeAnnouncement } from '../assets/js/pages/resident-dashboard-model.js';
 import { registerAnnouncementTests } from './announcements.js';
 import { registerFeedbackSummaryTests } from './feedback-summary.js';
@@ -35,6 +36,7 @@ const ok = (value, label = 'assertion failed') => { if (!value) throw new Error(
 async function rejects(run, code) { let found; try { await run(); } catch (error) { found = error; } ok(found, `expected ${code}`); equal(found.code, code); }
 const noDelay = () => Promise.resolve();
 registerResidentSosTests({ test, equal, ok, fixture, model: residentSosModel });
+registerVerificationResubmissionTests({ test, equal, ok, rejects, fixture });
 registerNotificationTests({ test, equal, ok, rejects, fixture });
 registerAssignmentTests({ test, equal, ok, rejects, fixture });
 registerFacilityTests({ test, equal, ok, rejects, fixture });

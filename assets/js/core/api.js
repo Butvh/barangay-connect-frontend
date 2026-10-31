@@ -7,6 +7,7 @@ import { announcementStatus, announcementPublishedAt } from './announcements.js'
 import { canAccessNotification, notificationProjection, notificationSource, notificationIsRead } from './notifications.js';
 import { personnelList, personnelGet, addExternalPersonnel, appointPersonnel, reassignPersonnel, removePersonnel } from './personnel.js';
 import { activitySnapshot, recordActivity } from './activity.js';
+import { checkVerificationRevision, preserveVerificationHistory, appendVerificationEvent } from './verification.js';
 import { facilityActive, facilityVisible, facilitySnapshot, facilityProjection, createFacility, updateFacility, setFacilityStatus } from './facilities.js';
 import { assignmentOptions, assignmentFlags, assignmentInput, assignmentRecords, assignPersonnel, endAssignment, assignmentForWrite, assignmentReason, checkAssignmentRevision, bumpAssignmentRevision, recordAssignmentActivity } from './assignments.js';
 
@@ -42,8 +43,8 @@ function coordinate(value, field, fallback) {
 }
 const latestVerification = (db, id) => recent(db.verify_residency.filter(row => row.user_id === id))[0] || null;
 const within = (db, user, row) => assertBarangay(user, db.users.find(person => person.id === row.user_id) || row);
-function notification(db, user_id, kind, message, link, at) {
-  const row = { id: nextId(db.notifications), user_id, kind, text: message, link, is_read: false, created_at: at };
+function notification(db, user_id, kind, message, link, at, presentation = {}) {
+  const row = { id: nextId(db.notifications), user_id, kind, text: message, link, is_read: false, created_at: at, ...presentation };
   const source = notificationSource(db, row);
   if (source?.type === 'alert') row.event_status = source.record?.status;
   db.notifications.push(notificationProjection(db, row));
@@ -199,10 +200,16 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
       submit: (user_id, input = {}) => write(['verification', 'notifications'], (db, user, at) => {
         assertRole(user, ['resident']); if (Number(user_id) !== user.id) throw new ApiError('FORBIDDEN', 'Submit your own verification.');
         let row = latestVerification(db, user.id);
+        checkVerificationRevision(row, input);
         if (row?.review_status === 'Approved') throw new ApiError('INVALID_STATE', 'Your residency is already approved.');
         const details = { document_type: text(input.document_type, 'document_type', { max: 100 }), file_name: text(input.file_name, 'file_name', { max: 200 }) };
-        if (!row || row.review_status !== 'Pending') { row = { id: nextId(db.verify_residency), user_id: user.id }; db.verify_residency.push(row); }
-        Object.assign(row, details, { review_status: 'Pending', submitted_at: at, deadline_at: zonedISO(Date.parse(at) + 7 * 86400000), reviewed_by: null, reviewed_at: null, rejection_reason: '' });
+        if (!row || ['Rejected', 'Expired'].includes(row.review_status)) { row = { id: nextId(db.verify_residency), user_id: user.id }; db.verify_residency.push(row); }
+        if (row.review_status && !['Pending', 'Resubmission requested'].includes(row.review_status)) throw new ApiError('INVALID_STATE', 'This verification cannot accept documents.');
+        preserveVerificationHistory(row, user);
+        const action = row.submission_number ? 'Resubmitted' : 'Submitted';
+        row.submission_number++;
+        Object.assign(row, details, { review_status: 'Pending', submitted_at: at, deadline_at: zonedISO(Date.parse(at) + 7 * 86400000), reviewed_by: null, reviewed_at: null, rejection_reason: '', resubmission_reason: '' });
+        appendVerificationEvent(row, action, { ...user, role: 'resident' }, at);
         notifyOfficials(db, user.barangay_id, 'verification', `${user.full_name} submitted a verification document.`, `official-verification.html?id=${row.id}`, at); return row;
       }),
       list: (options = {}) => read((db, user) => {
@@ -215,11 +222,19 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
       get: id => read((db, user) => { const row = get(db.verify_residency, id, 'Verification'); if (roleOf(user) === 'resident') { if (row.user_id !== user.id) throw new ApiError('FORBIDDEN', 'View your own verification.'); } else { assertRole(user, ['secretary', 'captain']); within(db, user, row); } const resident = db.users.find(u => u.id === row.user_id); return { ...row, resident: publicUser(resident), household: db.households.find(h => h.id === resident.household_id) || null }; }),
       review: (id, input = {}) => write(['verification', 'notifications', 'users'], (db, user, at) => {
         assertRole(user, ['secretary', 'captain']); const row = get(db.verify_residency, id, 'Verification'); within(db, user, row);
-        if (row.review_status !== 'Pending' || Date.parse(row.deadline_at) < Date.parse(at)) throw new ApiError('INVALID_STATE', 'This verification is no longer pending or its deadline has expired.');
-        row.review_status = oneOf(input.decision, ['Approved', 'Rejected'], 'decision');
-        row.rejection_reason = text(input.reason, 'reason', { required: row.review_status === 'Rejected', max: 1000 });
+        checkVerificationRevision(row, input);
+        if (latestVerification(db, row.user_id)?.id !== row.id || row.review_status !== 'Pending' || !Number.isFinite(Date.parse(row.deadline_at)) || Date.parse(row.deadline_at) < Date.parse(at)) throw new ApiError('INVALID_STATE', 'This verification is no longer pending or its deadline has expired.');
+        const decision = oneOf(input.decision, ['Approved', 'Rejected', 'Resubmission requested'], 'decision');
+        const reason = text(input.reason, 'reason', { required: decision !== 'Approved', max: 1000 });
+        preserveVerificationHistory(row, db.users.find(person => person.id === row.user_id));
+        row.review_status = decision;
+        row.rejection_reason = decision === 'Rejected' ? reason : '';
+        row.resubmission_reason = decision === 'Resubmission requested' ? reason : '';
         row.reviewed_by = user.id; row.reviewed_at = at;
-        notification(db, row.user_id, 'verification', `Your residency verification was ${row.review_status.toLowerCase()}.`, 'resident-verification.html', at); return row;
+        appendVerificationEvent(row, decision, { ...user, role: roleOf(user) }, at, reason);
+        if (decision === 'Resubmission requested') notification(db, row.user_id, 'verification', 'Your residency verification needs corrected documents.', 'resident-verification.html', at, { title: 'Verification resubmission requested', description: reason });
+        else notification(db, row.user_id, 'verification', `Your residency verification was ${row.review_status.toLowerCase()}.`, 'resident-verification.html', at);
+        return row;
       }),
       expireOverdue: () => write(['verification', 'notifications'], (db, user, at) => {
         assertRole(user, ['secretary', 'captain', 'resident']);
@@ -228,7 +243,7 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
           const person = db.users.find(u => u.id === row.user_id);
           if (person?.barangay_id !== user.barangay_id || (roleOf(user) === 'resident' && row.user_id !== user.id)) continue;
           if (roleOf(user) !== 'resident') assertRole(user, ['secretary', 'captain']);
-          if (row.review_status === 'Pending' && Date.parse(row.deadline_at) < Date.parse(at)) { row.review_status = 'Expired'; changed++; notification(db, row.user_id, 'verification', 'Your verification deadline expired. Resubmit your document.', 'resident-verification.html', at); }
+          if (row.review_status === 'Pending' && Date.parse(row.deadline_at) < Date.parse(at)) { preserveVerificationHistory(row, person); row.review_status = 'Expired'; appendVerificationEvent(row, 'Expired', null, row.deadline_at); changed++; notification(db, row.user_id, 'verification', 'Your verification deadline expired. Resubmit your document.', 'resident-verification.html', at); }
         }
         return changed;
       }),

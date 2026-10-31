@@ -20,7 +20,7 @@ const roleName = role => ({ secretary: 'Secretary', responder: 'Responder', resc
 // logs have their own IDs and are distinct from the alert status audit they cause.
 const activityActions = {
   alert: { 'incident reported': 'submitted', 'alert submitted': 'submitted', 'incident acknowledged': 'acknowledged', 'alert acknowledged': 'acknowledged', 'incident resolved': 'resolved', 'alert resolved': 'resolved' },
-  verification: { 'verification submitted': 'submitted', 'verification pending': 'submitted', 'verification approved': 'approved', 'verification rejected': 'rejected' },
+  verification: { 'verification submitted': 'submitted', 'verification pending': 'submitted', 'verification resubmitted': 'resubmitted', 'verification resubmission requested': 'resubmission requested', 'verification expired': 'expired', 'verification approved': 'approved', 'verification rejected': 'rejected' },
   announcement: { 'announcement published': 'published' },
   feedback: { 'feedback received': 'submitted', 'feedback submitted': 'submitted' },
   personnel: { 'added personnel role': 'added', added: 'added', 'appointed personnel role': 'appointed', appointed: 'appointed', 'reassigned personnel role': 'reassigned', reassigned: 'reassigned', 'removed personnel role': 'removed', removed: 'removed', 'updated personnel role': 'updated', 'personnel updated': 'updated' },
@@ -138,6 +138,10 @@ export function captainReportData(snapshot = {}, options = {}) {
   }
   for (const row of verifications) {
     const href = `official-verification.html?id=${encodeURIComponent(row.id)}`, detail = row.resident?.full_name || 'Resident name not recorded';
+    if (row.history?.length) {
+      row.history.forEach((h, index) => add(`verification-${row.id}-${index}`, 'verification', `Verification ${h.action.toLowerCase()}`, h.at, h.actor_id, h.actor_name || person(h.actor_id), h.actor_role, row.id, [detail, h.reason || h.document_type].filter(Boolean).join(' · '), href));
+      continue;
+    }
     add(`verification-${row.id}`, 'verification', 'Verification submitted', row.submitted_at, row.user_id, detail, 'resident', row.id, row.document_type, href);
     if (['Approved', 'Rejected'].includes(row.review_status)) add(`reviewed-${row.id}`, 'verification', `Verification ${row.review_status.toLowerCase()}`, row.reviewed_at, row.reviewed_by, person(row.reviewed_by), recordedRole('verification', row.id, row.reviewed_by, row.reviewed_at), row.id, detail, href);
   }
