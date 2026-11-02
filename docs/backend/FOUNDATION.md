@@ -14,16 +14,18 @@ From the repository root in normal PowerShell, with PHP, Composer and Node on PA
 
 ```powershell
 Set-Location backend
+$firstBackendSetup = -not (Test-Path -LiteralPath .env)
+if ($firstBackendSetup) { Copy-Item -LiteralPath .env.example -Destination .env }
 composer install
-Copy-Item .env.example .env
-php artisan key:generate
+if ($LASTEXITCODE -ne 0) { throw 'Composer install failed.' }
+if ($firstBackendSetup) { php artisan key:generate }
 Set-Location ..
 node scripts/stage-backend-frontend.mjs
 Set-Location backend
 php artisan serve --host=127.0.0.1 --port=8000
 ```
 
-Copy `.env` only on first setup; preserve an existing key and configuration. Do not use the repository root as a web-server document root. The local entry is `http://127.0.0.1:8000/frontend/login.html`; `/` redirects there. Apache/Nginx must also serve only `backend/public`. No production host, URL, mail provider, or cloud resources were configured.
+Create `.env` before Composer's application discovery so the local environment is explicit. Preserve an existing key/configuration; if an interrupted first setup left APP_KEY empty, generate it once before serving. Do not use the repository root as a web-server document root. The local entry is `http://127.0.0.1:8000/frontend/login.html`; `/` redirects there. Apache/Nginx must also serve only `backend/public`. No production host, URL, mail provider, or cloud resources were configured.
 
 `IDENTITY_ENABLED=false` is intentional. `/api/v1/auth/csrf` works, guest `/me` returns 401, and a valid-shaped login returns 503 until the DBA identity slice passes integration review. This is a clear dependency failure, not a demo login. Domain facade methods return `NOT_AVAILABLE` until their owners install reviewed adapters. Do not enable identity merely to hide that message.
 
