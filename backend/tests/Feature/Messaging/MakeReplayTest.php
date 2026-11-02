@@ -2,7 +2,9 @@
 
 namespace Tests\Feature\Messaging;
 
+use App\Models\SmsDelivery;
 use App\Services\Messaging\MakeAutomationService;
+use App\Services\Messaging\OutboxDispatcher;
 use App\Services\Messaging\SmsDeliveryService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -70,5 +72,17 @@ class MakeReplayTest extends MessagingTestCase
     {
         $this->prepare();
         $this->assertSame(0, DB::table('make_dispatches')->count());
+    }
+
+    public function test_v2_announcement_callback_and_replay_use_the_same_sms_ledger(): void
+    {
+        $event = $this->canonicalEvent(4, sms: true);
+        app(OutboxDispatcher::class)->dispatchOne();
+        $command = $this->command($event, ['type' => 'announcement.published.v2', 'template_key' => 'announcement-published.v2']);
+        $this->authenticated()->postJson('/api/v1/integrations/make/sms-commands', $command)->assertStatus(202)->assertJsonPath('data.duplicate', false);
+        $this->authenticated()->postJson('/api/v1/integrations/make/sms-commands', $command)->assertStatus(202)->assertJsonPath('data.duplicate', true);
+        $this->assertSame(1, DB::table('make_commands')->count());
+        $this->assertSame(1, DB::table('sms_deliveries')->count());
+        $this->assertSame('announcement-review.v1', SmsDelivery::firstOrFail()->receipt->template_key);
     }
 }

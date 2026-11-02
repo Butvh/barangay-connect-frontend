@@ -34,7 +34,18 @@ final class SmsDeliveryService
                 return null;
             }
             $event = $d->receipt->event;
-            $definition = EventContract::definition($event);
+            try {
+                $definition = EventContract::definition($event);
+                $recipient = $event->recipients()->where('recipient_id', $d->receipt->recipient_id)->first();
+                if (! $recipient || ! $recipient->sms || $d->receipt->channel !== 'sms' || $d->receipt->template_key !== EventContract::template($definition, 'sms')) {
+                    throw new EventContractViolation('sms_receipt_not_authorized');
+                }
+                EventContract::recipient($event, $recipient, $definition);
+            } catch (EventContractViolation $e) {
+                $this->block($d, $e->getMessage());
+
+                return null;
+            }
             if ($definition['route'] === 'make' && ! DB::table('make_commands')->where('outbox_event_id', $event->id)->exists()) {
                 return null;
             }

@@ -1,5 +1,7 @@
 # DBA acceptance evidence — November 2, 2026
 
+Historical standalone evidence for head `32ff81f4cb1c7e2f704dc5f93168f1261787e376`. See [November 3 integration acceptance](INTEGRATION-ACCEPTANCE.md) for the new additive changes, combined source inputs, commands, results and unresolved P1/P2 compatibility gates. The old55-test result below must not be presented as current combined acceptance.
+
 Branch: `codex/backend-db-schema-delivery`. Base and rechecked remote main: `3014ad60ca41a9a5aa4d5a0152faed09d0dfdaf0`. Only `backend/**` is added; existing frontend, workflows, shared bootstrap and P1/P2 domain implementation remain unchanged.
 
 ## Implemented and locally verified

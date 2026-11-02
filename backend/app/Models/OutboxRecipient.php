@@ -18,7 +18,7 @@ class OutboxRecipient extends Model
 
     protected function casts(): array
     {
-        return ['in_app' => 'boolean', 'sms' => 'boolean'];
+        return ['outbox_event_id' => 'integer', 'recipient_id' => 'integer', 'barangay_id' => 'integer', 'in_app' => 'boolean', 'sms' => 'boolean'];
     }
 
     public function event(): BelongsTo

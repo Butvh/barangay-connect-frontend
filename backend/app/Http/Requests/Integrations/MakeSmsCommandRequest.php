@@ -21,7 +21,7 @@ final class MakeSmsCommandRequest extends FormRequest
     public function rules(): array
     {
         return ['event_id' => ['required', 'uuid'], 'barangay_id' => ['required', 'integer', 'min:1'],
-            'type' => ['required', 'in:announcement.published.v1'], 'template_key' => ['required', 'in:announcement-review.v1'],
+            'type' => ['required', 'in:announcement.published.v1,announcement.published.v2'], 'template_key' => ['required', 'in:announcement-review.v1,announcement-published.v2'],
             'timestamp' => ['required', 'integer']];
     }
 

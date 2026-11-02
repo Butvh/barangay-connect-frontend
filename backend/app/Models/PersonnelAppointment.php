@@ -17,7 +17,7 @@ class PersonnelAppointment extends Model
 
     protected function casts(): array
     {
-        return ['effective_date' => 'immutable_date', 'legacy' => 'boolean', 'revision' => 'integer', 'added_externally_at' => 'immutable_datetime'];
+        return ['user_id' => 'integer', 'barangay_id' => 'integer', 'effective_date' => 'immutable_date', 'legacy' => 'boolean', 'revision' => 'integer', 'added_externally_at' => 'immutable_datetime'];
     }
 
     public function user(): BelongsTo

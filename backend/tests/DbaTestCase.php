@@ -18,6 +18,7 @@ abstract class DbaTestCase extends TestCase
         $app['config']->set('queue.default', 'sync');
         $app['config']->set('cache.default', 'array');
         $app['config']->set('hashing.bcrypt.rounds', 4);
+        $app['config']->set('hashing.driver', 'bcrypt'); // Fictional fixture hashes only; P1 production hashing is unchanged.
     }
 
     protected function setUp(): void

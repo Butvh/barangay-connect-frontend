@@ -20,7 +20,7 @@ class User extends Authenticatable
 
     protected function casts(): array
     {
-        return ['is_resident' => 'boolean', 'is_captain' => 'boolean', 'password' => 'hashed', 'last_login_at' => 'immutable_datetime', 'email_verified_at' => 'immutable_datetime'];
+        return ['id' => 'integer', 'barangay_id' => 'integer', 'household_id' => 'integer', 'auth_version' => 'integer', 'is_resident' => 'boolean', 'is_captain' => 'boolean', 'password' => 'hashed', 'last_login_at' => 'immutable_datetime', 'email_verified_at' => 'immutable_datetime'];
     }
 
     public function barangay(): BelongsTo

@@ -16,7 +16,7 @@ class TanodMembership extends Model
 
     protected function casts(): array
     {
-        return ['active' => 'boolean', 'joined_at' => 'immutable_datetime'];
+        return ['user_id' => 'integer', 'barangay_id' => 'integer', 'active' => 'boolean', 'joined_at' => 'immutable_datetime'];
     }
 
     public function user(): BelongsTo

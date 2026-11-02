@@ -285,6 +285,8 @@ Checks:
 | completed_at | timestamp(6) | YES | NULL/none |  |
 | created_at | timestamp(6) | YES | NULL/none |  |
 | updated_at | timestamp(6) | YES | NULL/none |  |
+| diagnostic_code | varchar(60) | YES | NULL/none |  |
+| failed_at | timestamp(6) | YES | NULL/none |  |
 
 Indexes:
 
@@ -296,6 +298,7 @@ Foreign keys:
 
 - `delivery_receipts_outbox_event_id_foreign`: (outbox_event_id) -> outbox_events(id); DELETE RESTRICT; UPDATE NO ACTION
 - `delivery_receipts_recipient_id_foreign`: (recipient_id) -> users(id); DELETE RESTRICT; UPDATE NO ACTION
+- `receipt_authorized_recipient_fk`: (outbox_event_id,recipient_id) -> outbox_recipients(outbox_event_id,recipient_id); DELETE RESTRICT; UPDATE NO ACTION
 
 ## documents
 
@@ -637,15 +640,23 @@ Indexes:
 | dismissed_at | timestamp(6) | YES | NULL/none |  |
 | created_at | timestamp(6) | YES | NULL/none |  |
 | updated_at | timestamp(6) | YES | NULL/none |  |
+| barangay_id | bigint unsigned | YES | NULL/none |  |
+| resource_type | varchar(40) | YES | NULL/none |  |
+| resource_id | bigint unsigned | YES | NULL/none |  |
+| audience | enum('resident','official') | YES | NULL/none |  |
+| event_status | enum('Pending','Acknowledged','Responding','Rescue in progress','Resolved') | YES | NULL/none |  |
+| template_key | varchar(80) | YES | NULL/none |  |
 
 Indexes:
 
 - `PRIMARY` UNIQUE (id)
 - `notifications_event_id_recipient_id_unique` UNIQUE (event_id, recipient_id)
 - `notification_inbox_index` (recipient_id, dismissed_at, read_at, created_at)
+- `notification_recipient_scope_fk` (recipient_id, barangay_id)
 
 Foreign keys:
 
+- `notification_recipient_scope_fk`: (recipient_id,barangay_id) -> users(id,barangay_id); DELETE RESTRICT; UPDATE NO ACTION
 - `notifications_recipient_id_foreign`: (recipient_id) -> users(id); DELETE RESTRICT; UPDATE NO ACTION
 
 Checks:
@@ -673,6 +684,7 @@ Checks:
 | next_attempt_at | timestamp(6) | YES | NULL/none |  |
 | dispatched_at | timestamp(6) | YES | NULL/none |  |
 | last_error | varchar(60) | YES | NULL/none |  |
+| blocked_at | timestamp(6) | YES | NULL/none |  |
 
 Indexes:
 
@@ -681,6 +693,7 @@ Indexes:
 - `outbox_events_event_id_unique` UNIQUE (event_id)
 - `outbox_events_barangay_id_foreign` (barangay_id)
 - `outbox_ready_index` (dispatched_at, next_attempt_at, lease_until)
+- `outbox_diagnostic_ready_index` (blocked_at, dispatched_at, next_attempt_at)
 
 Foreign keys:
 
@@ -688,7 +701,7 @@ Foreign keys:
 
 Checks:
 
-- `outbox_payload_bound`: ((`version` = 1) and (json_storage_size(`payload`) <= 2048))
+- `outbox_payload_bound`: ((`version` in (1,2)) and (json_storage_size(`payload`) <= 2048))
 
 ## outbox_recipients
 
@@ -700,6 +713,7 @@ Checks:
 | barangay_id | bigint unsigned | NO | NULL/none |  |
 | in_app | tinyint(1) | NO | 1 |  |
 | sms | tinyint(1) | NO | 0 |  |
+| audience | enum('resident','official') | YES | NULL/none |  |
 
 Indexes:
 
@@ -712,6 +726,10 @@ Foreign keys:
 
 - `outbox_recipient_event_scope_fk`: (outbox_event_id,barangay_id) -> outbox_events(id,barangay_id); DELETE RESTRICT; UPDATE NO ACTION
 - `outbox_recipient_user_scope_fk`: (recipient_id,barangay_id) -> users(id,barangay_id); DELETE RESTRICT; UPDATE NO ACTION
+
+Checks:
+
+- `recipient_channel_boolean_check`: ((`in_app` in (0,1)) and (`sms` in (0,1)))
 
 ## password_recovery_challenges
 
@@ -976,6 +994,7 @@ Foreign keys:
 | remember_token | varchar(100) | YES | NULL/none |  |
 | created_at | timestamp(6) | YES | NULL/none |  |
 | updated_at | timestamp(6) | YES | NULL/none |  |
+| auth_version | int unsigned | NO | 0 |  |
 
 Indexes:
 
@@ -993,6 +1012,7 @@ Foreign keys:
 Checks:
 
 - `users_email_normalized_check`: (cast(`email` as char charset binary) = cast(lower(trim(`email`)) as char charset binary))
+- `users_auth_version_nonnegative`: (`auth_version` >= 0)
 
 ## verification_submissions
 

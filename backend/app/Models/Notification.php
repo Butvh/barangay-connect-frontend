@@ -16,7 +16,7 @@ class Notification extends Model
 
     protected function casts(): array
     {
-        return ['read_at' => 'immutable_datetime', 'dismissed_at' => 'immutable_datetime'];
+        return ['recipient_id' => 'integer', 'barangay_id' => 'integer', 'resource_id' => 'integer', 'read_at' => 'immutable_datetime', 'dismissed_at' => 'immutable_datetime'];
     }
 
     public function recipient(): BelongsTo

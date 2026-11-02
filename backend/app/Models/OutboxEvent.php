@@ -19,7 +19,7 @@ class OutboxEvent extends Model
 
     protected function casts(): array
     {
-        return ['version' => 'integer', 'payload' => 'array', 'occurred_at' => 'immutable_datetime', 'created_at' => 'immutable_datetime', 'lease_until' => 'immutable_datetime', 'next_attempt_at' => 'immutable_datetime', 'dispatched_at' => 'immutable_datetime'];
+        return ['version' => 'integer', 'barangay_id' => 'integer', 'resource_id' => 'integer', 'payload' => 'array', 'occurred_at' => 'immutable_datetime', 'created_at' => 'immutable_datetime', 'lease_until' => 'immutable_datetime', 'next_attempt_at' => 'immutable_datetime', 'dispatched_at' => 'immutable_datetime', 'blocked_at' => 'immutable_datetime'];
     }
 
     public function recipients(): HasMany

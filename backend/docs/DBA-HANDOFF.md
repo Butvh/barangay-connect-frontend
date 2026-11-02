@@ -1,12 +1,12 @@
-# DBA schema and delivery handoff — proposed contract v1
+# DBA schema and delivery handoff
 
-Owner: DBA + SMS/automation engineer. Base: main `3014ad60ca41a9a5aa4d5a0152faed09d0dfdaf0`. Schedule: November 2–6, 2026, Asia/Manila. This branch implements only the DBA assignment. P1/P2 have not yet supplied a scaffold or agreed interfaces; the contracts here are proposals for review, not evidence of team agreement.
+Owner: DBA + SMS/automation engineer. Base: main `3014ad60ca41a9a5aa4d5a0152faed09d0dfdaf0`. Schedule: November 2–6, 2026, Asia/Manila. This branch implements only the DBA assignment. **November 3 update:** P1 #49 and P2 #50 are now available and were reviewed on an isolated combined checkout. [INTEGRATION-CONTRACT-V2.md](INTEGRATION-CONTRACT-V2.md) is the current exact contract candidate and supersedes conflicting v1 proposal text below. It records unresolved owner adoption/signoff; no joint agreement is claimed. [INTEGRATION-ACCEPTANCE.md](INTEGRATION-ACCEPTANCE.md) separates new combined evidence from prior standalone results.
 
 ## Integration order and boundaries
 
 1. P1 supplies the Laravel scaffold and replaces Pages `path: .` with an allowlisted root HTML/assets artifact. **Do not merge this backend branch into main while the old full-checkout Pages upload remains.** P1 also reviews PHP/framework pairing and host support. This branch does not edit their workflow, bootstrap, root Composer files or frontend.
 2. Review schema and writer/handler contracts with both programmers. Replace Laravel's generated users/cache/jobs migrations with these ordered DBA migrations before the first shared migration; do not run duplicate table generators. No shared/applied migration may be rewritten; subsequent changes are additive migrations.
-3. Apply the six migrations in timestamp order. `000100` identity/staffing; `000200` verification/documents/facilities; `000300` incidents; `000400` civic/recovery/audit; `000500` delivery; `000600` framework tables. The circular verification submission FK is added only after both tables exist. The reverse removes it first.
+3. Apply the original six migrations in timestamp order, followed by November 3's additive `000100_add_user_auth_version` and `000200_add_versioned_delivery_contract`. Original slices are unchanged: identity/staffing, verification/documents/facilities, incidents, civic/recovery/audit, delivery and framework tables. The circular verification submission FK is added only after both tables exist; rollback removes it first. V2 downgrade refuses to discard v2 events; security downgrade is destructive and disposable-only.
 4. P1/P2 build their policies/services against the models and lock contract below. P2 supplies the outbox/audit writers and in-app handler. P1 registers integration routes, handler binding, scheduler and workers as a small reviewed foundation change. No registration is silently added here.
 5. Run the integrated domain tests and this genuine-MySQL suite together. Publish a reviewed PR only after the combined revision is green. Draft review of this proposal is useful before integration; no merge or deployment is authorized by this handoff.
 
@@ -55,9 +55,9 @@ Generated nullable unique keys enforce one active incident per resident, one act
 
 P1/P2 must atomically persist state/history plus `AuditRecorder.record(actor, roleAtAction, scope, resource, action, summary)` and `OutboxWriter.record(eventId, type, scope, resourceId, recipientRefs, occurredAt)`. These writers remain P2-owned. Audit summary <=4 KiB, event payload <=2 KiB. Unknown historic actors/times stay null. Neither writer calls HTTP. Deadlock retries must wrap only the database transaction, never a provider call.
 
-## Event/recipient contract v1
+## Legacy event/recipient contract v1
 
-P2's writer inserts outbox_events and outbox_recipients in the caller's transaction. Proposed v1 accepts two initial SMS event types; other domain event types must be agreed/allowlisted before dispatch, rather than silently treated as either of these:
+The following documents the original two-type v1 proposal for existing fixtures/rows. New integrations must review the explicit v2 contract linked above, which separates in-app-only families, event-time snapshots and channel templates. No prototype data is automatically converted. P2's writer inserts outbox_events and outbox_recipients in the caller's transaction:
 
 | type | resource_type | template_key | route |
 | --- | --- | --- | --- |

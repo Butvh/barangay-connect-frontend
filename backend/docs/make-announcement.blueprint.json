@@ -1,5 +1,5 @@
 {
-  "name": "Barangay Connect announcement v1 — UNCONFIGURED",
+  "name": "Barangay Connect announcement v2 — UNCONFIGURED",
   "flow": [
     {
       "id": 1,
@@ -16,8 +16,8 @@
       "filter": {
         "name": "Allow configured nonurgent announcement only",
         "conditions": [[
-          {"a": "{{1.type}}", "b": "announcement.published.v1", "o": "text:equal"},
-          {"a": "{{1.template_key}}", "b": "announcement-review.v1", "o": "text:equal"},
+          {"a": "{{1.type}}", "b": "announcement.published.v2", "o": "text:equal"},
+          {"a": "{{1.template_key}}", "b": "announcement-published.v2", "o": "text:equal"},
           {"a": "{{1.barangay_id}}", "b": "REPLACE_WITH_SCOPED_BARANGAY_ID", "o": "number:equal"}
         ]]
       },

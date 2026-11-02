@@ -17,7 +17,7 @@ class DeliveryReceipt extends Model
 
     protected function casts(): array
     {
-        return ['completed_at' => 'immutable_datetime'];
+        return ['completed_at' => 'immutable_datetime', 'failed_at' => 'immutable_datetime'];
     }
 
     public function event(): BelongsTo

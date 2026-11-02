@@ -51,7 +51,7 @@ class FictionalScenarioSeeder extends Seeder
                 }
                 for ($index = 0; $index < 4; $index++) {
                     $alert = DB::table('emergency_alerts')->insertGetId(['barangay_id' => $scope, 'resident_id' => $base + 15 + $index, 'household_id' => $scope,
-                        'alert_type' => 'Flood', 'location_label' => 'Fictional district', 'status' => $index === 3 ? 'Resolved' : 'Acknowledged',
+                        'alert_type' => 'Flood', 'location_label' => 'Fictional district', 'status' => ['Acknowledged', 'Rescue in progress', 'Responding', 'Resolved'][$index],
                         'reported_at' => $at, 'victim_count' => $index === 0 ? 0 : null, 'map_x' => 0, 'map_y' => 0, 'created_at' => $at, 'updated_at' => $at]);
                     if ($index < 2) {
                         DB::table('alert_assignments')->insert(['alert_id' => $alert, 'barangay_id' => $scope, 'user_id' => $base + 3, 'role' => 'responder', 'status' => 'active', 'assigned_by' => $base + 1, 'assigned_at' => $at, 'created_at' => $at, 'updated_at' => $at]);
@@ -69,7 +69,11 @@ class FictionalScenarioSeeder extends Seeder
                 DB::table('alert_responses')->insert(['alert_id' => $alerts[2], 'assignment_id' => $completed, 'responder_id' => $base + 3, 'response_type' => 'Assessment', 'response_status' => 'Completed', 'rescue_required' => false, 'responded_at' => $at, 'created_at' => $at, 'updated_at' => $at]);
                 $rescue = DB::table('alert_assignments')->where('alert_id', $alerts[1])->where('role', 'rescuer')->value('id');
                 DB::table('rescues')->insert(['alert_id' => $alerts[1], 'assignment_id' => $rescue, 'rescuer_id' => $base + 4, 'facility_id' => $scope,
-                    'destination_snapshot' => json_encode(['id' => $scope, 'name' => 'Fictional facility '.$scope, 'type' => $scope === 1 ? 'Hospital' : 'Evacuation Center', 'address' => 'Fictional facility address', 'status' => 'Active']), 'rescue_status' => 'Completed', 'rescued_at' => $at, 'created_at' => $at, 'updated_at' => $at]);
+                    'destination_snapshot' => json_encode(['id' => $scope, 'name' => 'Fictional facility '.$scope, 'type' => $scope === 1 ? 'Hospital' : 'Evacuation Center', 'address' => 'Fictional facility address', 'status' => 'Active']), 'rescue_status' => $scope === 1 ? 'In progress' : 'Completed', 'rescued_at' => $at, 'created_at' => $at, 'updated_at' => $at]);
+                if ($scope === 2) {
+                    DB::table('alert_assignments')->where('id', $rescue)->update(['status' => 'completed', 'ended_at' => $at]);
+                }
+                DB::table('announcements')->insert(['barangay_id' => $scope, 'author_id' => $base + 1, 'author_role' => 'captain', 'title' => 'Fictional community notice', 'content' => 'Fictional fixture content.', 'status' => 'Active', 'published_at' => $at, 'created_at' => $at, 'updated_at' => $at]);
                 foreach (['complaint', 'suggestion', 'general'] as $kind) {
                     DB::table('community_feedback')->insert(['barangay_id' => $scope, 'resident_id' => $base + 5, 'kind' => $kind,
                         'status' => $kind === 'general' ? null : 'Pending', 'rating' => $kind === 'general' ? 4 : null,
