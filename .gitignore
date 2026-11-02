@@ -13,4 +13,6 @@ backend/storage/**
 !backend/storage/**/
 !backend/storage/**/.gitignore
 backend/bootstrap/cache/*.php
+backend/.phpunit.cache/
+backend/public/frontend/
 

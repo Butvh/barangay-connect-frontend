@@ -21,9 +21,49 @@ jobs:
       - run: node scripts/run-tests.mjs
       - run: node tests/frontend-artifact.mjs
       - run: node scripts/stage-frontend.mjs
+      - run: node tests/backend-artifact.mjs
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: barangay_connect_test
+          MYSQL_ROOT_PASSWORD: ephemeral-ci-only
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s --health-timeout=5s --health-retries=10
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      APP_ENV: testing
+      APP_DEBUG: 'false'
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: barangay_connect_test
+      DB_USERNAME: root
+      DB_PASSWORD: ephemeral-ci-only
+      MYSQL_INTEGRATION: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: mbstring, dom, fileinfo, pdo_mysql
+          coverage: none
+          tools: composer:v2
+      - run: composer validate --strict
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - run: composer check-platform-reqs
+      - run: composer audit --locked --no-interaction
+      - run: php artisan test --compact
+      - run: vendor/bin/pint --test
   deploy:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-    needs: check
+    needs: [check, backend]
     runs-on: ubuntu-latest
     permissions:
       pages: write

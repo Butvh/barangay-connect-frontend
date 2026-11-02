@@ -69,7 +69,8 @@ if (user) {
     const link = event.target.closest('a[href]'), signOut = event.target.closest('[data-sign-out]');
     if (!signOut && (!link || link.getAttribute('href').startsWith('#') || link.target === '_blank')) return;
     event.preventDefault(); event.stopImmediatePropagation(); if (navigating) return; navigating = true;
-    try { if (await dialogs.confirmNavigation()) { if (signOut) { Auth.logout(); location.assign('login.html'); } else location.assign(link.href); } }
+    try { if (await dialogs.confirmNavigation()) { if (signOut) { await Auth.logout(); location.assign('login.html'); } else location.assign(link.href); } }
+    catch { UI.toast('Sign out could not be confirmed. Try again.', 'error'); }
     finally { navigating = false; }
   }, true);
   window.addEventListener('beforeunload', event => { if (dialogs.hasDirty()) { event.preventDefault(); event.returnValue = ''; } });

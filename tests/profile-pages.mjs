@@ -40,7 +40,14 @@ async function run() {
     const shared={Auth:auth,Api:{...api,users},UI:{...UI,toast(){},confirm:async()=>true},Fmt};
     const context=vm.createContext({document:{querySelector:()=>null,querySelectorAll:()=>[],addEventListener(){}},window:{addEventListener(){},removeEventListener(){}},location:{assign(){}}});
     const mod=new vm.SourceTextModule(await readFile(new URL('../assets/js/pages/official-profile.js',import.meta.url),'utf8'),{context});
-    await mod.link(spec=>{const values=spec.endsWith('official-shared.js')?shared:spec.endsWith('shell-official.js')?{Shell:{official:()=>main}}:spec.endsWith('change-password.js')?{openChangePassword(){}}:{officialProfileContent};return new vm.SyntheticModule(Object.keys(values),function(){for(const[k,v]of Object.entries(values))this.setExport(k,v);},{context});});
+    await mod.link(async spec=>{
+      if(spec.endsWith('sign-out.js')){
+        const helper=new vm.SourceTextModule(await readFile(new URL('../assets/js/core/sign-out.js',import.meta.url),'utf8'),{context});
+        await helper.link(name=>{const values=name.endsWith('auth.js')?{Auth:auth}:{UI:shared.UI};return new vm.SyntheticModule(Object.keys(values),function(){for(const[k,v]of Object.entries(values))this.setExport(k,v);},{context});});
+        return helper;
+      }
+      const values=spec.endsWith('official-shared.js')?shared:spec.endsWith('shell-official.js')?{Shell:{official:()=>main}}:spec.endsWith('change-password.js')?{openChangePassword(){}}:{officialProfileContent};return new vm.SyntheticModule(Object.keys(values),function(){for(const[k,v]of Object.entries(values))this.setExport(k,v);},{context});
+    });
     await mod.evaluate();await settle();return {main,form,el,state,store,auth,api,async click(key){await el(key).listeners.click?.();await settle();},input(name,value){el(name).value=value;form.listeners.input({target:el(name)});}};
   }
   await check('Actual official controller loads for all roles using only supported store subscriptions',async()=>{

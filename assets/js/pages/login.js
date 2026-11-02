@@ -44,7 +44,7 @@ if (document.body.dataset.entry === 'index') {
     if (busy) return;
     if (await UI.confirm({ title: 'Reset demo data?', text: 'Restore the fictional sample records in this browser? Changes in the current demo will be replaced.', confirmLabel: 'Reset demo data', danger: true })) {
       button.disabled = true;
-      try { await Store.reset(); Auth.logout(); form.reset(); fieldError('email'); fieldError('password'); error.hidden = true; UI.toast('Demo data reset.'); email.focus(); }
+      try { await Store.reset(); await Auth.logout(); form.reset(); fieldError('email'); fieldError('password'); error.hidden = true; UI.toast('Demo data reset.'); email.focus(); }
       catch (err) { error.textContent = err.message; error.hidden = false; } finally { button.disabled = false; }
     }
   });

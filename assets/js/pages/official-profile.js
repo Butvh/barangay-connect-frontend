@@ -1,5 +1,6 @@
 import { Auth, Api, UI, Fmt } from './official-shared.js';
 import { Shell } from '../core/shell-official.js';
+import { signOutTo } from '../core/sign-out.js';
 import { openChangePassword } from '../core/change-password.js';
 import { officialProfileContent } from './official-profile-view.js';
 
@@ -10,7 +11,7 @@ if(user){
   const main=Shell.official({active:'Profile'});main.classList.add('official-profile-main');main.innerHTML=UI.skeleton(2);
   let current,dirty=false,busy=false,leaving=false,version=0,refreshing=false,confirming=false;
   async function mayLeave(){if(busy||confirming)return false;if(!dirty)return true;confirming=true;try{if(await UI.confirm({title:'Discard unsaved changes?',text:'Your profile changes have not been saved.',confirmLabel:'Discard changes',danger:true})){dirty=false;return true;}return false;}finally{confirming=false;}}
-  async function signOut(event){if(leaving||(!dirty&&!busy))return;event.preventDefault();event.stopImmediatePropagation();if(await mayLeave()){leaving=true;Auth.logout();location.assign('login.html');}}
+  async function signOut(event){if(leaving||(!dirty&&!busy))return;event.preventDefault();event.stopImmediatePropagation();if(await mayLeave()){leaving=true;if(!await signOutTo('login.html'))leaving=false;}}
   // Capture before the shell's existing logout handler; preserve its normal behavior when clean.
   document.querySelectorAll('[data-sign-out]').forEach(button=>button.addEventListener('click',signOut,true));
   document.addEventListener('click',async event=>{const link=event.target.closest('a[href]');if(!link||leaving||(!dirty&&!busy)||event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;event.preventDefault();if(await mayLeave()){leaving=true;location.assign(link.href);}},true);
@@ -35,7 +36,7 @@ if(user){
       });
       main.querySelector('[data-reload]').addEventListener('click',async()=>{if(await mayLeave())load();});
       main.querySelector('[data-change-password]').addEventListener('click',openChangePassword);
-      main.querySelector('[data-profile-signout]').addEventListener('click',async()=>{if(await mayLeave()){leaving=true;Auth.logout();location.assign('login.html');}});
+      main.querySelector('[data-profile-signout]').addEventListener('click',async()=>{if(await mayLeave()){leaving=true;if(!await signOutTo('login.html'))leaving=false;}});
     }catch(err){if(request!==version)return;if(background){UI.toast(err.message,'error');return;}main.innerHTML=UI.empty({title:'Unable to load your profile',text:err.message})+'<button class="btn" data-retry>Try again</button>';main.querySelector('[data-retry]').addEventListener('click',()=>load());}
   }
   async function refresh(){if(busy||refreshing)return;refreshing=true;try{const next=await Api.users.get(user.id);if(busy)return;if(JSON.stringify(next)!==JSON.stringify(current)){if(dirty)main.querySelector('[data-updated]').hidden=false;else await load(false,true);}}catch(err){UI.toast(err.message,'error');}finally{refreshing=false;}}

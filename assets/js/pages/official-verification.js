@@ -64,7 +64,8 @@ if (user) {
   }, true);
   document.querySelectorAll('[data-sign-out]').forEach(button => button.addEventListener('click', async event => {
     if (leaving || (!dirty && !busy)) return; event.preventDefault(); event.stopImmediatePropagation(); if (busy || confirming) return; confirming = true;
-    try { if (await UI.confirm({ title: 'Discard review notes?', text: 'Your review notes have not been saved.', confirmLabel: 'Discard changes', danger: true })) { dirty = false; leaving = true; Auth.logout(); location.assign('login.html'); } }
+    try { if (await UI.confirm({ title: 'Discard review notes?', text: 'Your review notes have not been saved.', confirmLabel: 'Discard changes', danger: true })) { await Auth.logout(); dirty = false; leaving = true; location.assign('login.html'); } }
+    catch { UI.toast('Sign out could not be confirmed. Try again.', 'error'); }
     finally { confirming = false; }
   }, true));
   window.addEventListener('beforeunload', event => { if (!leaving && (dirty || busy)) { event.preventDefault(); event.returnValue = ''; } });

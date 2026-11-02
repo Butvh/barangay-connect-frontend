@@ -4,6 +4,7 @@ import { UI } from '../core/ui.js';
 import { Icons } from '../core/icons.js';
 import { Fmt } from '../core/format.js';
 import { openChangePassword } from '../core/change-password.js';
+import { signOutTo } from '../core/sign-out.js';
 import { BCMap } from '../core/map.js';
 import { Shell } from '../core/shell-resident.js';
 
@@ -53,7 +54,7 @@ if (user) {
       });
       main.querySelectorAll('[data-change-password]').forEach(button => button.addEventListener('click', openChangePassword));
       main.querySelector('#reload-profile').addEventListener('click', async () => { if (await mayLeave()) load(); });
-      main.querySelector('#profile-signout').addEventListener('click', async () => { if (busy) return; if (await mayLeave()) { Auth.logout(); location.assign('resident-login.html'); } });
+      main.querySelector('#profile-signout').addEventListener('click', async () => { if (busy) return; if (await mayLeave()) await signOutTo('resident-login.html'); });
       if (household) mapView = BCMap.mount(main.querySelector('#profile-map'), { barangay_id: resident.barangay_id, controls: false, interactive: false, markers: [{ id: 'household', kind: 'own_household', x: household.map_x, y: household.map_y, label: 'My household', selected: true }], onSelect: async () => { if (await mayLeave()) location.assign('resident-map.html'); } });
     } catch (err) { if (version !== loadVersion) return; main.innerHTML = UI.empty({ icon: 'triangle-alert', title: 'Unable to load your profile', text: err.message }) + '<button type="button" class="btn btn-primary" id="profile-retry">Try again</button>'; main.querySelector('button').addEventListener('click', () => load()); }
     finally { if (version === loadVersion) main.removeAttribute('aria-busy'); }

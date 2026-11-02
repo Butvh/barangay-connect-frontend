@@ -1,4 +1,6 @@
-import { Config, ApiError, copy, delay } from './config.js';
+import { Config, ApiError, copy, delay, setServerTime } from './config.js';
+import { createHttp } from '../adapters/http.js';
+import { createBackendAuth } from '../adapters/session.js';
 import { Store, memoryStorage } from './store.js';
 import { roleOf } from './permissions.js';
 
@@ -32,5 +34,20 @@ export function createAuth({ store = Store, session = tabStorage(), wait = delay
   }
   return Object.freeze({ current, login, logout, requireRole, roleOf, homeFor });
 }
-export const Auth = createAuth();
+export const Http = Config.DEMO_MODE ? null : createHttp({ onServerTime: setServerTime });
+export const Auth = Config.DEMO_MODE ? createAuth() : createBackendAuth({ http: Http });
+// Every importing page waits for /me before a synchronous role guard can run.
+if (!Config.DEMO_MODE) await Auth.hydrateSession();
+if (!Config.DEMO_MODE) {
+  let previous = Auth.current();
+  Auth.onChange(() => {
+    const currentUser = Auth.current();
+    if (previous && !currentUser && !Auth.error()) {
+      const host = globalThis.document?.querySelector('#app');
+      if (host) host.textContent = 'Your session ended. Sign in to continue.';
+      globalThis.location?.replace?.(roleOf(previous) === 'resident' ? 'resident-login.html' : 'login.html');
+    }
+    previous = currentUser;
+  });
+}
 export default Auth;
