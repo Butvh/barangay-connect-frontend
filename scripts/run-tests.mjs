@@ -27,3 +27,8 @@ if (!process.exitCode) {
   if (verification.error) console.error(verification.error.message);
   process.exitCode = verification.status ?? 1;
 }
+if (!process.exitCode) {
+  const profile = spawnSync(process.execPath, ['tests/profile-pages.mjs'], { cwd: root, stdio: 'inherit' });
+  if (profile.error) console.error(profile.error.message);
+  process.exitCode = profile.status ?? 1;
+}

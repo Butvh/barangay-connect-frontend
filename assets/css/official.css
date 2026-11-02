@@ -480,3 +480,5 @@ html:has(.official-app):has(dialog[open]),html:has(.official-login):has(dialog[o
 .announcement-history ol{padding-left:20px;display:grid;gap:16px}
 .announcement-history li>small{display:block;margin-top:4px}
 .announcement-retraction-note{padding:16px;background:var(--red-50);border-radius:8px}
+/* Keep the existing avatar as the profile entry point on phones as well. */
+@media(max-width:767px){.official-app .official-header .official-avatar{display:grid;flex-shrink:0}}
