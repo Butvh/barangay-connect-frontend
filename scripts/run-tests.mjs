@@ -32,3 +32,9 @@ if (!process.exitCode) {
   if (profile.error) console.error(profile.error.message);
   process.exitCode = profile.status ?? 1;
 }
+for (const file of ['tests/password-recovery.mjs', 'tests/recovery-pages.mjs']) {
+  if (process.exitCode) break;
+  const recovery = spawnSync(process.execPath, [...flags, file], { cwd: root, stdio: 'inherit' });
+  if (recovery.error) console.error(recovery.error.message);
+  process.exitCode = recovery.status ?? 1;
+}

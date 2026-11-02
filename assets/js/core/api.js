@@ -9,6 +9,7 @@ import { personnelList, personnelGet, addExternalPersonnel, appointPersonnel, re
 import { activitySnapshot, recordActivity } from './activity.js';
 import { checkVerificationRevision, preserveVerificationHistory, appendVerificationEvent } from './verification.js';
 import { createAccountSecurity } from './account-security.js';
+import { createPasswordRecovery } from './password-recovery.js';
 import { facilityActive, facilityVisible, facilitySnapshot, facilityProjection, createFacility, updateFacility, setFacilityStatus } from './facilities.js';
 import { assignmentOptions, assignmentFlags, assignmentInput, assignmentRecords, assignPersonnel, endAssignment, assignmentForWrite, assignmentReason, checkAssignmentRevision, bumpAssignmentRevision, recordAssignmentActivity } from './assignments.js';
 
@@ -98,7 +99,7 @@ function announcementProjection(db, row, user, at) {
 }
 
 /** Contract adapter: browser store today, authenticated Laravel endpoints later. */
-export function createApi({ store = Store, auth = Auth, wait = delay, clock = store.now, accountTransport = null } = {}) {
+export function createApi({ store = Store, auth = Auth, wait = delay, clock = store.now, accountTransport = null, recoveryTransport = null } = {}) {
   const activeUser = db => {
     const session = auth.current();
     const user = session && db.users.find(row => row.id === session.id);
@@ -134,6 +135,7 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
   }
   const api = {
     account: createAccountSecurity({ currentUser: () => activeUser(store.read()), transport: accountTransport }),
+    recovery: createPasswordRecovery({ transport: recoveryTransport }),
     personnel: {
       list: () => read((db,user) => personnelList(db,user)),
       get: id => read((db,user) => personnelGet(db,user,id)),

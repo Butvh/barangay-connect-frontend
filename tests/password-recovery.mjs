@@ -1,0 +1,33 @@
+import assert from 'node:assert/strict';
+import { createPasswordRecovery } from '../assets/js/core/password-recovery.js';
+import { ApiError } from '../assets/js/core/config.js';
+import { createApi } from '../assets/js/core/api.js';
+
+let passed=0;
+export async function check(name,fn){await fn();passed++;console.log(`PASS ${name}`);}
+const rejects=(fn,code)=>assert.rejects(fn,e=>e.code===code);
+const accepted={accepted:true,challenge_id:'opaque-challenge',expires_in:600,retry_after:60};
+const verified={verified:true,reset_authorization:'opaque-authorization',expires_in:600};
+const email={email:' Fictional.Person@example.com ',portal:'resident'};
+const password={password:'Long fictional Passphrase 123',password_confirmation:'Long fictional Passphrase 123'};
+function fixture(overrides={}){let now=100000;const calls=[];const transport={requestCode:async p=>{calls.push(['request',p]);return accepted;},verifyCode:async p=>{calls.push(['verify',p]);return verified;},resetPassword:async p=>{calls.push(['reset',p]);return {password_reset:true};},...overrides};return {s:createPasswordRecovery({transport,now:()=>now}),calls,tick:ms=>now+=ms};}
+
+await check('Unavailable demo rejects recovery without account lookup or stage progression',async()=>{const s=createPasswordRecovery();assert.equal(s.available,false);await rejects(()=>s.requestCode(email),'NOT_AVAILABLE');assert.equal(s.state().stage,'request');await rejects(()=>s.verifyCode('123456'),'RECOVERY_STATE');await rejects(()=>s.resetPassword(password),'RECOVERY_STATE');});
+await check('Public API recovery neither reads demo accounts nor writes authentication/persistence',async()=>{const forbidden=()=>assert.fail('Recovery must not access the demo store or session');const api=createApi({store:{now:()=>'',read:forbidden,write:forbidden,mutate:forbidden},auth:{current:forbidden,login:forbidden,logout:forbidden}});const errors=[];for(const address of ['maria.santos@example.com','nonexistent@example.com']){try{await api.recovery.requestCode({email:address,portal:'resident'});}catch(e){errors.push([e.code,e.message]);}}assert.deepEqual(errors[0],errors[1]);assert.equal(errors[0][0],'NOT_AVAILABLE');assert.equal(api.recovery.state().stage,'request');});
+await check('Request validates email and origin before transport and requires complete confirmation',async()=>{const f=fixture();await rejects(()=>f.s.requestCode({email:'bad',portal:'resident'}),'VALIDATION');await rejects(()=>f.s.requestCode({...email,portal:'evil'}),'VALIDATION');assert.equal(f.calls.length,0);await f.s.requestCode(email);assert.deepEqual(f.calls[0],['request',{email:'fictional.person@example.com',portal:'resident'}]);assert.equal(f.s.state().stage,'verify');for(const result of [{accepted:true}, {...accepted,challenge_id:''},{...accepted,expires_in:Infinity}]){const b=fixture({requestCode:async()=>result});await rejects(()=>b.s.requestCode(email),'SERVER');assert.equal(b.s.state().stage,'request');}});
+await check('Only successful code verification unlocks reset and authorizations never enter public state',async()=>{const f=fixture();await f.s.requestCode(email);await rejects(()=>f.s.verifyCode('12a456'),'VALIDATION');await f.s.verifyCode('123456');assert.deepEqual(f.calls[1],['verify',{challenge_id:'opaque-challenge',code:'123456'}]);assert.equal(f.s.state().stage,'reset');assert.equal(JSON.stringify(f.s.state()).includes('opaque'),false);await f.s.resetPassword(password);assert.deepEqual(f.calls[2],['reset',{reset_authorization:'opaque-authorization',...password}]);assert.equal(f.s.state().stage,'request');await rejects(()=>f.s.resetPassword(password),'RECOVERY_STATE');});
+await check('Cooldown prevents early resend, replacement challenge is used and expiry blocks code verification',async()=>{let n=0;const f=fixture({requestCode:async()=>({...accepted,challenge_id:'challenge-'+(++n)})});await f.s.requestCode(email);await rejects(()=>f.s.resendCode(),'COOLDOWN');f.tick(60000);await f.s.resendCode();assert.equal(n,2);assert.equal(f.s.state().retry_in,60);f.tick(600001);await rejects(()=>f.s.verifyCode('123456'),'CODE_EXPIRED');f.tick(1);await f.s.resendCode();await f.s.verifyCode('123456');assert.equal(f.calls[0][1].challenge_id,'challenge-3');});
+await check('Incorrect/expired server codes and malformed verification never unlock password entry',async()=>{for(const problem of ['INVALID_CODE','CODE_EXPIRED','RATE_LIMIT']){const f=fixture({verifyCode:async()=>{throw new ApiError(problem,'Ignored raw body');}});await f.s.requestCode(email);await rejects(()=>f.s.verifyCode('123456'),problem);assert.equal(f.s.state().stage,'verify');}const f=fixture({verifyCode:async()=>({verified:true})});await f.s.requestCode(email);await rejects(()=>f.s.verifyCode('123456'),'SERVER');assert.equal(f.s.state().stage,'verify');});
+await check('Password policy rejects invalid/oversize/mismatch without truncation and success requires server confirmation',async()=>{const f=fixture({resetPassword:async()=>({})});await f.s.requestCode(email);await f.s.verifyCode('123456');for(const p of [{password:'weak',password_confirmation:'weak'},{...password,password_confirmation:'different'},{password:'Aa1'+'x'.repeat(126),password_confirmation:'Aa1'+'x'.repeat(126)}])await rejects(()=>f.s.resetPassword(p),'VALIDATION');assert.equal(f.calls.length,2);await rejects(()=>f.s.resetPassword(password),'SERVER');assert.equal(f.s.state().stage,'reset');f.tick(600001);await rejects(()=>f.s.resetPassword(password),'AUTHORIZATION_EXPIRED');});
+await check('Duplicate submissions are blocked and clear invalidates late responses',async()=>{let release;const f=fixture({requestCode:()=>new Promise(r=>release=r)});const pending=f.s.requestCode(email);await rejects(()=>f.s.requestCode(email),'BUSY');f.s.clear();release(accepted);await rejects(()=>pending,'CANCELLED');assert.equal(f.s.state().stage,'request');assert.equal(f.s.state().retry_in,0);});
+await check('Clear between transport resolution and each state mutation cannot resurrect recovery',async()=>{
+ for(const method of ['requestCode','verifyCode','resetPassword']){
+  let release;const f=fixture({[method]:()=>new Promise(r=>release=r)});
+  if(method!=='requestCode')await f.s.requestCode(email);
+  if(method==='resetPassword')await f.s.verifyCode('123456');
+  const pending=method==='requestCode'?f.s.requestCode(email):method==='verifyCode'?f.s.verifyCode('123456'):f.s.resetPassword(password);
+  release(method==='requestCode'?accepted:method==='verifyCode'?verified:{password_reset:true});queueMicrotask(()=>f.s.clear());
+  await rejects(()=>pending,'CANCELLED');assert.equal(f.s.state().stage,'request');assert.equal(f.s.state().retry_in,0);
+ }
+});
+console.log(`${passed} password recovery service tests passed.`);
