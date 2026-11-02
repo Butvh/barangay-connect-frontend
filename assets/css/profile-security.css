@@ -1,0 +1,66 @@
+/* Shared account security dialog; both profile pages load this stylesheet. */
+.password-dialog{width:min(568px,calc(100vw - 32px));max-width:none;max-height:calc(100dvh - 32px);padding:32px;overflow-y:auto;border:1px solid var(--border);border-radius:16px;color:var(--text)}
+.password-dialog::backdrop{background:rgba(23,32,51,.48)}
+.password-close{position:absolute;right:16px;top:16px}
+.password-heading{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;margin-bottom:16px}
+.password-heading .icon-tile{width:64px;height:64px;margin-bottom:8px;background:var(--blue-100);color:var(--blue-600)}
+.password-heading h2{font-size:28px;line-height:36px;font-weight:600}
+.password-heading p{font-size:14px;line-height:20px;color:var(--text-secondary)}
+.password-availability{font-size:12px;line-height:18px;background:var(--blue-50);padding:12px;border-radius:8px;margin:0 0 16px}
+.password-dialog form{display:grid;gap:16px}
+.password-dialog .field{gap:8px;min-width:0}
+.password-dialog label{font-size:14px;line-height:20px;font-weight:500}
+.password-input{position:relative}
+.password-input .input{height:48px;padding-right:48px;min-width:0}
+.password-input .icon-btn{position:absolute;right:4px;top:4px;width:40px;height:40px;color:var(--text-secondary)}
+.password-dialog .error-text:empty{display:none}
+.password-requirements{display:grid;grid-template-columns:160px minmax(0,1fr);gap:16px;padding:20px;background:var(--blue-50);border-radius:12px;font-size:12px;line-height:20px;margin:8px 0}
+.password-requirements>div{display:flex;gap:12px;align-items:flex-start;font-size:14px;line-height:20px}
+.password-requirements>div svg{color:var(--blue-600);flex-shrink:0}
+.password-requirements ul{list-style:none;padding:0;margin:0;display:grid;gap:4px}
+.password-requirements li{display:flex;gap:8px;align-items:flex-start;color:var(--text-secondary)}
+.password-requirements li [data-requirement-icon]{color:var(--text-muted);display:flex;padding-top:2px}
+.password-requirements li.satisfied [data-requirement-icon]{color:var(--green-600)}
+.password-actions{display:grid;grid-template-columns:1fr 1.7fr;gap:16px;margin-top:4px}
+.password-actions .btn{min-height:48px;padding-inline:12px}
+.official-profile-main{display:flex;flex-direction:column;gap:24px}
+.official-profile-main .official-heading{margin:0}
+.official-profile-layout{display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,1.2fr);gap:24px;align-items:start}
+.official-profile-column{display:grid;gap:16px;min-width:0}
+.official-profile-personal{padding:24px;display:grid;gap:20px}
+.official-profile-identity{display:flex;gap:20px;align-items:center;margin-bottom:4px;flex-wrap:wrap}
+.official-profile-identity .grow{min-width:120px;overflow-wrap:anywhere}
+.official-profile-avatar{width:80px;height:80px;display:grid;place-items:center;flex-shrink:0;border-radius:50%;background:var(--blue-100);color:var(--blue-700);font-size:28px;font-weight:600}
+.official-profile-main h2{font-size:24px;line-height:32px;font-weight:600}
+.official-profile-main h3{font-size:16px;line-height:24px;font-weight:500}
+.official-profile-main p{color:var(--text-secondary)}
+.official-profile-main .field{gap:8px}
+.official-profile-main .field label{font-size:14px;line-height:20px;font-weight:500}
+.official-profile-main .input{min-height:44px}
+.official-profile-main .input[readonly]:not([data-editable]){background:var(--bg)}
+.official-profile-main .error-text:empty{display:none}
+.official-profile-signout{display:flex;align-items:center;gap:20px;padding:24px}
+.official-profile-signout .grow{min-width:0}
+.official-profile-signout p{font-size:14px;line-height:20px;margin-top:4px}
+.official-profile-account{padding:16px;display:grid;grid-template-columns:1.1fr 1fr;gap:20px;align-items:center}
+.official-profile-account>div:last-child{border-left:1px solid var(--divider);padding-left:20px}
+.official-profile-account p{font-size:14px;line-height:20px;margin-top:6px}
+.official-profile-account-type{display:flex;gap:16px;align-items:center;background:var(--blue-50);padding:16px;border-radius:8px;min-width:0}
+.official-profile-account-type .icon-tile{width:64px;height:64px;flex-shrink:0}
+.official-profile-details{padding:24px;display:grid;gap:20px}
+.official-profile-section-heading{display:flex;gap:16px;align-items:center}
+.official-profile-section-heading .icon-tile{width:56px;height:56px;flex-shrink:0}
+.official-profile-section-heading p{font-size:14px;line-height:20px;margin-top:4px}
+.official-profile-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));background:var(--blue-50);border-radius:8px;padding:16px 0}
+.official-profile-facts>div{display:flex;gap:12px;padding:0 16px;min-width:0}
+.official-profile-facts>div+div{border-left:1px solid var(--divider)}
+.official-profile-facts svg{color:var(--blue-600);flex-shrink:0}
+.official-profile-facts small,.official-profile-facts strong{display:block;overflow-wrap:anywhere;font-size:14px;line-height:20px}
+.official-profile-facts small{color:var(--text-secondary);margin-bottom:4px}
+.official-profile-facts strong{font-weight:500}
+.official-profile-security-row{display:flex;align-items:center;gap:16px;border-top:1px solid var(--divider);padding-top:16px;flex-wrap:wrap}
+.official-profile-security-row>svg{flex-shrink:0;color:var(--blue-700)}
+.official-profile-security-row .grow{min-width:160px}
+.official-profile-security-row p{font-size:14px;line-height:20px;margin-top:2px}
+@media(max-width:1199px){.official-profile-layout{grid-template-columns:1fr}.official-profile-account{grid-template-columns:1fr 1fr}}
+@media(max-width:767px){.password-dialog{padding:24px;max-height:calc(100dvh - 24px)}.password-heading{padding-top:8px}.password-heading h2{font-size:24px;line-height:32px}.password-requirements{grid-template-columns:1fr;gap:12px;padding:16px}.password-actions{gap:10px}.official-profile-main{gap:16px}.official-profile-layout{gap:16px}.official-profile-personal,.official-profile-details,.official-profile-signout{padding:20px}.official-profile-signout{flex-wrap:wrap}.official-profile-signout>.btn{width:100%}.official-profile-account{grid-template-columns:1fr}.official-profile-account>div:last-child{border-left:0;padding-left:0}.official-profile-facts{grid-template-columns:1fr;gap:16px}.official-profile-facts>div+div{border-left:0}.official-profile-identity{gap:16px}.official-profile-avatar{width:64px;height:64px}.official-profile-security-row>.btn{width:100%}}

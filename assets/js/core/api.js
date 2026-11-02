@@ -8,6 +8,7 @@ import { canAccessNotification, notificationProjection, notificationSource, noti
 import { personnelList, personnelGet, addExternalPersonnel, appointPersonnel, reassignPersonnel, removePersonnel } from './personnel.js';
 import { activitySnapshot, recordActivity } from './activity.js';
 import { checkVerificationRevision, preserveVerificationHistory, appendVerificationEvent } from './verification.js';
+import { createAccountSecurity } from './account-security.js';
 import { facilityActive, facilityVisible, facilitySnapshot, facilityProjection, createFacility, updateFacility, setFacilityStatus } from './facilities.js';
 import { assignmentOptions, assignmentFlags, assignmentInput, assignmentRecords, assignPersonnel, endAssignment, assignmentForWrite, assignmentReason, checkAssignmentRevision, bumpAssignmentRevision, recordAssignmentActivity } from './assignments.js';
 
@@ -97,7 +98,7 @@ function announcementProjection(db, row, user, at) {
 }
 
 /** Contract adapter: browser store today, authenticated Laravel endpoints later. */
-export function createApi({ store = Store, auth = Auth, wait = delay, clock = store.now } = {}) {
+export function createApi({ store = Store, auth = Auth, wait = delay, clock = store.now, accountTransport = null } = {}) {
   const activeUser = db => {
     const session = auth.current();
     const user = session && db.users.find(row => row.id === session.id);
@@ -132,6 +133,7 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
     return row;
   }
   const api = {
+    account: createAccountSecurity({ currentUser: () => activeUser(store.read()), transport: accountTransport }),
     personnel: {
       list: () => read((db,user) => personnelList(db,user)),
       get: id => read((db,user) => personnelGet(db,user,id)),
@@ -184,7 +186,7 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
       get: id => read((db, user) => { const person = get(db.users, id, 'Resident'); if (person.id !== user.id) { assertRole(user, staff); assertBarangay(user, person); } return { ...publicUser(person), household: db.households.find(h => h.id === person.household_id) || null, verification: ['secretary', 'captain'].includes(roleOf(user)) || (roleOf(user) === 'resident' && person.id === user.id) ? latestVerification(db, person.id) : null }; }),
       update: (id, patch) => write(['users'], (db, user) => {
         const person = get(db.users, id, 'Resident'); assertOwner(user, person, 'id');
-        const allowed = ['full_name', 'contact_number', 'address', 'household_address', 'map_x', 'map_y'];
+        const allowed = roleOf(user) === 'resident' ? ['full_name', 'contact_number', 'address', 'household_address', 'map_x', 'map_y'] : ['full_name', 'contact_number'];
         if (Object.keys(patch).some(key => !allowed.includes(key))) throw new ApiError('VALIDATION', 'Only profile and household fields can be edited.');
         if (patch.full_name !== undefined) person.full_name = text(patch.full_name, 'full_name', { max: 100 });
         if (patch.contact_number !== undefined) person.contact_number = text(patch.contact_number, 'contact_number', { required: false, max: 30 });
