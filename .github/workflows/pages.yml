@@ -19,6 +19,8 @@ jobs:
           node-version: '22'
       - run: node scripts/check.mjs
       - run: node scripts/run-tests.mjs
+      - run: node tests/frontend-artifact.mjs
+      - run: node scripts/stage-frontend.mjs
   deploy:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     needs: check
@@ -32,9 +34,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
+      - run: node scripts/stage-frontend.mjs
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: .frontend-dist
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4

@@ -5,4 +5,12 @@ Thumbs.db
 node_modules/
 .superpowers/
 .qa/
+.frontend-dist/
+backend/vendor/
+backend/.env*
+!backend/.env.example
+backend/storage/**
+!backend/storage/**/
+!backend/storage/**/.gitignore
+backend/bootstrap/cache/*.php
 

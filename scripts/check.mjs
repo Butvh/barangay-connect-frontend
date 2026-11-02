@@ -10,6 +10,9 @@ async function walk(folder) {
   for (const entry of await readdir(folder, { withFileTypes: true })) {
     const path = resolve(folder, entry.name);
     if (entry.name === '.git') continue;
+    // Backend sources/dependencies have their own PHP/Composer checks, never Pages.
+    if (folder === root && ['backend', '.frontend-dist'].includes(entry.name)) continue;
+    if (entry.isSymbolicLink()) { fail(path, 'Symbolic links are forbidden in frontend sources.'); continue; }
     if (entry.name === 'node_modules') { fail(path, 'Runtime packages are forbidden.'); continue; }
     files.push(...entry.isDirectory() ? await walk(path) : [path]);
   }
