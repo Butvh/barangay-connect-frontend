@@ -8,17 +8,36 @@ final class EffectiveRole
 {
     public static function of(Authenticatable $user): ?string
     {
-        if (! is_int($user->barangay_id) || $user->barangay_id < 1) {
+        if (! is_int($user->barangay_id) || $user->barangay_id < 1 || $user->account_status !== 'Active') {
             return null;
         }
-        // Database boolean casts are a required DBA contract, never request input.
-        $inactive = in_array($user->personnel_status, ['Inactive', 'Unassigned'], true);
-        foreach (['captain', 'secretary', 'responder', 'rescuer', 'resident'] as $role) {
-            if ($user->{'is_'.$role} === true && ($role === 'resident' || ! $inactive)) {
-                return $role;
-            }
+        if ($user->is_captain === true) {
+            return 'captain';
+        }
+        $appointment = $user->appointment;
+        if ($appointment && $appointment->barangay_id === $user->barangay_id &&
+            $appointment->status === 'Active' && in_array($appointment->role, ['secretary', 'responder', 'rescuer'], true)) {
+            return $appointment->role;
         }
 
-        return null;
+        return $user->is_resident === true ? 'resident' : null;
+    }
+
+    /** Frontend role flags are derived projections, not duplicated database columns. */
+    public static function flags(Authenticatable $user): array
+    {
+        $appointment = $user->appointment;
+        $sameScope = $appointment && $appointment->barangay_id === $user->barangay_id;
+        $membership = $user->tanodMembership;
+        $result = [
+            'is_captain' => $user->is_captain === true, 'is_resident' => $user->is_resident === true,
+            'is_tanod' => $membership && $membership->barangay_id === $user->barangay_id,
+            'personnel_status' => $sameScope ? $appointment->status : null,
+        ];
+        foreach (['secretary', 'responder', 'rescuer'] as $role) {
+            $result['is_'.$role] = $sameScope && $appointment->role === $role;
+        }
+
+        return $result;
     }
 }

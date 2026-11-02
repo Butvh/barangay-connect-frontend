@@ -17,13 +17,10 @@ final class UserResource extends JsonResource
             'email' => $user->email, 'contact_number' => $user->contact_number,
             'barangay_id' => (int) $user->barangay_id,
             'household_id' => $user->household_id === null ? null : (int) $user->household_id,
-            'personnel_status' => $user->personnel_status, 'created_at' => $user->created_at,
+            'account_status' => $user->account_status, 'created_at' => $user->created_at,
             'role' => EffectiveRole::of($user),
         ];
-        foreach (['captain', 'secretary', 'responder', 'rescuer', 'resident', 'tanod'] as $role) {
-            $result['is_'.$role] = $user->{'is_'.$role} === true;
-        }
 
-        return $result;
+        return array_merge($result, EffectiveRole::flags($user));
     }
 }

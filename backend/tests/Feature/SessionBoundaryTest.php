@@ -93,8 +93,16 @@ final class SessionBoundaryTest extends TestCase
     public function test_inactive_staff_does_not_keep_official_session(): void
     {
         config(['identity.enabled' => true]);
-        $user = $this->user(['personnel_status' => 'Inactive', 'is_resident' => true]);
+        $user = $this->user(['appointment' => (object) ['role' => 'secretary', 'status' => 'Inactive', 'barangay_id' => 7], 'is_resident' => true]);
         $this->actingAs($user)->withSession(['identity_role' => 'secretary', 'identity_version' => 2])
+            ->getJson('/api/v1/me')->assertUnauthorized();
+    }
+
+    public function test_inactive_account_cannot_use_even_a_matching_portal_session(): void
+    {
+        config(['identity.enabled' => true]);
+        $this->actingAs($this->user(['account_status' => 'Inactive']))
+            ->withSession(['identity_role' => 'secretary', 'identity_version' => 2])
             ->getJson('/api/v1/me')->assertUnauthorized();
     }
 
@@ -139,9 +147,9 @@ final class SessionBoundaryTest extends TestCase
         return new GenericUser(array_replace([
             'id' => 42, 'full_name' => 'Test Secretary', 'email' => 'person@example.test',
             'barangay_id' => 7, 'household_id' => null, 'contact_number' => null,
-            'is_secretary' => true, 'is_captain' => false, 'is_responder' => false,
-            'is_rescuer' => false, 'is_resident' => false, 'is_tanod' => false,
-            'personnel_status' => 'Active', 'auth_version' => 2, 'created_at' => null,
+            'is_captain' => false, 'is_resident' => false, 'account_status' => 'Active',
+            'appointment' => (object) ['role' => 'secretary', 'status' => 'Active', 'barangay_id' => 7],
+            'tanodMembership' => null, 'auth_version' => 2, 'created_at' => null,
             'password' => 'never-output', 'remember_token' => 'never-output', 'internal_secret' => 'never-output',
         ], $extra));
     }

@@ -9,3 +9,4 @@
 - Added artifact/module-graph and session/security tests. Backend domain and MySQL race acceptance remain pending DBA/P2 integration, not implied by isolated guard tests.
 - Added shared proposals for event interfaces, model/cast needs, lock ordering, endpoint/facade mapping and reproducible local setup. No migrations, models, provider pipeline or P2 business implementation was created.
 - No production deploy, real mail/SMS, teammate branch merge or schema write performed.
+- Inspected newly published DBA draft PR48 (`32ff81f`); adapted only P1 projection/bootstrap/contracts for relational appointments, account-status denial, recipient channels and stateless integration routing. Requested a DBA-owned security-generation field and joint event/test-harness review before identity/domain enablement.

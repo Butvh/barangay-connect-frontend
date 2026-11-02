@@ -55,4 +55,4 @@ The frontend signatures below are inventoried so the shared facade seam is compl
 | reports.snapshot | GET reports/snapshot | Captain-only complete same-barangay projections and actual nullable historical audit fields. |
 | Api.subscribe | Authenticated scoped revision readers | `refreshSources` returns stable revision strings/numbers; unsubscribe/teardown included by P1; P2 supplies authorized domain reads. |
 
-DBA owns `routes/integrations.php`, delivery/provider jobs, delivery ledgers and `config/messaging.php`. P1's route loader includes that file when present, but webhook CSRF/signature placement still needs a P1-reviewed bootstrap change. No Make/Semaphore credential belongs in a browser adapter.
+DBA owns `routes/integrations.php`, delivery/provider jobs, delivery ledgers and `config/messaging.php`. P1 bootstrap includes that file when present in a separate stateless `api` group; browser API routes retain their web/session/CSRF group. Combined callback authorization tests remain a review dependency. No Make/Semaphore credential belongs in a browser adapter.
