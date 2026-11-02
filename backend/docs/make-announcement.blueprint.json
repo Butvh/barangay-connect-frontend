@@ -1,0 +1,45 @@
+{
+  "name": "Barangay Connect announcement v1 — UNCONFIGURED",
+  "flow": [
+    {
+      "id": 1,
+      "module": "gateway:CustomWebHook",
+      "version": 1,
+      "parameters": {"hook": "REPLACE_WITH_AUTHENTICATED_WEBHOOK_ID", "maxResults": 1},
+      "mapper": {},
+      "metadata": {"designer": {"x": 0, "y": 0}}
+    },
+    {
+      "id": 2,
+      "module": "http:ActionSendData",
+      "version": 3,
+      "filter": {
+        "name": "Allow configured nonurgent announcement only",
+        "conditions": [[
+          {"a": "{{1.type}}", "b": "announcement.published.v1", "o": "text:equal"},
+          {"a": "{{1.template_key}}", "b": "announcement-review.v1", "o": "text:equal"},
+          {"a": "{{1.barangay_id}}", "b": "REPLACE_WITH_SCOPED_BARANGAY_ID", "o": "number:equal"}
+        ]]
+      },
+      "parameters": {"handleErrors": true},
+      "mapper": {
+        "url": "https://REPLACE_WITH_LARAVEL_HOST.invalid/api/v1/integrations/make/sms-commands",
+        "method": "post",
+        "headers": [{"name": "X-Credential-Id", "value": "announcement-v1"}],
+        "qs": [],
+        "bodyType": "raw",
+        "contentType": "application/json",
+        "data": "{\"event_id\":\"{{1.event_id}}\",\"barangay_id\":{{1.barangay_id}},\"type\":\"{{1.type}}\",\"template_key\":\"{{1.template_key}}\",\"timestamp\":{{formatDate(now; \"X\")}}}",
+        "parseResponse": true,
+        "followRedirect": false
+      },
+      "metadata": {"designer": {"x": 300, "y": 0}}
+    }
+  ],
+  "metadata": {
+    "version": 1,
+    "scenario": {"roundtrips": 1, "maxErrors": 3, "autoCommit": true, "sequential": true, "confidential": true, "dataloss": false, "dlq": true},
+    "designer": {"orphans": []},
+    "notes": "Unconfigured import candidate. Enable webhook API-key auth; bind callback bearer via a credential/keychain; add Retry/Break and operator alert per runbook. No live import/execution has been tested."
+  }
+}
