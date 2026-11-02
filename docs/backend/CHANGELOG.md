@@ -10,3 +10,4 @@
 - Added shared proposals for event interfaces, model/cast needs, lock ordering, endpoint/facade mapping and reproducible local setup. No migrations, models, provider pipeline or P2 business implementation was created.
 - No production deploy, real mail/SMS, teammate branch merge or schema write performed.
 - Inspected newly published DBA draft PR48 (`32ff81f`); adapted only P1 projection/bootstrap/contracts for relational appointments, account-status denial, recipient channels and stateless integration routing. Requested a DBA-owned security-generation field and joint event/test-harness review before identity/domain enablement.
+- First CI run completed the genuine MySQL8.4.13 check but exposed suppressed missing-.env warnings. CI now creates its placeholder environment and fails on test warnings; isolated tests force a public test-only encryption key instead of inheriting a developer key.

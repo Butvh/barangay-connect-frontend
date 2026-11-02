@@ -9,7 +9,7 @@ Environment: Windows, PHP8.5.12, Composer2.11.1, Node22.14.0. Base main `3014ad6
 | Pages artifact | Allowlist and stale-output/destination safety tests pass; root/backend/secrets/docs/tests/uploads/vendor excluded. |
 | Backend artifact/module graph | Runtime switches only in generated copy; seed excluded; actual staged module imports hydrate `/me` before guards, read no browser storage, and use server time. |
 | Sign-out interaction | Real helper waits for invalidation; failed invalidation retains the page with safe error copy. |
-| Laravel tests | 17 pass /74 assertions, including the DBA account-status/relational-appointment projection. One actual-MySQL engine test explicitly skipped locally because no MySQL server is available. Test-only user provider covers guard behavior; it is not real MySQL persistence. |
+| Laravel tests | 18 pass /75 assertions, including the DBA account-status/relational-appointment projection and isolated encryption key. One actual-MySQL engine test explicitly skipped locally because no MySQL server is available. Test-only user provider covers guard behavior; it is not real MySQL persistence. |
 | Composer | Strict validation/platform checks pass; locked audit reports no security advisories at time of run. |
 | Pint / diff | Formatting and whitespace checks pass. |
 | Live local HTTP on temporary loopback port8011 | Session/CSRF cookies issued; missing-token POST419; configured-disabled login503; forged demo header cannot authenticate `/me` (401); frontend HTML/runtime served. |

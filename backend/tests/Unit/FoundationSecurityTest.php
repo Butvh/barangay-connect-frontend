@@ -7,6 +7,11 @@ use Tests\TestCase;
 
 final class FoundationSecurityTest extends TestCase
 {
+    public function test_encryption_uses_only_the_public_test_fixture_key(): void
+    {
+        $this->assertTrue(hash_equals('base64:MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=', (string) config('app.key')));
+    }
+
     public function test_hasher_does_not_truncate_after_72_bytes(): void
     {
         $password = str_repeat('Ab1', 40).'tail';
