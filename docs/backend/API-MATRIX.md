@@ -2,6 +2,8 @@
 
 All paths below have `/api/v1` prefix. Only the four session/CSRF routes are implemented in the foundation. Every other entry is an integration contract, not a claim of a live endpoint. P1 owns shared `config.js`, `auth.js`, `api.js`, `adapters/http.js` and the factory seam; coordinate edits there through a small reviewed PR.
 
+November3: actual P2 exports/routes and envelope injection are compared in [COMPATIBILITY.md](COMPATIBILITY.md), which supersedes older proposed P2 route spellings below. Disabled P2 route prefixes require current.identity and return503 to a valid session; the actual operations/communications/reports fragments remain gated until owner compatibility. No domain API is enabled by this mapping.
+
 Use numeric IDs and current DTO/status/null semantics. List envelopes must provide full scoped records where current pages compute totals, or explicit aggregates and pagination adapted before enabling that page. Never silently return one page to a full-list caller.
 
 ## P1

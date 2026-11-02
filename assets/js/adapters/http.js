@@ -16,7 +16,7 @@ const messages = {
 export function createHttp({ fetchImpl = globalThis.fetch, origin = globalThis.location?.origin, timeout = 15000, onServerTime = () => {} } = {}) {
   const base = new URL('/api/v1/', origin);
   const unauthorized = new Set();
-  let csrfToken = null, csrfPending = null;
+  let csrfToken = null, csrfPending = null, identityContext = null;
   function problem(code, status = 0, payload = {}, response = null) {
     const fields = {};
     for (const key of Object.keys(payload?.fields || {})) if (/^[a-z][a-z0-9_.]{0,99}$/i.test(key)) fields[key] = 'Check this field.';
@@ -27,16 +27,24 @@ export function createHttp({ fetchImpl = globalThis.fetch, origin = globalThis.l
     error.retry_after = Number.isFinite(retry) && retry > 0 ? retry : null;
     return error;
   }
-  async function send(path, { method = 'GET', body, query = {}, signal } = {}) {
+  async function send(path, { method = 'GET', body, query = {}, signal, headers: suppliedHeaders = {} } = {}) {
+    const observedIdentity = identityContext;
     if (typeof path !== 'string' || !/^[a-z][a-z0-9-]*(?:\/[a-z0-9-]+)*$/i.test(path)) throw problem('VALIDATION');
     method = method.toUpperCase();
     if (!['GET', 'POST', 'PATCH', 'PUT', 'DELETE'].includes(method)) throw problem('VALIDATION');
     const url = new URL(path, base);
     for (const [key, value] of Object.entries(query)) if (value !== undefined && value !== null && value !== '') url.searchParams.set(key, String(value));
     const headers = new Headers({ Accept: 'application/json' });
+    for (const [key, value] of new Headers(suppliedHeaders)) {
+      // Domain code may supply intent/concurrency headers, never authentication or CSRF authority.
+      if (!['idempotency-key', 'if-match'].includes(key.toLowerCase()) || !value || value.length > 128) throw problem('VALIDATION');
+      if (key.toLowerCase() === 'idempotency-key' && !/^[A-Za-z0-9_-]{8,128}$/.test(value)) throw problem('VALIDATION');
+      headers.set(key, value);
+    }
     const write = method !== 'GET';
     if (write && !csrfToken) await ensureCsrf();
     if (write) headers.set('X-CSRF-TOKEN', csrfToken);
+    if (write && observedIdentity) headers.set('X-BC-Identity', observedIdentity);
     let content = body;
     if (body !== undefined && !(body instanceof FormData)) { headers.set('Content-Type', 'application/json'); content = JSON.stringify(body); }
     const controller = new AbortController();
@@ -52,7 +60,7 @@ export function createHttp({ fetchImpl = globalThis.fetch, origin = globalThis.l
       throw problem('NETWORK');
     } finally { clearTimeout(timer); signal?.removeEventListener('abort', abort); }
     if (!response.ok) {
-      if (response.status === 401) { csrfToken = null; for (const callback of unauthorized) { try { callback(); } catch { /* One view cannot block revocation of the others. */ } } }
+      if (response.status === 401) { csrfToken = null; identityContext = null; for (const callback of unauthorized) { try { callback(); } catch { /* One view cannot block revocation of the others. */ } } }
       if (response.status === 419) csrfToken = null;
       let code = statuses[response.status] || 'SERVER';
       const domainCodes = ['CAPACITY', 'BUSY', 'INVALID_STATE', 'INVALID_CODE', 'CODE_EXPIRED', 'AUTHORIZATION_EXPIRED', 'COOLDOWN'];
@@ -74,6 +82,11 @@ export function createHttp({ fetchImpl = globalThis.fetch, origin = globalThis.l
   return Object.freeze({
     request: async (path, options) => (await send(path, options)).data,
     envelope: send,
+    setIdentity(identity) {
+      if (identity === null) { identityContext = null; return; }
+      if (!Number.isSafeInteger(identity.id) || identity.id < 1 || !Number.isSafeInteger(identity.barangay_id) || identity.barangay_id < 1 || !['resident', 'captain', 'secretary', 'responder', 'rescuer'].includes(identity.role)) throw problem('VALIDATION');
+      identityContext = `${identity.id}:${identity.barangay_id}:${identity.role}`;
+    },
     onUnauthorized(callback) { unauthorized.add(callback); return () => unauthorized.delete(callback); },
   });
 }

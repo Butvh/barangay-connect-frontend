@@ -2,6 +2,8 @@
 
 Status: initial P1 foundation, November 2, 2026. **Not a completed backend release.**
 
+November3 update: [compatibility matrix and exact owner requests](COMPATIBILITY.md) supersede the initial interface proposals below. It pins all three actual branches and documents candidate typed contracts, safe registration gates and reproducible combined tests. Joint acceptance remains pending; no live feature is enabled.
+
 The DBA's draft [PR48](https://github.com/Butvh/barangay-connect-frontend/pull/48), head `32ff81f`, is available for contract review; it has not been merged or imported here. No P2 implementation or production host is assumed. This slice supplies Laravel configuration, the session boundary, shared transport, isolated tests, and integration contracts. It creates **no models, migrations, factories, domain persistence, provider credentials, SMS service, or business-event writer**.
 
 ## Runtime and safe local setup
@@ -86,7 +88,7 @@ DBA also supplies households/map percentages, unique normalized email, private d
 
 ### P2 event contract request
 
-`AuditRecorder.record(?int actor, ?string roleAtAction, int scope, ResourceReference resource, string action, string summary): void` and `OutboxWriter.record(string eventId, string type, int scope, int resourceId, list<RecipientReference> recipientRefs, DateTimeImmutable occurredAt): void` are proposed typed interfaces. `scope` is the barangay ID; actor/role come from the server; nullable actors are only explicit system actions. `ResourceReference` contains type/id. `RecipientReference(userId,inApp=true,sms=false)` maps to PR48's `{user_id,in_app,sms}` channels, with no phone/email/credential/document payload.
+The candidate signatures now use `AuditSummary`, UUIDv4 `EventId`, `DateTimeImmutable` and a bounded historical `EventContext`; see `COMPATIBILITY.md` and `app/Contracts/Events`. `scope` is the barangay ID; actor/role come from the server; nullable actors are only explicit system actions. `ResourceReference` contains type/id. `RecipientReference(userId,inApp=true,sms=false)` maps to PR48's recipient/channel rows, with no phone/email/credential/document payload. P2's current array/32hex/string-time writers are not yet compatible bindings.
 
 Both implementations must use the caller's transaction/connection, perform no HTTP, create no independently committed side write, and leave dispatch to DBA. Persist a unique event ID/deduplication key. Resources are reread/authorized by consumers; no client-controlled URL, recipient or arbitrary template. Type names and versioned templates still require all three reviewers' agreement.
 

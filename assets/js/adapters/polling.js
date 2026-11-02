@@ -39,7 +39,7 @@ export function createPolling({ auth, sources = {}, interval = 15000, eventTarge
   document?.addEventListener?.('visibilitychange', tick);
   return Object.freeze({
     subscribe(entity, handler) {
-      if (stopped || typeof handler !== 'function') throw new ApiError('NOT_AVAILABLE', 'Refresh is not available.');
+      if (stopped || typeof handler !== 'function' || typeof sources[entity] !== 'function') throw new ApiError('NOT_AVAILABLE', 'This refresh reader is awaiting integration.');
       if (!subscribers.has(entity)) subscribers.set(entity, new Set());
       subscribers.get(entity).add(handler);
       return () => subscribers.get(entity)?.delete(handler);

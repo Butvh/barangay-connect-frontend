@@ -1,5 +1,14 @@
 # Backend work log
 
+## November 3, 2026 — focused compatibility slice
+
+- Rechecked main and PR48/49/50 at the pinned review SHAs; preserved a clean P1 branch and every DBA/P2 source byte.
+- Added the candidate canonical compatibility matrix and exact requests; no unilateral owner agreement or substitute production writer/Store.
+- Fixed tenant-bound session snapshots, negative generation denial and stale-tab write preconditions; supplied private effective-identity/current-locked-reference boundaries.
+- Added the P2 envelope/path/header bridge and actual factory composition, preserving submit keys and observed revisions; missing readers/modules explicitly unavailable.
+- Gated provider/routes/handler/scheduler registration on reviewed implementations, retained cookie/CSRF authentication and stateless DBA callbacks, and set the database retry window to180 seconds. All enablement flags remain false.
+- Added the exact Testbench dependency and pinned private snapshot/combined CI job, retaining existing frontend, P2 and DBA suites. Real DBA-model positive auth/revocation checks remain conditional on the missing DBA generation field/cast; no substitute migration or shared-database write.
+
 ## November 2, 2026 — initial P1 foundation
 
 - Started from main `3014ad60ca41a9a5aa4d5a0152faed09d0dfdaf0`; its tree matches audited `928505bcecad3ba153a764b86c51718c35de7695`.

@@ -63,9 +63,94 @@ jobs:
       - run: composer audit --locked --no-interaction
       - run: php artisan test --compact --display-warnings --fail-on-warning
       - run: vendor/bin/pint --test
+  combined:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: bc_dba_p1_compat
+          MYSQL_ROOT_PASSWORD: ephemeral-ci-only
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s --health-timeout=5s --health-retries=10
+    env:
+      APP_ENV: testing
+      APP_KEY: 'base64:MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE='
+      APP_DEBUG: 'false'
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: bc_dba_p1_compat
+      DB_USERNAME: root
+      DB_PASSWORD: ephemeral-ci-only
+      DB_TEST_DISPOSABLE: '1'
+      DB_TEST_HOST: 127.0.0.1
+      DB_TEST_PORT: 3306
+      DB_TEST_DATABASE: bc_dba_p1_compat
+      DB_TEST_USERNAME: root
+      DB_TEST_PASSWORD: ephemeral-ci-only
+      MYSQL_TEST_BIN: /usr/bin
+      MYSQL_INTEGRATION: '1'
+      P1_COMBINED_TESTS: '1'
+      SMS_ENABLED: 'false'
+      MAKE_ENABLED: 'false'
+      P2_MODULES_ENABLED: 'false'
+      OUTBOX_DISPATCH_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: mbstring, dom, fileinfo, pdo_mysql
+          coverage: none
+          tools: composer:v2
+      - name: Verify MySQL backup clients
+        run: |
+          command -v mysql
+          command -v mysqldump
+          mysql --version
+      - run: node scripts/prepare-integration.mjs
+      - name: Install shared locked test runtime in private snapshot
+        working-directory: ${{ env.SNAPSHOT_DIR }}/backend
+        run: |
+          cp .env.example .env
+          composer validate --strict
+          composer install --no-interaction --prefer-dist --no-progress
+          composer check-platform-reqs
+          composer audit --locked --no-interaction
+      - name: P1 and unchanged DBA suites on genuine MySQL
+        working-directory: ${{ env.SNAPSHOT_DIR }}/backend
+        run: php vendor/phpunit/phpunit/phpunit -c phpunit.combined.xml --display-warnings --fail-on-warning --log-junit combined-junit.xml
+      - name: Unchanged P2 contract suite
+        working-directory: ${{ env.SNAPSHOT_DIR }}
+        run: php backend/tests/P2/run.php
+      - name: P2 adapters through shared transport and original frontend gates
+        working-directory: ${{ env.SNAPSHOT_DIR }}
+        run: |
+          node --experimental-default-type=module --test tests/p2-adapters.mjs
+          node scripts/run-tests.mjs
+          node scripts/check.mjs
+          node tests/frontend-artifact.mjs
+          node tests/backend-artifact.mjs
+          node scripts/stage-backend-frontend.mjs
+          node --experimental-default-type=module tests/backend-live.mjs
+      - name: Read-only format check of all owners
+        working-directory: ${{ env.SNAPSHOT_DIR }}/backend
+        run: vendor/bin/pint --test
+      - name: Verify owner source preservation
+        if: ${{ always() && env.SNAPSHOT_DIR != '' }}
+        working-directory: ${{ env.SNAPSHOT_DIR }}
+        run: node scripts/verify-integration.mjs
   deploy:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-    needs: [check, backend]
+    needs: [check, backend, combined]
     runs-on: ubuntu-latest
     permissions:
       pages: write

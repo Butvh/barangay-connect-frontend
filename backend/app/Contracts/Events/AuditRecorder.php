@@ -11,6 +11,6 @@ interface AuditRecorder
         int $scope,
         ResourceReference $resource,
         string $action,
-        string $summary,
+        AuditSummary $summary,
     ): void;
 }

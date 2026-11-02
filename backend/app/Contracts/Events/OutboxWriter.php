@@ -12,11 +12,12 @@ interface OutboxWriter
      * @param  list<RecipientReference>  $recipientRefs
      */
     public function record(
-        string $eventId,
+        EventId $eventId,
         string $type,
         int $scope,
         int $resourceId,
         array $recipientRefs,
         DateTimeImmutable $occurredAt,
+        EventContext $context = new EventContext,
     ): void;
 }

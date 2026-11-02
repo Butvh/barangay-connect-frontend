@@ -11,6 +11,7 @@ export function createBackendAuth({ http, location = globalThis.location } = {})
     if (!value || !Number.isSafeInteger(value.id) || !roleOf(value)) throw new ApiError('SERVER', 'The session response could not be read.');
     // Server uses an allowlisted Resource. Never retain credential fields even in a malformed reply.
     const { password, remember_token, auth_version, ...safe } = value;
+    http.setIdentity?.({ id: safe.id, barangay_id: safe.barangay_id, role: roleOf(safe) });
     user = copy(safe); hydrated = true; failure = null;
   }
   http.onUnauthorized(() => { version++; user = null; hydrated = true; failure = null; emit(); });
@@ -35,6 +36,7 @@ export function createBackendAuth({ http, location = globalThis.location } = {})
     const result = await http.request('auth/logout', { method: 'POST', body: {} });
     if (result?.signed_out !== true) throw new ApiError('SERVER', 'Sign out could not be confirmed. Try again.');
     user = null; failure = null; hydrated = true; emit();
+    http.setIdentity?.(null);
   }
   function requireRole(roles = []) {
     if (!hydrated) throw new ApiError('NOT_READY', 'Checking your session.');

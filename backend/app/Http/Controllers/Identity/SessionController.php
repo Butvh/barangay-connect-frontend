@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Identity;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Identity\LoginRequest;
 use App\Http\Resources\Identity\UserResource;
-use App\Services\Identity\EffectiveRole;
+use App\Services\Identity\EffectiveIdentity;
 use App\Support\ApiProblem;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -29,15 +29,15 @@ final class SessionController extends Controller
             throw new ApiProblem('AUTH', 401, 'Email or password is incorrect.');
         }
         $user = $guard->user();
-        $role = EffectiveRole::of($user);
-        if (! $role || ! is_int($user->auth_version)) {
+        $identity = EffectiveIdentity::fromUser($user);
+        if (! $identity) {
             $guard->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
             throw new ApiProblem('AUTH', 401, 'Email or password is incorrect.');
         }
         $request->session()->regenerate();
-        $request->session()->put(['identity_role' => $role, 'identity_version' => $user->auth_version]);
+        $request->session()->put($identity->sessionSnapshot());
 
         return $this->show($request);
     }

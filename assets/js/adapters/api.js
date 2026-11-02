@@ -13,7 +13,7 @@ const methods = {
   announcements: ['list', 'get', 'create', 'update', 'archive', 'retract', 'expireOverdue'],
   feedback: ['list', 'get', 'create', 'assignTanod', 'resolve'],
   notifications: ['list', 'get', 'markRead', 'markUnread', 'dismiss', 'markAllRead', 'clearRead'],
-  dashboard: ['officialStats'], reports: ['snapshot'],
+  dashboard: ['officialStats'], map: ['get'], reports: ['snapshot', 'summary', 'incidents', 'incident', 'activity', 'performance', 'exportPath'],
 };
 export function createBackendApi({ http, auth, factories = domainFactories, sources = refreshSources, pollingFactory = createPolling } = {}) {
   const polling = pollingFactory({ auth, sources: Object.fromEntries(Object.entries(sources).map(([key, factory]) => [key, factory({ http, auth })])) });
@@ -25,7 +25,7 @@ export function createBackendApi({ http, auth, factories = domainFactories, sour
   };
   for (const [group, names] of Object.entries(methods)) {
     const implementation = factories[group]?.({ http, auth }) || {};
-    api[group] = Object.freeze(Object.fromEntries(names.map(name => [name, implementation[name] || (async () => {
+    api[group] = Object.freeze(Object.fromEntries([...new Set([...names, ...Object.keys(implementation)])].map(name => [name, implementation[name] || (async () => {
       throw new ApiError('NOT_AVAILABLE', 'This backend feature is awaiting integration.');
     })])));
   }

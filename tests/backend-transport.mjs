@@ -114,4 +114,10 @@ await test('polling survives back-forward caching and destroys on actual departu
   events.get('pagehide')({ persisted: false }); assert.equal(cleared, 1);
   assert.equal(events.size, 0); polling.destroy(); assert.equal(cleared, 1);
 });
+await test('a missing polling reader is explicitly unavailable', async () => {
+  const polling = createPolling({ auth: { current: () => null, refresh: async () => {}, onChange: () => () => {} },
+    setIntervalImpl: () => 1, clearIntervalImpl() {}, eventTarget: null });
+  try { assert.throws(() => polling.subscribe('alerts', () => {}), error => error.code === 'NOT_AVAILABLE'); }
+  finally { polling.destroy(); }
+});
 console.log(`${count} backend transport checks passed.`);

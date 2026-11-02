@@ -2,7 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\Services\Identity\EffectiveRole;
+use App\Services\Identity\EffectiveIdentity;
 use App\Support\ApiProblem;
 use Closure;
 use Illuminate\Http\Request;
@@ -22,14 +22,21 @@ final class CurrentIdentity
         }
         // Laravel's provider rereads the database on each new HTTP request.
         $user = Auth::guard('web')->user();
-        $role = $user ? EffectiveRole::of($user) : null;
-        if (! $role || $request->session()->get('identity_role') !== $role ||
-            ! is_int($user->auth_version) || $request->session()->get('identity_version') !== $user->auth_version) {
+        $identity = $user ? EffectiveIdentity::fromUser($user) : null;
+        if (! $identity || ! $identity->matches($request->session()->all())) {
             Auth::guard('web')->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
             throw new ApiProblem('AUTH', 401, 'Sign in to continue.');
         }
+        // Concurrency precondition only: the cookie/DB identity remains the authority.
+        // An old tab must not submit its form as a newly signed-in account in another tab.
+        $observed = $request->header('X-BC-Identity');
+        $expected = $identity->id.':'.$identity->barangayId.':'.$identity->role;
+        if (! $request->isMethodSafe() && $observed !== null && ! hash_equals($expected, $observed)) {
+            throw new ApiProblem('CONFLICT', 409, 'Your account changed. Reload before continuing.');
+        }
+        $request->attributes->set('effective_identity', $identity);
 
         return $next($request);
     }

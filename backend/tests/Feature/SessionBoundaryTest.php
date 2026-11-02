@@ -74,7 +74,7 @@ final class SessionBoundaryTest extends TestCase
     {
         config(['identity.enabled' => true]);
         $user = $this->user();
-        $this->actingAs($user)->withSession(['identity_role' => 'secretary', 'identity_version' => 2])
+        $this->actingAs($user)->withSession(['identity_scope' => 7, 'identity_role' => 'secretary', 'identity_version' => 2])
             ->getJson('/api/v1/me')->assertOk()
             ->assertJsonPath('data.id', 42)->assertJsonPath('data.role', 'secretary')
             ->assertJsonMissingPath('data.password')->assertJsonMissingPath('data.remember_token')
@@ -85,16 +85,40 @@ final class SessionBoundaryTest extends TestCase
     public function test_changed_role_or_security_version_revokes_session(): void
     {
         config(['identity.enabled' => true]);
-        $this->actingAs($this->user())->withSession(['identity_role' => 'secretary', 'identity_version' => 1])
+        $this->actingAs($this->user())->withSession(['identity_scope' => 7, 'identity_role' => 'secretary', 'identity_version' => 1])
             ->getJson('/api/v1/me')->assertUnauthorized()->assertJsonPath('code', 'AUTH');
         $this->assertGuest();
+    }
+
+    public function test_tenant_change_revokes_even_when_role_and_generation_match(): void
+    {
+        config(['identity.enabled' => true]);
+        $this->actingAs($this->user())->withSession(['identity_role' => 'secretary', 'identity_version' => 2, 'identity_scope' => 8])
+            ->getJson('/api/v1/me')->assertUnauthorized();
+    }
+
+    public function test_negative_security_generation_cannot_authenticate(): void
+    {
+        config(['identity.enabled' => true]);
+        $this->users->users[42] = $this->user(['auth_version' => -1, 'password' => Hash::make('TestPassword123')]);
+        $this->postJson('/api/v1/auth/login', ['email' => 'person@example.test', 'password' => 'TestPassword123'])
+            ->assertUnauthorized();
+    }
+
+    public function test_stale_tab_actor_context_cannot_mutate_as_a_different_cookie_account(): void
+    {
+        config(['identity.enabled' => true]);
+        $this->actingAs($this->user())->withSession(['identity_role' => 'secretary', 'identity_version' => 2, 'identity_scope' => 7])
+            ->withHeader('X-BC-Identity', '99:7:secretary')->postJson('/api/v1/auth/logout')
+            ->assertConflict()->assertJsonPath('code', 'CONFLICT');
+        $this->assertAuthenticated();
     }
 
     public function test_inactive_staff_does_not_keep_official_session(): void
     {
         config(['identity.enabled' => true]);
         $user = $this->user(['appointment' => (object) ['role' => 'secretary', 'status' => 'Inactive', 'barangay_id' => 7], 'is_resident' => true]);
-        $this->actingAs($user)->withSession(['identity_role' => 'secretary', 'identity_version' => 2])
+        $this->actingAs($user)->withSession(['identity_scope' => 7, 'identity_role' => 'secretary', 'identity_version' => 2])
             ->getJson('/api/v1/me')->assertUnauthorized();
     }
 
@@ -102,14 +126,14 @@ final class SessionBoundaryTest extends TestCase
     {
         config(['identity.enabled' => true]);
         $this->actingAs($this->user(['account_status' => 'Inactive']))
-            ->withSession(['identity_role' => 'secretary', 'identity_version' => 2])
+            ->withSession(['identity_scope' => 7, 'identity_role' => 'secretary', 'identity_version' => 2])
             ->getJson('/api/v1/me')->assertUnauthorized();
     }
 
     public function test_logout_invalidates_session_and_rotates_csrf(): void
     {
         config(['identity.enabled' => true]);
-        $this->actingAs($this->user())->withSession(['identity_role' => 'secretary', 'identity_version' => 2, 'old_private_value' => 'remove'])
+        $this->actingAs($this->user())->withSession(['identity_scope' => 7, 'identity_role' => 'secretary', 'identity_version' => 2, 'old_private_value' => 'remove'])
             ->postJson('/api/v1/auth/logout')->assertOk()->assertJsonPath('data.signed_out', true)
             ->assertSessionMissing('old_private_value')->assertSessionHas('_token');
         $this->assertGuest();
