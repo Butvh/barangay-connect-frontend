@@ -4,6 +4,8 @@ November 3 contract update: see [INTEGRATION-CONTRACT-V2.md](INTEGRATION-CONTRAC
 
 ## Current integration status
 
+The current typed SQL gate resolves P1's real port bindings/configured production classes. It defaults to in-app-only; the optional `--sms-intent` case creates durable pending SMS intent with fake transport, not an authorized live send. Current result is exit2: `outbox_adapter_not_configured`, `notification_adapter_not_configured`. See [current acceptance](INTEGRATION-ACCEPTANCE.md). P1 registration hooks exist behind disabled flags; P2's production writer/handler are not supplied. A green fixture-based DBA suite does not approve those absent implementations.
+
 Code and offline fakes are supplied; no live Semaphore key, sender approval, Make workspace/scenario or hosting/worker access was provided. The Make blueprint is an unconfigured, redacted import candidate; importing/configuring it in the real workspace and capturing a controlled end-to-end trace remain external work. No real SMS or credit purchase is authorized or performed.
 
 Official references rechecked November 2, 2026: [Semaphore API](https://api.semaphore.co/docs), [Make webhook API-key authentication](https://apps.make.com/gateway), [Make webhook behavior](https://help.make.com/webhooks), [incomplete executions](https://help.make.com/incomplete-executions). The implementation uses the standard HTTPS messages endpoint. Its POST/GET limits are 120/30 requests per minute, tracked across workers in MySQL, with Retry-After respected on sending. Provider Queued/Pending/Sent/Failed/Refunded are retained; Sent means delivery to the network. A TEST-prefixed message is never used.

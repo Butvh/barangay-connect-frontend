@@ -1,6 +1,6 @@
 # DBA integration contract v2 — November 3, 2026
 
-This is the exact DBA implementation candidate for joint review, **not a claim of P1/P2 agreement**. Reviewed inputs: DBA #48 `32ff81f4cb1c7e2f704dc5f93168f1261787e376`; P1 #49 `7dcf8447bbfc594d0cf42b7a1710f62a7856436c`; P2 #50 `c902d9f7239a8fcefdddf293fbc531876548c10a`; main `3014ad60ca41a9a5aa4d5a0152faed09d0dfdaf0`. P1's [review comment](https://github.com/Butvh/barangay-connect-frontend/pull/48#issuecomment-6578875660) requests the generation, event extensions, locks and combined-test review. P2's current prototype remains incompatible and must be adapted by P2. All drafts remain unmerged.
+DBA ratifies the mappings below against P1 #49 `41b6c42fc536237b10034b3eb3fe058f9ee71fc1` (typed PHP/runtime source unchanged from `bc2764a746d742efb655a4b3c752ad205e28f180`), P2 #50 `c902d9f7239a8fcefdddf293fbc531876548c10a` and main `3014ad60ca41a9a5aa4d5a0152faed09d0dfdaf0`. This records **DBA acceptance of the boundary**, not invented P2 adoption or joint signoff. See [current evidence](INTEGRATION-ACCEPTANCE.md) for the tested DBA revision. P1's interface-contract marker **1** and the persisted event-envelope version **2** are separate contracts; neither selects the other. All drafts remain unmerged.
 
 ## Additive schema and identity contract
 
@@ -28,7 +28,7 @@ One production event model: `App\Models\OutboxEvent`. One dispatcher: `OutboxDis
 }
 ```
 
-Recipient input DTO: `{user_id: positive integer, audience: "resident"|"official", in_app: boolean, sms: boolean}`. Persist as outbox_recipients(outbox_event_id, recipient_id=user_id, barangay_id, audience, in_app, sms). Composite FKs enforce same scope and receipt authorization. At least one channel is required. At most1,000 recipient rows per event; split large authorized fanout into distinct event IDs before writing. Duplicate recipients are rejected by the unique key. UUIDs are generated server-side; IDs use safe positive numeric DTOs. A repeated event ID must have exactly the same semantic envelope/recipients or fail; P2 owns request/event idempotency policy.
+Typed recipient input is P1's `RecipientReference(userId, inApp=true, sms=false)`. **An audience constructor argument is not required.** P2 derives the intended resident/official audience from the authorized event/source and recipient, then persists outbox_recipients(outbox_event_id, recipient_id=userId, barangay_id, audience, in_app, sms). V2 requires a persisted audience even though the additive SQL column is nullable for legacy rows. A browser never supplies this authority. P2's consumer reauthorizes current access against that persisted audience; it must not silently switch audience after a role change. This supersedes the earlier request to extend RecipientReference. Composite FKs enforce same scope. At least one channel is required. At most1,000 recipient rows per event; split large authorized fanout into distinct event IDs before writing. Duplicate recipients are rejected by the unique key. New v2 IDs must be P1 canonical lowercase UUIDv4. A repeated event ID must have exactly the same semantic envelope/recipients or fail; P2 owns request/event idempotency policy.
 
 Do **not** place recipients, a payload.version, arbitrary context containers, messages, links, phone/email, private files, exact household/location details, recovery material or credentials inside payload. It is a flat allowlisted snapshot, max256 JSON bytes in application validation (DB storage cap remains2KiB for legacy compatibility). Store UTC and serialize explicit UTC/offsets. Type, version, resource, event template and channel template must all match the definition; no dispatch-time renaming or conversion.
 
@@ -59,18 +59,31 @@ The two explicit v1 definitions (`alert.created.v1`, `announcement.published.v1`
 
 Fixtures: `tests/Fixtures/events-v2.json` supplies14 valid shapes and8 invalid mutations. The base UUID is a single-case fixture, not an ID to reuse across a batch. Unit checks and MySQL delivery tests consume these fixtures. Current P1/P2 source compatibility is checked separately by `tests/Compatibility/check-shared-contracts.php`; a failing gate must not be reported as combined readiness.
 
-## Proposed shared writer interfaces for P1/P2 to adopt
+## Ratified typed boundary and precise unresolved owner requests
 
-P1 owns `app/Contracts/Events/**`; this branch does not edit them. Proposed OutboxWriter signature:
+P1 owns `app/Contracts/Events/**`; this branch does not edit them. DBA accepts its current OutboxWriter signature:
 
 ```php
-record(string $eventId, string $type, int $scope, int $resourceId,
-       array $recipientRefs, DateTimeImmutable $occurredAt, array $context = []): void;
+record(EventId $eventId, string $type, int $scope, int $resourceId,
+       array $recipientRefs, DateTimeImmutable $occurredAt,
+       EventContext $context = new EventContext): void;
 ```
 
-The bounded `$context` becomes payload directly after exact per-event validation. Infer the allowlisted resource/template/version from the canonical type; never infer business recipients. P1's RecipientReference needs an explicit audience argument (after userId/inApp/sms is a compatible constructor extension); P2 must validate it for v2. Its typed DTO maps to the input shape above. The interface currently has6 arguments and no audience; adoption is pending. P2 currently returns an array, accepts a string timestamp, uses different IDs/columns and does not implement P1's interface. P2 owns adapting both its writer and callers.
+| P1 type / boundary | DBA mapping and acceptance | Remaining owner work |
+| --- | --- | --- |
+| EventId.value | Lowercase UUIDv4 in outbox_events.event_id; v2 consumer rejects UUIDv7, malformed/32hex IDs and wrong case. No rewriting. | P2 generates and retains canonical IDs/idempotency. Existing explicitly supported v1 rows remain legacy. |
+| DateTimeImmutable | Normalize to UTC and retain microseconds in timestamp(6); OutboxEvent now writes `Y-m-d H:i:s.u`. | P2 passes the actual typed timestamp on the shared connection. |
+| EventContext(status) | Incident snapshot `['status' => status]`; null maps to an empty context for empty-context families. Validate the exact event definition before persistence. | P1/P2 must extend the typed context deliberately for the other payloads below; arbitrary arrays are not an alternative. |
+| RecipientReference | Actual typed list, relational recipient rows, server-derived persisted audience; in-app-only is valid. | P2 selects authorized users/channel intent and reauthorizes source/audience at consumption. SMS intent is not consent/budget approval. |
+| AuditSummary.values | Allowlisted structured JSON <=4096 encoded bytes; also satisfy DB JSON_STORAGE_SIZE <=4096. Actor/role/scope server-derived; explicit system actions may have null actor/role. | P2 implements the typed audit adapter, physical aliases and SQL commit/rollback/bounds tests. The outbox probe does not certify the production audit writer. |
+| ResourceReference(type,id) | Accepted audit vocabulary includes `alert`/`personnel`; these are not automatically outbox `incident`/`personnel_appointment`. | P2 maps audit physical fields explicitly and infers the outbox resource/template from its canonical registered type. No consumer aliases. |
+| Transaction ownership | One named/default mysql Connection; caller owns domain commit/rollback, dispatcher owns each in-app receipt transaction. No writer/handler independent commit, queue or HTTP. | P2 supplies production adapters; P1 supplies reviewed integration bindings. |
 
-AuditRecorder stays transaction-participating: proposed actor is nullable integer ID (system only when explicit), recorded role, integer scope, ResourceReference(type,id), action and bounded allowlisted **array** summary <=4KiB. P1's current summary string and P2's Actor/array signature need reconciliation by their owners. Preserve safe structured identifiers/status/revision evidence, and reject secrets instead of copying arbitrary submitted bodies. This branch does not implement either writer or add a second interface namespace.
+P1's current context can represent the five incident stages and empty contexts (announcement, resident registration, profile and household). It cannot represent verification Approved/Resubmission requested/Rejected/Expired, personnel role/status, facility Active/Inactive, security action or feedback kind/status. The coincidental string Pending does not make the verification family complete. Those families remain **dormant** pending bounded typed context, authorized P1/P2 source projections, correct event names and P2's actual per-recipient handler/templates. Registry presence is storage validation, not producer/consumer completion. No additional family gains SMS permission.
+
+P2's published portable wrappers still use Actor/array audit arguments, string timestamps, array event fanout and prototype IDs/fields. They may remain portable-test implementations; they are not hardcoded as the production adapter by the acceptance gate. P2 must supply typed SQL Store/ReferenceData/audit/outbox/notification adapters and set `P2ServiceProvider::P1_CONTRACT_VERSION=1` only after review. P1's current integration adapter config is null and both enable flags remain false. Do not implement another writer or bind a test double to make this gate green.
+
+The corrected `tests/Compatibility/check-shared-contracts.php` resolves the actual P1 port binding or configured implementation class (or explicit validated `--outbox=FQCN --handler=FQCN`). Production classes must implement the reviewed interface and live under app/, never tests/. It constructs real P1 DTOs, uses SQL fixtures and the same targeted dispatcher/receipt pipeline. The default case requests **in-app only**; `--sms-intent` is a separate authorized-intent check with fake transports and no provider send. See [runner setup](../tests/ci/README.md). Passing this fixture is required but does not replace actual domain races, audit writer acceptance or five-role HTTP/E2E.
 
 ## Handler and receipt boundary
 

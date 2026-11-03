@@ -1,85 +1,86 @@
-# DBA integration acceptance — November 3, 2026, Asia/Manila
+# DBA follow-up acceptance — November 3, 2026, Asia/Manila
 
-DBA compatibility changes are implemented and tested, with remaining cross-owner gates explicitly **not passed**. No main/teammate PR merge, live database migration, real SMS, credit purchase or Make activation occurred.
+**135 tests / 567 assertions pass; production integration remains blocked.** The corrected configured-adapter CLI exits2 because the production outbox writer and notification handler are unconfigured. Test doubles prove the checker and DBA pipeline, not P2 implementation. Keep #48 draft. No main/teammate merge, shared database migration, deployment, live SMS, purchase or Make activation occurred.
 
-## Reviewed source and environment
+## Exact inputs and runtime
 
-| Input | Exact reviewed revision |
+| Input | Reviewed revision |
 | --- | --- |
 | Main | 3014ad60ca41a9a5aa4d5a0152faed09d0dfdaf0 |
-| Prior DBA #48 | 32ff81f4cb1c7e2f704dc5f93168f1261787e376 |
-| Published DBA implementation update | 0c966860cb7dc9368031d47b27e7c560348633ea |
-| Exact DBA implementation tree | bf2f78d9baaae954c4107437851b95451ba43f59 |
-| P1 #49 | 7dcf8447bbfc594d0cf42b7a1710f62a7856436c |
+| Prior DBA #48 | f641918d37ff2ecd49cc47b3437bb0e159d6a10a |
+| Published DBA implementation | 8f4d4f6a8ce2f4892766ac773d2bc09e86162758 |
+| DBA implementation tree | b55159b47878f98038873d7086f788eab1eb0d63 |
+| P1 #49 current | 41b6c42fc536237b10034b3eb3fe058f9ee71fc1 |
+| P1 PHP/runtime baseline | bc2764a746d742efb655a4b3c752ad205e28f180 |
 | P2 #50 | c902d9f7239a8fcefdddf293fbc531876548c10a |
-| Local-only combined assembly | 2eede4ea187de806b18d49dd11015472ff701b71 |
-| Local combined tree | 4e4116123d494e594131490fed41830d5ba7c5bb |
+| P2 planning base | ef9a57a2ea0feeb99829e7928595cc925c25bcc7 |
+| Local-only frozen assembly | d1660a973dd4b774ee11130161e7e13df39223b2 |
+| Local assembly tree | 37073438e63cf004392622bb3e10341fee53e709 |
 
-The combined checkout starts at P1's revision, overlays P2's diff from its planning base (keeps P1's backend README), then adds DBA-owned source. It is a local verification assembly, **not a reviewed merge or published integration branch**. Tests ran on that assembled code, subsequently recorded in the local commit; documentation/cache-exclusion changes do not alter the tested code. A normalized-LF fingerprint of152 application/config/migration/route/test/fixture/dependency metadata files is `58a1915fca843450659f4eb6e3a5ca64ceb14062d6830d09258403d31ff42890`. All458 P1 tracked files and34 P2 changed files (excluding their overlapping backend README) were compared against their original Git blobs and are unchanged apart from checkout line endings.
+The private assembly combines P1 source, P2's planning-base diff and DBA-owned files. All **477 P1 tracked files and35 P2 changed files** match their exact Git blobs after checkout CRLF normalization. No P1/P2 application, interface, Composer, bootstrap or CI source was edited by DBA. The local frozen assembly is evidence only, not a published integration branch or approved merge.
 
-Verified PHP8.5.12, Composer2.11.1, Node24.22.1, Laravel13.39.0 and MySQL Community8.4.13/InnoDB/utf8mb4 on a disposable loopback-only database. XAMPP MariaDB and SQLite were not used. Separate external vendor directories preserve P1's root lock (PHPUnit12.5.43) and DBA Testbench11.3.0/PHPUnit13.4.6 lock; no P1 Composer/bootstrap/CI source was changed.
+The SQL run used P1 bc2764a's PHP/runtime source. P1 published41b6c42 during verification: only workflow registration, the integration pin and snapshot discovery changed. Those three files were copied unchanged into the private assembly and all source comparisons rerun. The normalized application/config/migration/route/test/fixture fingerprint is identical before and after: **169 files, SHA256 `33c6e74e8f1ef01a45504d58d74ecc5132ef8079032bb6f45cde899455d57225`**. Documentation changes following the implementation do not alter that tested code.
 
-## Passing evidence
+Verified PHP8.5.12, Composer2.11.1, Node24.22.1, **P1 root Laravel13.39.0/Testbench11.3.0/PHPUnit12.5.43**, and genuine MySQL Community8.4.13/InnoDB/utf8mb4. All SQL used a loopback-only disposable `bc_dba_p1_*` database and a database-specific test account. MariaDB/SQLite were not used. Root dependencies were installed from P1's unchanged lock with `--no-scripts` and an external vendor directory; a private ignored vendor junction supplied framework/Testbench path resolution. No external provider credentials were loaded.
 
-| Gate | Result and practical limit |
+## Passing evidence and limits
+
+| Gate | Result |
 | --- | --- |
-| Combined P1 + DBA suite | **99 tests,421 assertions,0 failures/errors/skips**,99.076s; fail-on-warning/risky enabled |
-| P1 exact locked runtime | **19 tests,79 assertions,0 failures/errors/skips**,1.961s; actual MySQL engine test enabled |
-| P2 existing runner | **47 checks pass**; P2-owned MemoryStore contract tests, not SQL/domain race evidence |
-| Original frontend regression suite | **405 checks pass** on DBA branch and combined source |
-| P1 frontend additions |13 transport/lifecycle checks plus the awaited-sign-out check pass on combined source |
-| P2 adapter suite |8/8 pass; no skips |
-| Static checks |Pass: DBA source and combined frontend scanner; no weakening of P1-owned exclusions |
-| Frontend Pages artifact |Both static artifact allowlist/root-destination checks pass on P1's combined source |
-| Backend frontend artifact |Both secret/seed exclusion and actual hydrated module-graph checks pass using `node tests/backend-artifact.mjs` |
-| DBA Pint |Pass for DBA-owned PHP |
-| Composer |P1 strict manifest validation passes; P1 and DBA locked audits report no advisories |
-| Migration immutability |Original six November2 migrations unchanged; two November3 migrations are additive |
-| Ownership |DBA branch changes only DBA-owned backend paths; P1/P2 source checksums match reviewed inputs |
+| P1 root combined PHPUnit | **135 tests,567 assertions,0 errors/failures/skips**,90.198046s JUnit test time; fail-on-warning enabled |
+| Unit / Feature / Database |25/84;60/288;39/153 (tests/assertions) |
+| P1 real-model Integration |2 tests/11 assertions; actual P1 role/resource/middleware with DBA models |
+| New Compatibility suite |9 tests/31 assertions; SQL test doubles only, never production bindings |
+| Current P1 generation/lifecycle |Real-model login/logout, role/status/generation revocation cases execute; no missing-generation skip remains |
+| P2 portable runner |47 checks pass; expressly not SQL/HTTP integration |
+| Frontend |Original405 regressions,14 P1 transport checks, sign-out/domain bridge and8 real P2 factories through shared transport pass |
+| P2 adapter suite |8 tests pass,0 skips |
+| Artifact/static checks |Both static Pages checks, both backend hydrated-artifact checks and421-file scanner pass on the private composition |
+| DBA PHP style / dependencies |DBA-owned Pint passes; P1 root Composer strict validation and locked audit pass, no advisories |
+| Migration immutability |All six original and both additive migrations are unchanged in this follow-up |
 
-The99-test suite retains the original provider timeout/uncertainty, low-balance/rate-limit, replay/forgery, lease/fencing, channel deduplication, recovery, real-MySQL independent-process guard races, migration/seeded upgrade/rollback, encrypted fictional backup/restore and5,000-row EXPLAIN coverage. New tests verify auth_version default/cast/nonnegative/remember-token/upgrade/rollback, all14 v2 event shapes/eight invalid mutations, explicit channel permissions, snapshot status after a later source change, failed/unbound/missing-handler diagnostics, malformed SMS-ledger rejection, v2 Make replay, downgrade refusal and current locking reads after a stale repeatable-read snapshot. Real P1 role/resource/middleware code was tested against real DBA User/appointment/Tanod rows and a persisted generation change.
+The full DBA suite retains fresh migration, seeded upgrade, destructive disposable downgrade, v2-preserving downgrade refusal/forward application, nonnegative/default0/integer generation, absent-generation denial, scoped constraints, immutable assignment/destination history, encrypted fictional dump/restore and5,000-row EXPLAIN checks. It also retains independent-process guard protocol races, provider timeout/uncertainty, rate/budget/low-balance, lease/fencing, independent channel replay, forgery, failed diagnostics and recovery. These delivery/guard fixtures do not prove P2's production domain services use the protocol.
 
-Named failing regressions were run before their fixes: `test_auth_version_defaults_to_integer_zero_and_missing_generation_stays_null`, `test_status_snapshot_is_explicitly_versioned_and_in_app_only`, `test_unknown_event_is_quarantined_once_without_success_receipts`, and the three GuardContractTest cases (coerced IDs, unsupported scope/kind and missing current-read helper). The final combined run has no skipped cases. Standalone DBA source intentionally lacks P1 classes; the two Integration tests explicitly skip there rather than pretending P1 integration exists. No new standalone-total claim replaces the historical55-test record in ACCEPTANCE.md.
+New acceptance cases construct actual P1 typed objects and use real SQL, caller rollback, a second connection's visibility, the real dispatcher/receipt transaction, frozen event status after a later source status change, replay, account revocation, cross-scope rejection and invalid type/version/context/channel/template/size. An in-app-only writer passes without SMS permission. A separate explicit SMS-intent fixture creates a pending receipt/delivery with **zero HTTP calls, queued jobs or provider attempts**. Wrong interfaces, test-class production selections, independently committing writers, wrong persisted versions and no-op handlers fail. Named regressions reproduced the old hardcoded/raw-boundary gap, unrelated-event dispatch and noncanonical v2 UUID acceptance. The typed SQL fixture also exposed Eloquent dropping timestamp microseconds; OutboxEvent now preserves them.
 
-## Exact commands and required P1 registration
+The Compatibility/Fixtures implementations exist only to test the checker; the production resolver rejects them and has no CLI bypass. Recipient-account revocation is exercised here; production source-access revocation for every domain still requires P2's real handler/projections. Production audit writer persistence/rollback and actual-domain concurrency remain separate gates.
 
-In the local verification workspace, with external dependencies/private bootstrap paths and DB/DB_TEST variables targeting the same explicitly disposable `bc_dba_*` MySQL:
+## Reproduction and current owner requests
+
+Private bootstrap supplies APP_BASE_PATH (process + $_ENV), reviewed root autoloader, matching DB_TEST_*/DB_* for the same disposable database, DB_CONNECTION=mysql, DB_TEST_DISPOSABLE=1, MYSQL_INTEGRATION=1, P1_COMBINED_TESTS=1, MYSQL_TEST_BIN and disabled provider/module flags. Never publish that private bootstrap or credentials. From the local workspace root:
 
 ```powershell
-# Combined Testbench profile; bootstrap supplies test-only DB settings and APP_BASE_PATH.
-php work/combined-harness/vendor/phpunit/phpunit/phpunit --configuration work/dba-combined-verification/backend/tests/ci/phpunit.combined.xml --bootstrap <absolute>/work/combined-bootstrap.php --log-junit work/combined-results.xml
+# Root P1 settings plus Database/Integration/Compatibility discovery in a private generated profile.
+php work/followup-root-vendor/phpunit/phpunit/phpunit --configuration work/dba-followup-verification/backend/phpunit.followup.xml --bootstrap <absolute>/work/followup-bootstrap.php --display-warnings --fail-on-warning --log-junit work/followup-combined-results.xml
 
-# From combined backend, P1's unchanged lock/profile and only its existing test paths:
-php ../../p1-locked-vendor/phpunit/phpunit/phpunit --configuration phpunit.xml --bootstrap <absolute>/work/p1-locked-bootstrap.php --log-junit ../../p1-locked-results.xml tests/Feature/SessionBoundaryTest.php tests/Feature/MySqlEngineTest.php tests/Unit/FoundationSecurityTest.php
+# Corrected production gate, same explicit disposable runtime; current exit2 is required failure.
+php -d auto_prepend_file=<absolute>/work/followup-bootstrap.php work/dba-followup-verification/backend/tests/Compatibility/check-shared-contracts.php
 
-# From combined root:
-php backend/tests/P2/run.php
-php backend/tests/Compatibility/check-shared-contracts.php
-node scripts/run-tests.mjs
-node scripts/check.mjs
-node tests/frontend-artifact.mjs
-node tests/backend-artifact.mjs
-node --test tests/p2-adapters.mjs
+composer validate --strict --working-dir=work/dba-followup-verification/backend
+composer audit --locked --working-dir=work/dba-followup-verification/backend
 ```
 
-Composer installs were `--no-scripts` with external COMPOSER_VENDOR_DIR; P1's tracked manifest, lock and bootstrap remained byte-equivalent. The independent harness's App/Tests namespaces point at the combined checkout. P1 must register the separate profile/suite commands or review an explicit root dependency update. Its current default PHPUnit discovery fails because Testbench is absent and its root suites also omit tests/Database. This failure was reproduced; it is **not** an integrated-green CI claim. See tests/ci/README.md for exact environment/registration steps.
+From the combined repository root, the following independently return0: `node scripts/run-tests.mjs`, `node scripts/check.mjs`, `node tests/frontend-artifact.mjs`, `node tests/backend-artifact.mjs`, `node --test tests/p2-adapters.mjs`, `node tests/domain-transport.mjs` and `php backend/tests/P2/run.php`. DBA Pint uses the reviewed root vendor executable against only DBA-owned app/database/config/routes/tests. Node24 does not support the older documented `--experimental-default-type=module` flag; the flag-free commands pass. Windows does not supply Linux-only symlink-branch evidence.
 
-The documented Node flag `--experimental-default-type=module` is unavailable in Node24.22.1; the supported flag-free command above passes the unchanged artifact test. Windows did not execute that test's conditional non-Windows symlink branch; no Linux symlink-branch evidence is claimed.
+P1 now supplies root Testbench and its private snapshot preparer discovers Database **and Integration**; its workflow separately invokes the shared-contract CLI. These earlier requests are resolved. P1's current pin still points at DBA f641918d; request this implementation revision and **Compatibility suite discovery**, without changing P1's source from this branch. The private generated profile adds that suite for local evidence. See [runner setup](../tests/ci/README.md). No default combined-green CI claim follows from the local pass.
 
-## Failed or unavailable integration gates — keep drafts
+## Gates still blocked — retain draft status
 
-`check-shared-contracts.php` reports five current failures against the unchanged P1/P2 sources:
+The corrected CLI now resolves actual P1 bindings/configuration rather than guessing P2 portable wrapper names. Its exact current output is:
 
-1. P2's writer does not implement P1's shared OutboxWriter interface.
-2. P2's occurredAt argument is string rather than DateTimeImmutable.
-3. P2's `handle(array): int` handler does not implement the per-recipient ORM `InAppNotificationHandler` contract.
-4. P1's six-argument OutboxWriter needs the explicit optional bounded context argument (plus recipient audience/structured-audit review described in the contract).
-5. P2's actual writer rejects the canonical UUID/v2/relational-recipient fixture.
+```text
+BLOCKED: outbox_adapter_not_configured
+BLOCKED: notification_adapter_not_configured
+```
 
-These failures are deliberate release gates, not suppressed/expected-success tests. The v2 definitions are the exact DBA candidate; neither party's adoption/approval is invented. P2 must adapt producer names/IDs/DTOs, channel selection, repositories and handler; P1 must review interface/context/audience additions, auth-generation increments, source gateways and bootstrap/CI registration. The registration of in-app families does not mean P1 domain source handlers already exist.
+It exits2. The old five raw/wrapper-interface findings are historical, not the current configured-gate result. P1 has the seventh typed EventContext argument and structured AuditSummary; DBA no longer requests those as absent. DBA accepts RecipientReference without an audience argument: the authorized P2 writer derives/persists v2 audience and the handler reauthorizes current access. Interface-contract1 is compatible with persisted envelope2. See the [ratified DBA mapping](INTEGRATION-CONTRACT-V2.md).
 
-No production SQL Store/ReferenceData or actual-domain MySQL race tests are provided by the reviewed drafts. P2's requested last-slot, same-incident, stale-revision, transfer/revocation, completion-release, facility/use and transactional side-effect races therefore remain **unverified on the actual services**. DBA's protocol fixtures are retained but are not substitutes; this assignment explicitly excludes implementing P2 repositories/business services. No production fake is bound.
+P2 must deliver reviewed typed production Store/ReferenceData/audit/outbox/notification adapters, canonical UUID/names/physical-field mappings, current generation checks, the contract marker and real SQL tests. P1 then supplies reviewed bindings/enablement. No production fake is bound. The current EventContext can express incident stages/empty contexts; feedback kind/status, verification/personnel/facility/security payloads require deliberate bounded context and authorized projections/templates. Registry presence does not complete these families or authorize SMS.
 
-Combined default Laravel Pint on an isolated LF-normalized copy still flags P2's `backend/app/Http/Controllers/P2/NotificationController.php` (unary spacing/statement indentation). Windows checkout line-ending noise was separated before identifying that remaining source finding. P2 must format its owned file and rerun the combined check; this branch does not edit it. DBA's scoped Pint passes.
+Actual P1/P2 service races remain unavailable: last-slot and same-incident conflicts, stale revisions, role/status revocation, transfers, completion capacity release, facility deactivation/use and transactional audit/outbox rollback must run against the real implementations. The exact guard map is in the contract: staffing scope when relevant, sorted operations-person guards, current user/appointment reads, sorted incident/assignment rows, facility row; SOS retains its documented guard kind. Staffing3/6/6 and incident Responder2/Rescuer1 remain unchanged; emergency override stays disabled.
 
-P1's safe Pages artifact passes in its draft/combined checkout, but main still has the old whole-checkout upload. Keep #48/#49/#50 draft until safe-artifact integration, contract adoption, shared runtime/CI, real SQL-domain races and review gates pass. Live host/storage/session/mail/worker/monitoring and live Semaphore/Make setup remain external and unverified. No recipients/budget were authorized and no provider send or scenario activation occurred.
+Combined read-only Pint on an isolated LF copy still fails only P2's `backend/app/Http/Controllers/P2/NotificationController.php` (`unary_operator_spaces`, `statement_indentation`, `not_operator_with_successor_space`). P2 owns that correction. DBA style passes. P1's safe Pages artifact and private Laravel public root remain required release gates; main still has the old whole-checkout upload. Five-role HTTP/E2E, actual host/storage/session/mail/worker operations and provider setup are not certified by these results. Urgent SMS remains Laravel worker directly to Semaphore; optional Make is nonurgent only.
+
+## Preserved history
+
+[Initial integration evidence](INTEGRATION-ACCEPTANCE-INITIAL.md) retains99 tests/421 assertions against older P1 and the old checker. [Original standalone evidence](ACCEPTANCE.md) retains55/218 against32ff81f. Neither is evidence for newer production integration. The current135/567 result uses P1's root runtime and includes new checker tests; it does not turn the missing production adapter gate green.

@@ -25,16 +25,30 @@ Run `pint --test backend/app backend/database backend/routes backend/config/mess
 
 `AppointmentConcurrencyTest` starts independent PHP processes behind a file barrier, using committed fixtures. It proves the proposed guard/lock protocol and constraints. It does **not** exercise P1/P2 domain services: those owners must use these guards and add their integrated authorization/revision/workflow race tests. No report queries or domain controllers are implemented here.
 
-## November 3 combined runtime handoff to P1
+## November 3 follow-up: current P1 root runtime
 
-P1 #49 locks Laravel13.39.0/PHPUnit12.5.43; this separate Testbench11.3.0 harness locks the same Laravel13.39.0 with PHPUnit13.4.6. The root application does **not** currently install Testbench. Running its unchanged default PHPUnit discovery over combined Unit/Feature files fails at Orchestra\\Testbench\\TestCase. This is a real CI-registration gap, not a passed combined gate. Do not edit P1's Composer/bootstrap/CI from the DBA branch.
+P1 #49 `41b6c42f` now locks **Laravel13.39.0/Testbench11.3.0/PHPUnit12.5.43** in the root application. The missing-Testbench request is resolved. The independent harness above remains useful for DBA-only checks; it is not required to replace P1's current root runtime. Do not edit P1 Composer/bootstrap/CI.
 
-The reviewed approach uses two external vendor profiles on the same combined source checkout and MySQL engine, leaving P1's lock unchanged:
+Install P1's unchanged root lock with an external COMPOSER_VENDOR_DIR and `composer install --no-scripts`. The root autoloader's App/Tests paths must resolve to the actual private composition. Root framework/Testbench loading must also resolve that same vendor directory (the local Windows snapshot used an ignored private vendor junction). This is runtime setup, not a committed application/source change.
 
-1. Install P1's root lock with an external COMPOSER_VENDOR_DIR and `composer install --no-scripts`; bootstrap its external autoloader explicitly. Run its exact tests with the root phpunit.xml and explicit existing paths `tests/Feature/SessionBoundaryTest.php tests/Feature/MySqlEngineTest.php tests/Unit/FoundationSecurityTest.php`. With MYSQL_INTEGRATION=1 these include the genuine-MySQL engine test.
-2. Install the locked DBA test project in this directory with another external vendor directory. Set DBA_TEST_AUTOLOAD, APP_BASE_PATH (absolute combined backend path, also visible in $_ENV), DB_TEST_* and corresponding DB_* to the same disposable MySQL. Set MYSQL_INTEGRATION=1. Run that vendor's PHPUnit using `--configuration backend/tests/ci/phpunit.combined.xml` from the repository root. The config includes P1 Unit/Feature, DBA MySQL/delivery/Integration tests. Source App/Tests autoload maps must point at the combined checkout. `P1IdentityModelContractTest` checks real P1 role/resource/middleware with real DBA User rows; it explicitly skips when P1 classes are absent in standalone DBA source.
-3. Run `php backend/tests/P2/run.php` for P2's existing MemoryStore checks. They remain isolated contract tests. Run `php backend/tests/Compatibility/check-shared-contracts.php` separately on the combined autoloader; **it must pass before integration**. It currently reports the actual writer/handler contract gaps. Do not count a passing MemoryStore runner as actual-domain MySQL races.
+P1's `scripts/prepare-integration.mjs` now creates private root `phpunit.combined.xml` discovery for Unit, Feature, Database and Integration, and its workflow invokes the standalone shared-contract CLI. Its reviewed pin is DBA `f641918d`; request a pin to this follow-up and **add tests/Compatibility discovery**. Until that owner change, the local run adds only that extra suite in a private generated profile, retaining P1 root settings. The DBA-owned `phpunit.combined.xml` in this directory also includes Compatibility for review. No combined-green CI claim is made while the production adapter CLI remains blocked.
 
-P1 must register both jobs/profiles, or jointly review an alternative root Testbench/PHPUnit update and rerun it. Its existing root phpunit.xml also omits tests/Database, so simply making class loading succeed is insufficient. The combined config supplied here is DBA-owned review material; no shared workflow or dependency file was edited. No fake handler, MemoryStore or test password has a production binding. Extend the combined gate with P2's real SQL domain-race tests once their repository/ReferenceData implementations exist.
+For all real-model tests set DB_TEST_DISPOSABLE=1, MYSQL_INTEGRATION=1 and P1_COMBINED_TESTS=1. Use a dedicated `bc_dba_p1_*` MySQL8.4 database; set both DB_TEST_* and matching DB_* including DB_CONNECTION=mysql. Set APP_BASE_PATH in both the process environment and $_ENV to the combined backend, and DBA_TEST_AUTOLOAD to its reviewed root autoloader. MYSQL_TEST_BIN must include mysql/mysqldump so encrypted restore is exercised. Keep SMS_ENABLED/MAKE_ENABLED/P2_MODULES_ENABLED/OUTBOX_DISPATCH_ENABLED false. A private bootstrap may supply these explicit test settings. [Current acceptance](../../docs/INTEGRATION-ACCEPTANCE.md) records the exact run and all zero skips.
 
-See backend/docs/INTEGRATION-CONTRACT-V2.md for the additive migration order, required P1 interface/context/audience changes and precise P2 persistence/lock map.
+## Configured typed SQL acceptance command
+
+Run the CLI **outside any open transaction**, against that same explicitly disposable migrated database:
+
+```powershell
+php backend/tests/Compatibility/check-shared-contracts.php
+# Optional reviewed explicit implementation classes; these are actual production classes, not wrappers to guess:
+php backend/tests/Compatibility/check-shared-contracts.php --app-base=<absolute-combined-backend> --outbox=<FQCN> --handler=<FQCN>
+# Separate authorized SMS-intent case; still fake transport and zero provider sends:
+php backend/tests/Compatibility/check-shared-contracts.php --sms-intent
+```
+
+The default fixture uses P1 EventId, RecipientReference(inApp=true,sms=false), DateTimeImmutable and EventContext. It resolves the actual P1 interface binding first, then `integration.outbox_adapter`/`integration.notification_adapter`, or explicit validated classes. Tests/ classes and sources outside app/ cannot be selected as production. There is no CLI switch to bypass that restriction. Invalid/missing adapters return exit2 with static diagnostics; current composition reports `outbox_adapter_not_configured` and `notification_adapter_not_configured`.
+
+The probe uses isolated fictional SQL rows, independent-connection visibility/rollback checks, the real targeted dispatcher/receipt transaction, event-time snapshots after source status changes, replay, recipient-account revocation, cross-scope rejection and invalid persisted contracts. It cleans only its known fixture IDs. HTTP/queue are faked and SMS attempts must stay zero. `--sms-intent` separately verifies pending SMS intent; an in-app-only implementation need not support it to pass the default contract. Unit/SQL test doubles in Compatibility/Fixtures validate the checker itself and cannot certify an absent production adapter. P2's existing MemoryStore runner remains separate, as do production audit validation, source-access revocation and actual-domain SQL race/E2E gates.
+
+See [typed mapping and lock protocol](../../docs/INTEGRATION-CONTRACT-V2.md). P2 owns the production Store/ReferenceData/audit/outbox/notification adapters under this assignment.
