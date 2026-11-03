@@ -21,7 +21,7 @@ Route::middleware('current.identity')->group(function (): void {
         // Explicit unavailable responses; no P2 business logic or fake empty DTOs.
         Route::any('{module}/{remainder?}', fn () => throw new ApiProblem(
             'NOT_AVAILABLE', 503, 'This backend module is awaiting reviewed integration.',
-        ))->where('module', 'dashboard|map|nearby-alerts|alerts|assignments|announcements|feedback|notifications|reports')
+        ))->where('module', 'dashboard|map|nearby-alerts|alerts|assignments|announcements|feedback|notifications|reports|revisions')
             ->where('remainder', '.*');
     }
 });

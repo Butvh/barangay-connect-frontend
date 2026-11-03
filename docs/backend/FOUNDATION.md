@@ -4,7 +4,7 @@ Status: P1 compatibility follow-up, November 3, 2026. **Not a completed backend 
 
 November3 update: [compatibility matrix and exact owner requests](COMPATIBILITY.md) supersede the initial interface proposals below. It pins all three actual branches and documents candidate typed contracts, safe registration gates and reproducible combined tests. Joint acceptance remains pending; no live feature is enabled.
 
-The DBA's draft [PR48](https://github.com/Butvh/barangay-connect-frontend/pull/48), head `3d2b3a2`, now supplies the additive security generation, v2 event storage and locking helpers. Its source is overlaid unchanged only in private combined tests, not merged into this branch. P2's published `c902d9f` still lacks compatible production adapters. P1 supplies foundation, safe reference contracts, transport/registration and tests; it creates no models, migrations, SMS service or competing business writer.
+The DBA's draft [PR48](https://github.com/Butvh/barangay-connect-frontend/pull/48), head `3d2b3a2`, supplies the additive security generation, v2 event storage and locking helpers. Its source is overlaid unchanged only in private combined tests, not merged into this branch. P2's published `3d23092` supplies five production adapters and SQL/HTTP/race suites. [The current binding review](P2-BINDINGS-REVIEW.md) selects those classes only in a guarded disposable test build; the lock-order correction and original-form integration still block enablement. P1 supplies foundation, safe reference contracts, transport/registration and tests; it creates no models, migrations, SMS service or competing business writer.
 
 ## Runtime and safe local setup
 

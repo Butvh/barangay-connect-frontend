@@ -1,5 +1,13 @@
 # Backend work log
 
+## November 3, 2026 — P2 production candidate refresh
+
+- Pinned P2 3d23092 and narrowly added its reviewed documentation/foundation-test paths to snapshot assembly; retained exact owner hashes.
+- Reviewed/selectively prepared the five actual production adapters through a disposable-test-only profile; production routes/factories/readers stay gated.
+- Added unchanged P2 SQL/HTTP/race/foundation suites and configured DBA production probe to CI, with a fresh guarded p2_test_ schema.
+- Added a required actual-service lock-order regression; P2 owns its correction. No failure suppression or teammate edits.
+- Added explicit unavailable revision routes and kept private artifacts/web root unchanged.
+
 ## November 3, 2026 — latest DBA v2 follow-up
 
 - Adopted DBA3d2b3a2's corrected scope fixture and configured-production-adapter SQL acceptance. Preserved the reviewed EventContext(status) and RecipientReference(userId,inApp,sms) constructors; new context families use forEvent and audience is server-derived with an optional validated intent hint. Added Compatibility discovery without binding test doubles.

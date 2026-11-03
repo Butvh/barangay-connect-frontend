@@ -39,7 +39,7 @@ async function overlay(sha, paths, owner) {
 const dba = git('ls-tree', '-r', '--name-only', lock.dba, 'backend').toString().trim().split('\n');
 await overlay(lock.dba, dba, 'dba');
 const p2 = git('diff', '--name-only', lock.p2_base, lock.p2).toString().trim().split('\n');
-if (p2.some(name => !/^(?:backend\/(?:app|routes|tests\/P2)\/|backend\/README\.md$|assets\/js\/adapters\/|tests\/p2-adapters\.mjs$|docs\/P2-BACKEND-INTEGRATION\.md$|docs\/superpowers\/plans\/2026-11-02-p2-modules-execution\.md$)/.test(name))) throw new Error('P2 changed outside the reviewed integration allowlist');
+if (p2.some(name => !/^(?:backend\/(?:app|routes|tests\/P2)\/|backend\/README\.md$|assets\/js\/adapters\/|tests\/p2-(?:adapters|foundation-adapters)\.mjs$|docs\/P2-(?:BACKEND-INTEGRATION|COMPATIBILITY)\.md$|docs\/P2-INTEGRATION-MANIFEST\.json$|docs\/superpowers\/plans\/(?:2026-11-02-p2-modules-execution|2026-11-03-p2-integration-execution)\.md$)/.test(name))) throw new Error('P2 changed outside the reviewed integration allowlist');
 await overlay(lock.p2, p2, 'p2');
 // Add DBA suite discovery in the private snapshot only; preserve root P1 suites and every owner's source bytes.
 const xmlPath = resolve(destination, 'backend/phpunit.xml');

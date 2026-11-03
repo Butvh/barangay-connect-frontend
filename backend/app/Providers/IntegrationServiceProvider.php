@@ -14,7 +14,16 @@ final class IntegrationServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        if (! config('integration.p2_enabled')) {
+        $testBindings = (bool) config('integration.test_bindings');
+        if ($testBindings || config('integration.p2_enabled')) {
+            $this->assertIsolatedBuild();
+        }
+        if ($testBindings) {
+            foreach (config('integration.reviewed_test_adapters', []) as $key => $adapter) {
+                config(['integration.'.$key => $adapter]);
+            }
+        }
+        if (! config('integration.p2_enabled') && ! $testBindings) {
             if (config('integration.dispatch_enabled')) {
                 throw new LogicException('Outbox dispatch requires the reviewed module and handler bindings.');
             }
@@ -39,12 +48,27 @@ final class IntegrationServiceProvider extends ServiceProvider
             $this->bindReviewed($port, $key);
         }
         $this->app->register($provider);
+        if ($testBindings) {
+            $this->bindReviewed('App\\Services\\Messaging\\InAppNotificationHandler', 'notification_adapter');
+        }
         if (config('integration.dispatch_enabled')) {
             $this->bindReviewed('App\\Services\\Messaging\\InAppNotificationHandler', 'notification_adapter');
             if (config('queue.default') !== 'database' || config('queue.connections.database.retry_after') <= 90 ||
                 ! class_exists('App\\Jobs\\Messaging\\DispatchOutbox')) {
                 throw new LogicException('Reviewed database queue/dispatcher configuration is required.');
             }
+        }
+    }
+
+    private function assertIsolatedBuild(): void
+    {
+        $name = config('database.connections.mysql.database');
+        $httpHarness = $this->app->environment('local') && getenv('P2_TEST_HTTP') === '1';
+        if ((! $this->app->environment('testing') && ! $httpHarness) || getenv('DB_TEST_DISPOSABLE') !== '1' ||
+            ! is_string($name) || ! preg_match('/^(?:bc_dba_p[12]_|p2_test_)[A-Za-z0-9_]+$/D', $name) ||
+            $name !== getenv('DB_TEST_DATABASE') || config('integration.dispatch_enabled') ||
+            config('messaging.sms.enabled', false) || config('messaging.make.enabled', false)) {
+            throw new LogicException('P2 bindings/modules are restricted to the reviewed disposable test build until form and lock-order acceptance.');
         }
     }
 

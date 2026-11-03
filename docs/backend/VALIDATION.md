@@ -2,6 +2,12 @@
 
 Current baseline pins are in integration-lock.json. Final follow-up P1/synthetic-merge SHAs, CI totals and browser artifacts are recorded in [draft PR49](https://github.com/Butvh/barangay-connect-frontend/pull/49). A standalone green job is not combined acceptance.
 
+## Current P2 production refresh
+
+The current candidate is P2 `3d23092883e0f24aa89b4c86ce93862e35880e3e` with unchanged DBA `3d2b3a2dd6afa88ea34b9a441f48da3863787bbd`. It publishes the five production adapters, scoped readers, foundation-adapter checks and SQL/HTTP/race commands previously unavailable. [The binding review](P2-BINDINGS-REVIEW.md) records selection, isolation and commands. The combined job now runs the actual configured adapters, the unchanged DBA production probe and P2's original suites. An additional P1 actual-service lock-order regression remains a required release gate. No expected-failure suppression or owner patch is used.
+
+Local PHP skips are reported because genuine MySQL/DBA composition is unavailable locally. Final measured totals, failing cases, source-preservation results and exact P1/synthetic-merge SHAs are published in PR49 after CI. Earlier results below remain historical evidence; absence of P2 adapters/commands is no longer a current blocker.
+
 ## Historical pre-fix baseline
 
 The follow-up first repinned unchanged owner source to DBA f641918d37ff2ecd49cc47b3437bb0e159d6a10a and P2 c902d9f7239a8fcefdddf293fbc531876548c10a; P1 preflight head41b6c42fc536237b10034b3eb3fe058f9ee71fc1. [Run41604926592](https://github.com/Butvh/barangay-connect-frontend/actions/runs/41604926592) tests clean synthetic merge5a9876c31f7c0a8278a8a371594797d81a44af60.
@@ -37,7 +43,7 @@ New real-SQL tests cover safe household/approval/visible-facility/personnel proj
 
 ## Disabled / unverified
 
-Production identity/P2/dispatch flags remain false; P2 Store/reference/writer/handler/readers and global factories are not registered. P2 has published no actual SQL/HTTP/race commands at its pinned head. No actual-domain race acceptance or real worker/scheduler delivery is claimed.
+Production identity/P2/dispatch flags remain false. The five P2 production classes are selected only in the isolated disposable-test profile; global factories/readers and original forms remain unregistered pending the lock-order correction and original-form acceptance. SQL/HTTP/race and DBA production-adapter results must be read from the current committed CI, not inferred from portable tests. No real worker/scheduler delivery is claimed.
 
 Private incident-photo metadata/policy/byte service is absent; authenticated routes intentionally return503. DTO tests prove neither uploaded bytes nor download authorization/cleanup. P1 password/reset/verification/personnel/facility mutation services remain later reviewed slices; the test-only guarded generation change is not a production endpoint.
 
