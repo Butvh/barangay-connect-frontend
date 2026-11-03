@@ -4,7 +4,7 @@ November 3 contract update: see [INTEGRATION-CONTRACT-V2.md](INTEGRATION-CONTRAC
 
 ## Current integration status
 
-The current typed SQL gate resolves P1's real port bindings/configured production classes. It defaults to in-app-only; the optional `--sms-intent` case creates durable pending SMS intent with fake transport, not an authorized live send. Current result is exit2: `outbox_adapter_not_configured`, `notification_adapter_not_configured`. See [current acceptance](INTEGRATION-ACCEPTANCE.md). P1 registration hooks exist behind disabled flags; P2's production writer/handler are not supplied. A green fixture-based DBA suite does not approve those absent implementations.
+The typed SQL gate resolves P1's actual bindings/configured app classes. P2 now supplies TypedOutboxWriter/InAppHandler and passes the selected **in-app-only** SQL/receipt probe with zero provider calls. Default production config remains unselected/off. The separate fake SMS-intent case still exits2 because P2's writer and producer deliberately allow only in-app. See [fake delivery evidence and explicit owner request](DELIVERY-FAKE-ACCEPTANCE.md) and [current acceptance](INTEGRATION-ACCEPTANCE.md). A green DBA fixture does not certify actual P2 SMS intent, the unpublished lock correction or live operational setup.
 
 Code and offline fakes are supplied; no live Semaphore key, sender approval, Make workspace/scenario or hosting/worker access was provided. The Make blueprint is an unconfigured, redacted import candidate; importing/configuring it in the real workspace and capturing a controlled end-to-end trace remain external work. No real SMS or credit purchase is authorized or performed.
 

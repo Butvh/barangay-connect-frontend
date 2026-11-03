@@ -4,6 +4,8 @@ Generated from the migrated MySQL Community 8.4.13 schema. Types/nullability/ind
 
 November 3 follow-up changes no DDL or migration. The original six migrations and two additive migrations are retained. New v2 event IDs are canonical lowercase UUIDv4, occurrence timestamps retain UTC microseconds, and audience is derived by the authorized producer then required in v2 recipient rows. SQL audience nullability remains for legacy v1 compatibility. These application boundaries are detailed in [INTEGRATION-CONTRACT-V2.md](INTEGRATION-CONTRACT-V2.md).
 
+Incident-photo metadata is a separate [unratified proposal](INCIDENT-PHOTO-METADATA-PROPOSAL.md) under database/proposals/, not part of the migrated38-table schema below. Its tests execute only on disposable databases; no active migration/model or private-byte implementation is added.
+
 ## activity_logs
 
 | Column | Type | Nullable | Default | Extra / generated expression |
