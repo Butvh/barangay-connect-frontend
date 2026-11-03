@@ -6,6 +6,7 @@ namespace App\Services\Incidents;
 
 use App\Contracts\P2\ActorReferences;
 use App\Contracts\P2\DestinationReferences;
+use App\Contracts\P2\EligibilityReferences;
 use App\Services\P2\Actor;
 use App\Services\P2\Module;
 use App\Services\P2\Problem;
@@ -147,7 +148,8 @@ final class IncidentService extends Module
 
                 return $this->get($a, $previous[0]['resource_id']) + ['was_created' => false];
             }
-            $home = $this->references($a)->household($a->id, $a->barangayId) ?? throw new Problem('FORBIDDEN', 'A registered household is required.');
+            $refs = $this->references($a);
+            $home = ($refs instanceof EligibilityReferences ? $refs->sosHousehold($a->id, $a->barangayId) : $refs->household($a->id, $a->barangayId)) ?? throw new Problem('FORBIDDEN', 'A registered household is required.');
             $details = $this->detailsInput($in, $home);
             $active = array_values(array_filter($this->store->select('emergency_alerts', ['barangay_id' => $a->barangayId, 'resident_id' => $a->id]), fn ($r) => $r['status'] !== 'Resolved'));
             $r = $active[0] ?? null;
@@ -164,7 +166,13 @@ final class IncidentService extends Module
         }));
     }
 
-    public function details(Actor $a, int $id, array $in): array
+    public function details(Actor $a, int $id, array $in, ?string $key = null): array
+    {
+        return $key === null ? $this->detailsWrite($a, $id, $in)
+            : $this->once($a, 'alerts.'.$id.'.details', $in, $key, fn () => $this->detailsWrite($a, $id, $in), fn ($resource) => $this->get($a, $resource));
+    }
+
+    private function detailsWrite(Actor $a, int $id, array $in): array
     {
         $a->allow(['resident']);
 
@@ -172,10 +180,19 @@ final class IncidentService extends Module
             $r = $this->row('emergency_alerts', $id, $a);
             if ($r['resident_id'] !== $a->id) {
                 throw new Problem('NOT_FOUND', 'This incident is unavailable.');
-            } if ($r['status'] === 'Resolved') {
+            }
+            if (array_key_exists('expected_revision', $in)) {
+                Rules::revision($r, $in, 'assignment_revision');
+                unset($in['expected_revision']);
+            }
+            if ($r['status'] === 'Resolved') {
                 throw new Problem('INVALID_STATE', 'This incident is resolved.');
             } $patch = $this->detailsInput($in, $this->references($a)->household($a->id, $a->barangayId) ?? [], true);
-            $r = $this->store->update('emergency_alerts', $id, $patch);
+            $changed = array_filter($patch, fn ($value, $field) => $value !== $r[$field], ARRAY_FILTER_USE_BOTH);
+            if (! $changed) {
+                return $this->project($a, $r);
+            }
+            $r = $this->store->update('emergency_alerts', $id, $changed + ['assignment_revision' => $r['assignment_revision'] + 1]);
             $this->audit($a, 'alert', $id, 'Incident details updated');
 
             return $this->project($a, $r);
@@ -258,7 +275,7 @@ final class IncidentService extends Module
 
     private function addAssignment(Actor $a, array $r, string $role, int $person, array $in): array
     {
-        $p = $this->references($a)->person($person, $a->barangayId);
+        $p = $this->eligiblePerson($a, $person);
         if (! $p || $p['role'] !== $role || ($p['personnel_status'] ?? 'Active') !== 'Active') {
             throw new Problem('VALIDATION', 'Choose active eligible local personnel.');
         }
@@ -318,7 +335,7 @@ final class IncidentService extends Module
     private function responseWrite(Actor $a, int $id, array $in): array
     {
         $a->allow(['responder']);
-        Rules::only($in, ['response_type', 'response_status', 'rescue_required', 'notes']);
+        Rules::only($in, ['response_type', 'response_status', 'rescue_required', 'notes', 'expected_revision']);
         $type = Rules::choice($in['response_type'] ?? null, ['First aid', 'Assessment', 'Evacuation assistance', 'Other'], 'response_type');
         $status = Rules::choice($in['response_status'] ?? null, ['Responding', 'Completed'], 'response_status');
         if (! is_bool($in['rescue_required'] ?? null)) {
@@ -328,6 +345,9 @@ final class IncidentService extends Module
         return $this->atomic($a, [], $id, function () use ($a, $id, $in, $type, $status, $notes) {
             $r = $this->row('emergency_alerts', $id, $a);
             $assignment = $this->activeOwn($a, $r, 'responder');
+            if (array_key_exists('expected_revision', $in)) {
+                Rules::revision($r, $in, 'assignment_revision');
+            }
             if (! in_array($r['status'], ['Acknowledged', 'Responding', 'Rescue in progress'], true)) {
                 throw new Problem('INVALID_STATE', 'Response is unavailable at this stage.');
             }
@@ -353,19 +373,22 @@ final class IncidentService extends Module
     private function rescueWrite(Actor $a, int $id, array $in): array
     {
         $a->allow(['rescuer']);
-        Rules::only($in, ['rescue_status', 'facility_id', 'notes']);
+        Rules::only($in, ['rescue_status', 'facility_id', 'notes', 'expected_revision']);
         $status = Rules::choice($in['rescue_status'] ?? null, ['In progress', 'Completed'], 'rescue_status');
         $facility = Rules::id($in['facility_id'] ?? null, 'facility_id');
         $notes = Rules::text($in['notes'] ?? '', 'notes', 2000, false);
 
         // Store must lock destination after person/incident guards, sharing this key with facility mutation.
-        return $this->store->transaction(['person:'.$a->id, 'incident:'.$id, 'facility:'.$facility], function () use ($a, $id, $status, $facility, $notes) {
+        return $this->store->transaction(['person:'.$a->id, 'incident:'.$id, 'facility:'.$facility], function () use ($a, $id, $status, $facility, $notes, $in) {
             $fresh = $this->refs instanceof ActorReferences ? $this->refs->locked($a) : $this->refs->actorFor($a->id);
             if ($fresh->role !== $a->role || $fresh->barangayId !== $a->barangayId) {
                 throw new Problem('FORBIDDEN', 'Account access changed.');
             }
             $r = $this->row('emergency_alerts', $id, $a);
             $assignment = $this->activeOwn($a, $r, 'rescuer');
+            if (array_key_exists('expected_revision', $in)) {
+                Rules::revision($r, $in, 'assignment_revision');
+            }
             if (! in_array($r['status'], ['Responding', 'Rescue in progress'], true)) {
                 throw new Problem('INVALID_STATE', 'Rescue is unavailable at this stage.');
             }

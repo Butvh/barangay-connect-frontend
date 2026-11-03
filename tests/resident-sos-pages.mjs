@@ -7,6 +7,8 @@ import vm from 'node:vm';
 
 async function run() {
   const model = await import('../assets/js/pages/resident-report-model.js');
+  const formIntent = await import('../assets/js/adapters/p2-form-intent.js');
+  const config = await import('../assets/js/core/config.js');
   const { UI } = await import('../assets/js/core/ui.js');
   const { Fmt } = await import('../assets/js/core/format.js');
   const { Icons } = await import('../assets/js/core/icons.js');
@@ -43,7 +45,7 @@ async function run() {
     const context = vm.createContext({ URLSearchParams, location, history: { replaceState(a, b, url) { location.search = new URL(url, 'http://localhost').search; } }, window: { addEventListener() {} } });
     const page = new vm.SourceTextModule(source, { context });
     await page.link(specifier => {
-      const values = specifier.endsWith('resident-shared.js') ? shared : specifier.endsWith('shell-resident.js') ? { Shell: { resident: () => main } } : specifier.endsWith('icons.js') ? { Icons } : model;
+      const values = specifier.endsWith('resident-shared.js') ? shared : specifier.endsWith('shell-resident.js') ? { Shell: { resident: () => main } } : specifier.endsWith('icons.js') ? { Icons } : specifier.endsWith('p2-form-intent.js') ? formIntent : specifier.endsWith('config.js') ? config : model;
       return new vm.SyntheticModule(Object.keys(values), function () { for (const [key, value] of Object.entries(values)) this.setExport(key, value); }, { context });
     });
     await page.evaluate(); await settle();

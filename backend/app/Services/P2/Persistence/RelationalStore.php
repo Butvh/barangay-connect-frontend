@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\P2\Persistence;
 
-use App\Contracts\P2\Store;
+use App\Contracts\P2\GuardedStore;
 use App\Models\ActivityLog;
 use App\Models\AlertAssignment;
 use App\Models\AlertResponse;
@@ -22,8 +22,17 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
 /** Explicit P2 DTO mappings over DBA models on the default caller connection. */
-final class RelationalStore implements Store
+final class RelationalStore implements GuardedStore
 {
+    private array $peopleHeld = [];
+
+    public function assertPersonLocked(int $id): void
+    {
+        if (! $this->inTransaction() || ! in_array($id, $this->peopleHeld, true)) {
+            throw new \LogicException('Declare every mutable person before taking source locks.');
+        }
+    }
+
     private const MODELS = [
         'emergency_alerts' => EmergencyAlert::class,
         'alert_assignments' => AlertAssignment::class,
@@ -78,26 +87,33 @@ final class RelationalStore implements Store
             CapacityGuard::lockPeople($sos, 'sos');
             CapacityGuard::lockRows('users', $people);
             DB::table('personnel_appointments')->whereIn('user_id', $people)->orderBy('id')->lockForUpdate()->get();
-            foreach ($keys as $key) {
-                [$type, $id] = explode(':', $key, 2);
-                if ($type === 'sos') {
-                    continue;
-                } elseif ($type === 'person') {
-                    continue;
-                } else {
-                    $table = match ($type) {
-                        'incident' => 'emergency_alerts', 'facility' => 'facilities',
-                        'announcement' => 'announcements', 'feedback' => 'community_feedback',
-                        default => throw new \LogicException('Unsupported P2 lock.'),
-                    };
-                    DB::table($table)->where('id', (int) $id)->lockForUpdate()->first();
-                    if ($type === 'incident') {
-                        DB::table('alert_assignments')->where('alert_id', (int) $id)->orderBy('id')->lockForUpdate()->get();
+            DB::table('tanod_memberships')->whereIn('user_id', $people)->orderBy('id')->lockForUpdate()->get();
+            $previousPeople = $this->peopleHeld;
+            $this->peopleHeld = array_values(array_unique([...$previousPeople, ...$people]));
+            try {
+                foreach ($keys as $key) {
+                    [$type, $id] = explode(':', $key, 2);
+                    if ($type === 'sos') {
+                        continue;
+                    } elseif ($type === 'person') {
+                        continue;
+                    } else {
+                        $table = match ($type) {
+                            'incident' => 'emergency_alerts', 'facility' => 'facilities',
+                            'announcement' => 'announcements', 'feedback' => 'community_feedback',
+                            default => throw new \LogicException('Unsupported P2 lock.'),
+                        };
+                        DB::table($table)->where('id', (int) $id)->lockForUpdate()->first();
+                        if ($type === 'incident') {
+                            DB::table('alert_assignments')->where('alert_id', (int) $id)->orderBy('id')->lockForUpdate()->get();
+                        }
                     }
                 }
-            }
 
-            return $work();
+                return $work();
+            } finally {
+                $this->peopleHeld = $previousPeople;
+            }
         }, $attempts);
     }
 

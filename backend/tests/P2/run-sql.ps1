@@ -13,10 +13,15 @@ $env:DB_CONNECTION = 'mysql'
 $env:DB_HOST = '127.0.0.1'
 $env:DB_PORT = [string]$Port
 $env:DB_DATABASE = $p2Database
+$env:DB_TEST_DATABASE = $p2Database
+$env:DB_TEST_DISPOSABLE = '1'
 $env:DB_USERNAME = 'root'
 $env:DB_PASSWORD = ''
 $env:SMS_ENABLED = 'false'
 $env:MAKE_ENABLED = 'false'
+$env:P2_MODULES_ENABLED = 'false'
+$env:P2_TEST_BINDINGS = 'false'
+$env:OUTBOX_DISPATCH_ENABLED = 'false'
 $env:IDENTITY_ENABLED = 'true'
 & $Mysql --host=127.0.0.1 --port=$Port --user=root --execute="CREATE DATABASE $p2Database CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci"
 if ($LASTEXITCODE -ne 0) { throw 'Unable to create isolated database.' }

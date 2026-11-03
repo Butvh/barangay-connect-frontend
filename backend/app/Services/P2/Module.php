@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\P2;
 
 use App\Contracts\P2\ActorReferences;
+use App\Contracts\P2\EligibilityReferences;
 use App\Contracts\P2\ReferenceData;
 use App\Contracts\P2\ScopedReferences;
 use App\Contracts\P2\Store;
@@ -80,6 +81,13 @@ abstract class Module
         }
 
         return array_values(array_filter($this->refs->people($actor->barangayId), fn ($p) => in_array($p['role'], ['captain', 'secretary'], true) && ($p['personnel_status'] ?? 'Active') === 'Active'));
+    }
+
+    protected function eligiblePerson(Actor $actor, int $id): ?array
+    {
+        $refs = $this->references($actor);
+
+        return $refs instanceof EligibilityReferences ? $refs->eligiblePerson($id, $actor->barangayId) : $refs->person($id, $actor->barangayId);
     }
 
     protected function event(Actor $actor, string $type, int $id, array $people): array

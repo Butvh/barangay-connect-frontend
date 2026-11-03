@@ -241,7 +241,9 @@ final class CivicService extends Module
         $a->allow(['captain', 'secretary']);
         Rules::only($in, $assign ? ['tanod_id', 'expected_revision'] : ['expected_revision']);
 
-        return $this->store->transaction(['person:'.$a->id, 'feedback:'.$id], function () use ($a, $id, $in, $assign) {
+        $tanod = $assign ? Rules::id($in['tanod_id'] ?? null, 'tanod_id') : null;
+
+        return $this->store->transaction(['person:'.$a->id, ...($tanod ? ['person:'.$tanod] : []), 'feedback:'.$id], function () use ($a, $id, $in, $assign, $tanod) {
             $fresh = $this->refs instanceof ActorReferences ? $this->refs->locked($a) : $this->refs->actorFor($a->id);
             if (! $fresh->administrator() || $fresh->barangayId !== $a->barangayId) {
                 throw new Problem('FORBIDDEN', 'Account access changed.');
@@ -251,8 +253,8 @@ final class CivicService extends Module
             } Rules::revision($r, $in);
             $patch = ['revision' => $r['revision'] + 1];
             if ($assign) {
-                $idTanod = Rules::id($in['tanod_id'] ?? null, 'tanod_id');
-                $p = $this->references($a)->person($idTanod, $a->barangayId);
+                $idTanod = $tanod;
+                $p = $this->eligiblePerson($a, $idTanod);
                 if (! $p || ! ($p['is_tanod'] ?? false)) {
                     throw new Problem('VALIDATION', 'Choose an existing local Tanod.');
                 } $patch += ['assigned_tanod_id' => $idTanod, 'assigned_at' => ($this->clock)(), 'status' => 'Assigned'];

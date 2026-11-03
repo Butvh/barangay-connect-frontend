@@ -47,7 +47,9 @@ export function responseProgress(alert) {
   });
 }
 
+export const hasReportPin = value => [value?.map_x, value?.map_y].every(coordinate => typeof coordinate === 'number' && Number.isFinite(coordinate) && coordinate >= 0 && coordinate <= 100);
 export function initialReportLocation(alert, household) {
-  const x = alert.map_x ?? household?.map_x ?? 50, y = alert.map_y ?? household?.map_y ?? 50;
+  const source = hasReportPin(alert) ? alert : hasReportPin(household) ? household : null;
+  const x = source?.map_x ?? 50, y = source?.map_y ?? 50;
   return { mode: x === household?.map_x && y === household?.map_y ? 'home' : 'pin', x, y };
 }

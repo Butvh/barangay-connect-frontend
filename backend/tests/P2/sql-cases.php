@@ -260,5 +260,8 @@ caseTest('SQL reports retain Captain-only joins and truthful monthly counts', fu
 });
 require __DIR__.'/http-cases.php';
 require __DIR__.'/sql-races.php';
+require __DIR__.'/sql-lock-order.php';
 require __DIR__.'/sql-review.php';
-echo 'MySQL '.$version.'; original-UI form handoffs and remaining cross-owner races are separate acceptance gates.'.PHP_EOL;
+require __DIR__.'/sql-form-revisions.php';
+require __DIR__.'/sql-final-review.php';
+echo 'MySQL '.$version.'; original controllers exercised over HTTP; full registered-browser acceptance and remaining cross-owner races are separate gates.'.PHP_EOL;

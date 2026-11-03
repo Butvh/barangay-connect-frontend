@@ -1,19 +1,22 @@
 import { Auth, Api, UI, Icons, Fmt, Store, e, roleLabel, alertName, facts, facilityType, facilityDetail, dialog } from './official-shared.js';
 import { RESPONSE_TYPES } from '../core/alertMachine.js';
 import { facilityActive } from '../core/facilities.js';
+import { createFormSubmission } from '../adapters/p2-form-intent.js';
 
 export function alertSummary(alert) {
   return dialog('Alert summary', `<div class="stack"><div class="spread wrap"><h3>${e(alertName(alert))}</h3>${UI.badge(alert.status)}</div>${facts([['Location', alert.location_label], ['Reporter', alert.resident?.full_name || 'Not provided'], ['Victims', alert.victim_count ?? 'Not confirmed'], ['Reported', Fmt.dateTime(alert.created_at)]])}<p class="official-long-copy">${e(alert.description || 'No description provided.')}</p><a class="btn btn-primary" href="official-alert.html?id=${alert.id}">View alert</a></div>`);
 }
 
 export async function resolveAlert(alert, saved = () => {}) {
+  const submission = createFormSubmission({ auth: Auth, revision: alert.assignment_revision });
   if (!await UI.confirm({ title: 'Resolve alert?', text: `Mark ${Fmt.alertId(alert.id)} at ${alert.location_label} as Resolved? The resident will receive an update.`, confirmLabel: 'Resolve', danger: true })) return;
-  try { await Api.alerts.resolve(alert.id); UI.toast(`${Fmt.alertId(alert.id)} resolved.`); await saved(); }
+  try { await submission.submit({}, body => Api.alerts.resolve(alert.id, body)); UI.toast(`${Fmt.alertId(alert.id)} resolved.`); await saved(); }
   catch (error) { UI.toast(error.message, 'error'); await saved(); }
 }
 
 export async function logAlert(alert, kind, saved = () => {}) {
   const rescue = kind === 'rescue', title = rescue ? 'Log rescue' : 'Log response', user = Auth.current();
+  const submission = createFormSubmission({ auth: Auth, revision: alert.assignment_revision });
   let dirty = false, busy = false, facilities = [], chosen = null, closing = false, picker = null, facilityVersion = 0, facilitiesLoaded = false;
   const requestClose = async () => {
     if (busy || closing) return false;
@@ -30,7 +33,7 @@ export async function logAlert(alert, kind, saved = () => {}) {
   form.addEventListener('input', changed); form.addEventListener('change', changed);
   form.querySelector('[data-cancel]').addEventListener('click', async () => { if (await requestClose()) UI.closeDialog(el); });
   const timestamp = setInterval(() => { if (el.open && !busy) form.querySelector('[data-auto-time]').textContent = Fmt.dateTime(Store.now()); }, 30000);
-  el.addEventListener('close', () => clearInterval(timestamp), { once: true });
+  el.addEventListener('close', () => { clearInterval(timestamp); submission.discard(); }, { once: true });
   function chooseFacility() {
     picker = dialog('Choose destination facility', '<div class="stack" data-options></div><button type="button" class="btn" data-picker-cancel>Cancel</button>');
     picker.querySelector('[data-picker-cancel]').addEventListener('click', () => UI.closeDialog(picker));
@@ -60,8 +63,9 @@ export async function logAlert(alert, kind, saved = () => {}) {
     event.preventDefault(); if (busy) return;
     if (rescue && (!facilitiesLoaded || !facilityActive(chosen))) { form.querySelector('#log-facility_id-error').textContent = 'Choose an active destination facility.'; const button = form.querySelector('#choose-destination'); button.setAttribute('aria-invalid', 'true'); button.focus(); return; }
     const data = new FormData(form), payload = rescue ? { facility_id: chosen.id, rescue_status: data.get('rescue_status'), notes: data.get('notes') } : { response_type: data.get('response_type'), response_status: data.get('response_status'), rescue_required: data.get('rescue_required') === 'Yes' ? true : data.get('rescue_required') === 'No' ? false : undefined, notes: data.get('notes') };
+    if (!rescue && typeof payload.rescue_required !== 'boolean') { form.querySelector('#log-rescue_required-error').textContent = 'Choose Yes or No.'; return; }
     busy = true; error.hidden = true; form.setAttribute('aria-busy', 'true'); el.querySelectorAll('input,select,textarea,button').forEach(button => button.disabled = true); const save = form.querySelector('[type="submit"]'); save.textContent = 'Saving…';
-    try { await (rescue ? Api.alerts.logRescue(alert.id, payload) : Api.alerts.logResponse(alert.id, payload)); dirty = false; UI.closeDialog(el); UI.toast(rescue ? 'Rescue logged.' : 'Response logged.'); await saved(); }
+    try { await submission.submit(payload, (body, intent) => rescue ? Api.alerts.logRescue(alert.id, body, intent) : Api.alerts.logResponse(alert.id, body, intent)); dirty = false; UI.closeDialog(el); UI.toast(rescue ? 'Rescue logged.' : 'Response logged.'); await saved(); }
     catch (err) { error.textContent = err.message; error.hidden = false; for (const [name, message] of Object.entries(err.fields || {})) { const hint = form.querySelector(`#log-${name}-error`); if (hint) hint.textContent = message; form.elements[name]?.setAttribute('aria-invalid', 'true'); } error.tabIndex = -1; error.focus(); }
     finally { busy = false; form.removeAttribute('aria-busy'); el.querySelectorAll('input,select,textarea,button').forEach(button => button.disabled = false); save.textContent = `Save ${rescue ? 'rescue' : 'response'}`; if(rescue && el.isConnected) renderFacilities(); }
   });

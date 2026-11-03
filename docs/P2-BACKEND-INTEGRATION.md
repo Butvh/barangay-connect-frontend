@@ -1,6 +1,6 @@
 # P2 backend modules — integration handoff
 
-Status: **P2 compatibility candidate** (November3,2026). Actual P1/DBA sources are composed privately for SQL/HTTP tests; production and original-UI registration remain gated. Read [the current compatibility matrix and evidence](P2-COMPATIBILITY.md) first. It supersedes provisional storage/event assumptions below and records exact revisions, owner requests and untested gates. No main merge or live deployment is performed.
+Status: **P2 lock/form compatibility candidate** (November4,2026). Actual P1/DBA sources are composed privately for SQL/HTTP tests; production and global original-UI registration remain gated. Read [the current protocol and evidence](P2-COMPATIBILITY.md) first. It supersedes provisional storage/event assumptions below and records exact revisions, owner requests and untested gates. No main merge or live deployment is performed.
 
 ## Ownership and registration
 
@@ -11,7 +11,7 @@ P1 must:
 1. Preserve these `backend/app` modules while adding the foundation. Configure `App\` => `app/` using the application's Composer autoload.
 2. Keep P1 IntegrationServiceProvider as the single registration entry point; it selects the reviewed Store, reference, typed audit/outbox and optional handler bindings before registering P2. Do not register P2 directly a second time. P2 preserves these bindings; its HTTP gateway must implement ActorReferences. **No production fake bindings are supplied.** Missing bindings fail closed.
 3. Preserve P1's existing conditional includes for `operations.php`, `communications.php` and `reports.php` under `/api/v1`. Each fragment uses P1 CurrentIdentity plus P2 error/enable middleware in the foundation web/session/CSRF group; no browser identity or role is accepted as authority. P2's middleware only formats domain `Problem` errors; auth/419/429/unexpected errors remain P1's global envelope and redacted logs. Shared rate-limit/release policy remains an owner review gate.
-4. Inject the authenticated HTTP transport into the adapter factories; coordinate the small facade/config/form integration PR. Do not enable backend mode for incomplete modules. Existing public demo and backend release coverage must be separate.
+4. Inject the authenticated HTTP transport into the existing factories/readers, and register P1's existing `createSubmissionIntent` with P2's `configureOperationalSubmissions` before original operational pages initialize. See the exact handoff in P2-COMPATIBILITY.md. P2's owned operational forms are wired; missing global registration/reference readers remain fail-closed. Do not enable incomplete modules. Public demo and backend release coverage must be separate.
 5. Preserve P1's new explicit static artifact staging when composing the eventual merge result; its artifact/module-graph tests pass on the pinned composition. Main's older whole-root upload must not deploy backend sources. P2 has not edited P1's CI/foundation files. Update P1's snapshot owner pins and P2 allowlist only after this P2 revision is published/reviewed.
 
 DBA supplies schema/models/casts/indexes, guard helpers, factories, MySQL integrity tests and the single dispatcher. P2 supplies the relational Store/reference adapter candidate; P1 selects reviewed bindings. Binding the Store without implementing the locking semantics below is not sufficient.
@@ -27,12 +27,12 @@ Errors are `{code,message,fields,request_id}`; AUTH401, FORBIDDEN403, NOT_FOUND4
 | Existing facade / prepared adapter | Route | Additional integration contract |
 | --- | --- | --- |
 | `alerts.list(options)` | GET `/alerts` or `/nearby-alerts` when `nearby:true` | q, status, alert_type, resident_id (private list only), sort:newest/oldest. Resident can only request own private records; staff only assigned; Captain/Secretary same barangay. |
-| `alerts.get(id)`, `addDetails(id,patch)` | GET/PATCH `/alerts/{id}` | Own resident details only; lifecycle/assignment fields immutable. See photo gate below. |
+| `alerts.get(id)`, `addDetails(id,patch,intent)` | GET/PATCH `/alerts/{id}` | Own resident details only. PATCH requires original expected_revision and intent.idempotencyKey; actual changes advance assignment_revision. Lifecycle/assignment fields immutable. See photo gate below. |
 | `alerts.create(input,intent)` | POST `/alerts` | Mandatory `intent.idempotencyKey`; persisted SOS has no automatic assignments. One active SOS per resident. |
 | `assignmentOptions(id,role)` | GET `/alerts/{id}/assignment-options?role=...` | Numeric current assignment ID, `alert_revision`, eligible personnel, workload/limit, selected/at-capacity flags, current workflow flags. Inactive personnel excluded. |
 | `acknowledge(id,input)`, `assign(id,input)` | POST `/alerts/{id}/acknowledgments`, `/assignments` | Explicit personnel_id, role, expected_revision; acknowledgment defaults responder. No automatic choice. |
 | `reassign(id,input)`, `cancelAssignment(id,input)` | POST `/assignments/{assignmentID}/transfers`, `/cancellations` | Captain only. Adapter resolves the active assignment, verifies the **observed** revision, never silently refreshes it. Reason required. |
-| `logResponse(id,input,intent)`, `logRescue(...)` | POST `/alerts/{id}/responses`, `/rescues` | Mandatory stable command key; explicit assessment/destination and own active role assignment. |
+| `logResponse(id,input,intent)`, `logRescue(...)` | POST `/alerts/{id}/responses`, `/rescues` | Mandatory stable command key and original expected_revision; explicit assessment/destination and own active role assignment. |
 | `resolve(id,{expected_revision})` | POST `/alerts/{id}/resolution` | Explicit official action; completion alone never resolves the incident. |
 | `dashboard.officialStats()` | GET `/dashboard` | Role-scoped counts; administrative counters are null for operational roles. Resident projection contains own alerts, sanitized nearby and latest announcement. |
 | `map.get(filters)` | GET `/map` | Assigned/scoped incidents for officials, sanitized nearby for residents, visible safe facilities and own household only. |
@@ -48,7 +48,7 @@ Errors are `{code,message,fields,request_id}`; AUTH401, FORBIDDEN403, NOT_FOUND4
 | barangays/me/people/facilities/verification/personnel/auth/profile/recovery | **P1-owned routes** | P2 consumes their safe reference DTOs; no duplicate APIs. |
 | subscribe/server time/current-user hydration | **P1 integration** | Replace demo storage events with authenticated polling; stop on teardown/logout/revocation; preserve dirty forms and focus. |
 
-The stable command key is created once per submit intent, retained for retries and replaced only for a new intentional command. P2 deliberately does not generate a new key per HTTP retry. Existing form calls for SOS/response/rescue/publish/feedback need P1's coordinated key handoff. Existing resolve/feedback calls also need the revision observed when the dialog opened. The adapter refuses missing revisions instead of overwriting newer work.
+The stable command key is created once per submit intent, retained with the exact body/original revision for retries and replaced only for a deliberate new command. P2's original SOS/details/response/rescue forms now consume P1's injected intent helper; assignment/transfer/cancellation/resolution preserve the opening revision and cannot silently refresh it after409. Publish/feedback and shared global registration remain coordinated P1 handoffs. The adapter refuses missing revisions instead of overwriting newer work. Backend photos remain disabled until private bytes/attachment are available; viewport centering does not become a saved map pin.
 
 ### Example command and DTO
 
@@ -92,7 +92,7 @@ Required integrity/index requests: tenant/resource indexes on all scoped reads; 
 
 `Store.transaction(keys, closure)` must use the **same MySQL connection/transaction** as ReferenceData, audit and outbox writes, acquire each supplied guard in order before executing the closure, retain locks through commit, and join nested transactions without committing them independently. Store must whitelist logical tables and bind query values. Unknown tables/fields are a programming error. P2's MemoryStore is tests only.
 
-Global order: P1 staffing/capacity guard (when changing positions), unique per-person guards sorted numerically, incident guard/current assignment rows, then facility row. Keys emitted here: `person:{id}`, `incident:{id}`, `facility:{id}`, `announcement:{id}`, `feedback:{id}`, `outbox:{eventID}`. The DBA must implement durable lockable guard rows or an agreed equivalent; do not silently ignore a key. Per-person guards are essential for capacity across different incidents. P1's role changes must contend on the same guards; facility deactivation must lock the same facility row as rescue logging.
+Global order: P1 staffing/capacity guard (when changing positions), operations-person guards sorted numerically and SOS guard when applicable, current declared user/appointment/Tanod rows, incident/source and current assignment rows, then selected facility. Keys emitted by domain commands are `person:{id}`, `sos:{id}`, `incident:{id}`, `facility:{id}`, `announcement:{id}` and `feedback:{id}`. Mutable selection uses `EligibilityReferences` and `GuardedStore::assertPersonLocked`; historical display/recipient `person()` reads are nonlocking and retain source authorization. SOS current household eligibility is separate from display projection. Nested current command paths reuse declared people; future code must not add lower-rank locks after source acquisition. See the exact tested protocol in P2-COMPATIBILITY.md. Per-person guards protect capacity across incidents. P1 role changes must contend on the same guards; facility deactivation must lock the same facility row as rescue logging.
 
 Use current/locking reads inside mutations (`SELECT ... FOR UPDATE` as appropriate), not stale REPEATABLE READ snapshots established before waiting for another guard. All row updates, assignments, revisions, histories, audit and outbox/idempotency receipts roll back together. A transfer ends the old active row before inserting its replacement; failed insertion restores the old assignment through rollback. Whole internal transactions may retry deadlocks; external sends must never be retried by the domain transaction.
 
@@ -124,7 +124,7 @@ See [current mappings, executable fixtures and precise owner requests](P2-COMPAT
 
 ## Explicit remaining gates and reproduction
 
-The current [compatibility/evidence document](P2-COMPATIBILITY.md) is authoritative: P1 safe-reference ratification, original facade/form key/revision and reader registration, private photo bytes, P1-domain event consumers, actual cross-owner mutation races, full browser/scale/release acceptance. SQL fixtures and HTTP harnesses do not replace those tests. Production stays disabled; demo and native print remain intact.
+The current [compatibility/evidence document](P2-COMPATIBILITY.md) is authoritative: P1 safe-reference/binding ratification, global helper/factory/reader registration, private photo bytes, P1-domain event consumers, actual cross-owner mutation races and full browser/scale/release acceptance. Original operational controllers are tested over P1 HTTP/MySQL with explicit DOM/reference-reader boundaries; this does not replace fully registered browser acceptance. Production stays disabled; demo and native print remain intact.
 
 From the P2 checkout, portable checks remain:
 

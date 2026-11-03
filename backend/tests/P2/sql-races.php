@@ -1,5 +1,6 @@
 <?php
 
+use App\Contracts\P2\Store;
 use App\Models\PersonnelAppointment;
 use App\Models\User;
 use App\Models\Verification;
@@ -123,7 +124,7 @@ caseTest('Candidate eligibility uses a current appointment read despite an older
         // Establish a repeatable-read snapshot before another connection changes eligibility.
         DB::table('personnel_appointments')->where('user_id', $person->id)->first();
         DB::connection('p2_second')->table('personnel_appointments')->where('user_id', $person->id)->update(['status' => 'Inactive']);
-        $current = $refs->forActor($captain)->person($person->id, $person->barangayId);
+        $current = app(Store::class)->transaction(['person:'.$captain->id, 'person:'.$person->id], fn () => $refs->forActor($captain)->eligiblePerson($person->id, $person->barangayId));
         verify($current['role'] !== 'responder' || ($current['personnel_status'] ?? null) !== 'Active', 'Stale appointment remained dispatch-eligible.');
     });
     DB::purge('p2_second');

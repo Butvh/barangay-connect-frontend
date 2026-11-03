@@ -7,6 +7,7 @@ namespace App\Http\Controllers\P2;
 use App\Contracts\P2\ReferenceData;
 use App\Services\Incidents\IncidentService;
 use App\Services\Incidents\OverviewService;
+use App\Services\P2\Problem;
 use Illuminate\Http\Request;
 
 final class IncidentController extends P2Controller
@@ -33,7 +34,7 @@ final class IncidentController extends P2Controller
 
     public function details(Request $r, string $id)
     {
-        return $this->data($this->incidents->details($this->actor($r), $this->id($id), $this->body($r)));
+        return $this->data($this->incidents->details($this->actor($r), $this->id($id), $this->observedBody($r), $this->key($r)));
     }
 
     public function options(Request $r, string $id)
@@ -65,12 +66,22 @@ final class IncidentController extends P2Controller
 
     public function respond(Request $r, string $id)
     {
-        return $this->data($this->incidents->response($this->actor($r), $this->id($id), $this->body($r), $this->key($r)));
+        return $this->data($this->incidents->response($this->actor($r), $this->id($id), $this->observedBody($r), $this->key($r)));
     }
 
     public function rescue(Request $r, string $id)
     {
-        return $this->data($this->incidents->rescue($this->actor($r), $this->id($id), $this->body($r), $this->key($r)));
+        return $this->data($this->incidents->rescue($this->actor($r), $this->id($id), $this->observedBody($r), $this->key($r)));
+    }
+
+    private function observedBody(Request $request): array
+    {
+        $input = $this->body($request);
+        if (! is_int($input['expected_revision'] ?? null) || $input['expected_revision'] < 0) {
+            throw new Problem('CONFLICT', 'Use the revision originally shown when opening the form.');
+        }
+
+        return $input;
     }
 
     public function resolve(Request $r, string $id)

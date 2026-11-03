@@ -6,7 +6,10 @@ namespace App\Services\P2\Persistence;
 
 use App\Contracts\P2\ActorReferences;
 use App\Contracts\P2\DestinationReferences;
+use App\Contracts\P2\EligibilityReferences;
+use App\Contracts\P2\GuardedStore;
 use App\Contracts\P2\ScopedReferences;
+use App\Contracts\P2\Store;
 use App\Models\User;
 use App\Services\Identity\EffectiveIdentity;
 use App\Services\Identity\EffectiveRole;
@@ -18,9 +21,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 /** Reads only current DBA records; P1 remains the authority for effective portal identity. */
-final class ReferenceData implements \App\Contracts\P2\ReferenceData, ActorReferences, DestinationReferences, ScopedReferences
+final class ReferenceData implements \App\Contracts\P2\ReferenceData, ActorReferences, DestinationReferences, EligibilityReferences, ScopedReferences
 {
     private ?EffectiveIdentity $observed = null;
+
+    public function __construct(private Store $store) {}
 
     public function forActor(Actor $actor): \App\Contracts\P2\ReferenceData
     {
@@ -74,10 +79,10 @@ final class ReferenceData implements \App\Contracts\P2\ReferenceData, ActorRefer
         return new Actor($fresh->id, $fresh->barangayId, $fresh->role, $fresh);
     }
 
-    private function user(int $id): ?User
+    private function user(int $id, bool $locked = false): ?User
     {
         $query = User::query();
-        if (DB::transactionLevel() === 0) {
+        if (! $locked) {
             return $query->with(['appointment', 'tanodMembership'])->find($id);
         }
         $user = $query->lockForUpdate()->find($id);
@@ -92,7 +97,8 @@ final class ReferenceData implements \App\Contracts\P2\ReferenceData, ActorRefer
 
     public function actorFor(int $authenticatedUserId): Actor
     {
-        $user = $this->user($authenticatedUserId);
+        // Dispatcher identity precedes source reads; HTTP mutations use locked(observed).
+        $user = $this->user($authenticatedUserId, DB::transactionLevel() > 0);
         $identity = $user ? EffectiveIdentity::fromUser($user) : null;
         if (! $identity) {
             throw new Problem('FORBIDDEN', 'Current account access is unavailable.');
@@ -126,11 +132,51 @@ final class ReferenceData implements \App\Contracts\P2\ReferenceData, ActorRefer
         return app(SourceReferences::class)->people($this->identity($barangay));
     }
 
+    public function eligiblePerson(int $id, int $barangay): ?array
+    {
+        if (DB::transactionLevel() < 1) {
+            throw new \LogicException('Eligibility requires the caller transaction and declared person locks.');
+        }
+        if (! $this->store instanceof GuardedStore) {
+            throw new \LogicException('Mutable references require a guarded relational Store.');
+        }
+        $this->store->assertPersonLocked($id);
+        $actor = $this->identity($barangay);
+        app(IdentityReferences::class)->assertCurrent($actor);
+        if (! in_array($actor->role, ['captain', 'secretary'], true)) {
+            throw new Problem('FORBIDDEN', 'Only officials may select personnel.');
+        }
+        $user = $this->user($id, true);
+
+        if (! $user || $user->barangay_id !== $barangay) {
+            return null;
+        }
+        $person = $this->project($user);
+        $person['is_tanod'] = $person['is_tanod'] && $user->account_status === 'Active' && $user->tanodMembership?->active === true;
+
+        return $person;
+    }
+
     public function household(int $userId, int $barangay): ?array
     {
         $actor = $this->identity($barangay);
 
-        return app(SourceReferences::class)->household($actor, $userId, DB::transactionLevel() > 0 && $userId === $actor->id);
+        // Projection must not introduce identity/household locks after an incident lock.
+        return app(SourceReferences::class)->household($actor, $userId);
+    }
+
+    public function sosHousehold(int $residentId, int $barangay): ?array
+    {
+        $actor = $this->identity($barangay);
+        if ($residentId !== $actor->id || $actor->role !== 'resident' || DB::transactionLevel() < 1) {
+            throw new \LogicException('SOS household eligibility requires the guarded resident transaction.');
+        }
+        if (! $this->store instanceof GuardedStore) {
+            throw new \LogicException('SOS requires a guarded relational Store.');
+        }
+        $this->store->assertPersonLocked($residentId);
+
+        return app(SourceReferences::class)->household($actor, $residentId, true);
     }
 
     public function approved(int $userId, int $barangay): bool

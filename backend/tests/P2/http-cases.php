@@ -71,6 +71,7 @@ try {
         $httpUser->forceFill(['auth_version' => $httpUser->fresh()->auth_version + 1])->save();
         verify($call($cookies, 'me')[0] === 401, 'Changed generation did not revoke session.');
     });
+    require __DIR__.'/http-ui-cases.php';
 } finally {
     proc_terminate($process);
     proc_close($process);

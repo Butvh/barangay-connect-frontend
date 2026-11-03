@@ -15,7 +15,7 @@ final class P2Errors
         try {
             return $next($request);
         } catch (Problem $e) {
-            return response()->json(['code' => $e->errorCode, 'message' => $e->getMessage(), 'fields' => (object) $e->fields, 'request_id' => bin2hex(random_bytes(12))], $e->status());
+            return $e->render($request);
         }
         // P1's global renderer owns auth/CSRF/throttle and unexpected errors. Never expose SQL/provider details.
     }

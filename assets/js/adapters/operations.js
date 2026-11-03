@@ -17,7 +17,7 @@ export function createOperations({ request }) {
       list: async ({ nearby, ...filters } = {}) => call(query(nearby ? '/nearby-alerts' : '/alerts', filters), { complete: true }),
       get: async id => call(alert(id)),
       create: async (input = {}, intent) => call('/alerts', { method: 'POST', body: input, headers: command(intent) }),
-      addDetails: async (id, input) => call(alert(id), { method: 'PATCH', body: input }),
+      addDetails: async (id, input, intent) => call(alert(id), { method: 'PATCH', body: revision(input), headers: command(intent) }),
       assignmentOptions: async (id, role) => options(id, role),
       acknowledge: async (id, input) => call(`${alert(id)}/acknowledgments`, { method: 'POST', body: revision(input) }),
       assign: async (id, input) => call(`${alert(id)}/assignments`, { method: 'POST', body: revision(input) }),
