@@ -4,7 +4,7 @@ This verifies DBA's existing **single dispatcher and independent channel receipt
 
 ## Current evidence
 
-The full current P1/DBA suite passes **178 tests / 781 assertions, zero failures/errors/skips** on PHP8.5.12, P1 locked Laravel13.39.0/Testbench11.3.0/PHPUnit12.5.43 and MySQL8.4.13. The unchanged delivery cases cover:
+The full P1 c0a32cf/DBA baseline passes **178 tests / 781 assertions, zero failures/errors/skips** on PHP8.5.12, P1 locked Laravel13.39.0/Testbench11.3.0/PHPUnit12.5.43 and MySQL8.4.13. P1 subsequently published aec4e78 with a required failing actual-service lock-order regression; its separate latest-composition result is recorded in [current evidence](INTEGRATION-ACCEPTANCE.md), and is not described as green. The unchanged delivery cases cover:
 
 - All14 registered v2 shapes in-app; exactly two permitted v2 SMS families; unknown type/version/context/template/channel combinations fail closed without false successful receipts.
 - Independent event/recipient/channel/template receipts; duplicate dispatcher/send jobs and Make callbacks preserve one logical intent; completed in-app work does not repeat on SMS retries.

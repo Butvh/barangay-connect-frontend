@@ -31,7 +31,7 @@ P1 #49 `c0a32cfa` locks **Laravel13.39.0/Testbench11.3.0/PHPUnit12.5.43** in the
 
 Install P1's unchanged root lock with an external COMPOSER_VENDOR_DIR and `composer install --no-scripts`. The root autoloader's App/Tests paths must resolve to the actual private composition. Root framework/Testbench loading must also resolve that same vendor directory (the local Windows snapshot used an ignored private vendor junction). This is runtime setup, not a committed application/source change.
 
-P1's `scripts/prepare-integration.mjs` now discovers Unit, Feature, Database, Integration **and Compatibility**; that earlier request is resolved. Its reviewed pins are DBA `3d2b3a2d` and older P2 `c902d9f`; request the current DBA review and P2 corrected commit, plus review of P2's expanded file allowlist. The local private composition preserves root settings and uses equivalent suite discovery. No P1 Composer/bootstrap/CI is edited here, and no combined-green production claim follows from a local pass.
+P1's `scripts/prepare-integration.mjs` discovers Unit, Feature, Database, Integration **and Compatibility**. Its newer aec4e78 update pins P2 `3d23092`, updates that file allowlist and supplies P2_TEST_BINDINGS only behind disposable/disabled-provider guards; those earlier requests are resolved. It also adds the required failing CombinedP2LockOrderTest. Request this DBA pin and P2's future corrected commit. The local private composition preserves current P1 files and equivalent suite discovery. No P1 Composer/bootstrap/CI is edited here, and no green-production claim follows from the older passing baseline.
 
 For all real-model tests set DB_TEST_DISPOSABLE=1, MYSQL_INTEGRATION=1 and P1_COMBINED_TESTS=1. Use a dedicated `bc_dba_p1_*` MySQL8.4 database; set both DB_TEST_* and matching DB_* including DB_CONNECTION=mysql. Set APP_BASE_PATH in both the process environment and $_ENV to the combined backend, and DBA_TEST_AUTOLOAD to its reviewed root autoloader. MYSQL_TEST_BIN must include mysql/mysqldump so encrypted restore is exercised. Keep SMS_ENABLED/MAKE_ENABLED/P2_MODULES_ENABLED/OUTBOX_DISPATCH_ENABLED false. A private bootstrap may supply these explicit test settings. [Current acceptance](../../docs/INTEGRATION-ACCEPTANCE.md) records the exact run and all zero skips.
 
@@ -51,7 +51,7 @@ The default fixture uses P1 EventId, RecipientReference(inApp=true,sms=false), D
 
 ## Lock/photo/delivery review
 
-The current full P1/DBA profile includes IncidentPhotoProposalTest and DeliveryAcceptanceTest:178 tests/781 assertions,0 failures/errors/skips. The metadata candidate is **not an active migration**; only its disposable test calls database/proposals/incident-photo-metadata.php directly. See [unratified proposal](../../docs/INCIDENT-PHOTO-METADATA-PROPOSAL.md).
+The full P1 c0a32cf/DBA baseline includes IncidentPhotoProposalTest and DeliveryAcceptanceTest:178 tests/781 assertions,0 failures/errors/skips. P1 aec4e78 adds its required lock-order failure; see [latest exact totals](../../docs/INTEGRATION-ACCEPTANCE.md). The metadata candidate is **not an active migration**; only its disposable test calls database/proposals/incident-photo-metadata.php directly. See [unratified proposal](../../docs/INCIDENT-PHOTO-METADATA-PROPOSAL.md).
 
 Run the separate unresolved order gate from a migrated disposable composition with IDENTITY_ENABLED=true, exact DB_DATABASE=DB_TEST_DATABASE under p2_test_*, APP_ENV=testing and DB_TEST_DISPOSABLE=1:
 

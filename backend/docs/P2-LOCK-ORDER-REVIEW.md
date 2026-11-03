@@ -2,6 +2,8 @@
 
 **Unresolved.** Reviewed published P2 `3d23092883e0f24aa89b4c86ce93862e35880e3e` with P1 `c0a32cfaf4b26b86d57681cd1ed6aa42d6c87bb1` and DBA `3d2b3a2dd6afa88ea34b9a441f48da3863787bbd` plus DBA review tests. The user confirmed that P2's correction is not implemented/published yet. This review accepts no unseen correction and changes no teammate service.
 
+P1 published `aec4e78dab6557a41053d5a76c6ee217db73a16e` during verification. Its new CombinedP2LockOrderTest independently invokes the actual assignment and keeps the same order defect as a **required failing gate**. The newest P1 files were copied unchanged and the entire suite rerun; see [exact latest result](INTEGRATION-ACCEPTANCE.md). P1 now supplies guarded disposable real-class bindings and pins the current P2 candidate; production remains off.
+
 ## Confirmed defect
 
 [RelationalStore::transaction](https://github.com/Butvh/barangay-connect-frontend/blob/3d23092883e0f24aa89b4c86ce93862e35880e3e/backend/app/Services/P2/Persistence/RelationalStore.php#L60) takes supplied operations-person/SOS guards, users/appointments, then incident/assignment and facility rows. That order is suitable **only if the supplied person set is complete** and nested work adds no earlier-rank locks.
@@ -29,3 +31,5 @@ The manual gate is intentionally outside default PHPUnit discovery; it is a sepa
 5. Publish the failing regression, correction and exact tested commit. Retest actual response versus resident edit; competing assignment/transfer/completion/resolution; reversed actor/candidate ID orders; retained historical participants; same-incident/last-slot/stale-generation cases; and rollback/retry side effects. Assert the lock sequence as well as final counts. Later actual P1 role/status change versus P2 transfer and facility deactivation versus rescue remain required once P1 mutation services exist.
 
 DBA's CapacityGuard keys, normal Responder2/Rescuer1 capacity, occupied staffing3/6/6, immutable history and disabled emergency override stay unchanged. No P1/P2 source, Composer/bootstrap/CI or production binding is altered by this review. Keep lock acceptance unresolved until the corrected published candidate is independently rerun.
+
+One precise P1 test-harness request: CombinedP2LockOrderTest currently treats every integer user-query binding as a user ID, including a barangay predicate. Extract only ID predicate bindings (or exact acquired user rows) so a corrected implementation is not falsely rejected for a scope ID. DBA's review trace excludes scope bindings. This does not dismiss the present finding: the actual resident is newly locked after the incident at the published P2 head. P1 owns that test correction; no P1 test is patched here.
