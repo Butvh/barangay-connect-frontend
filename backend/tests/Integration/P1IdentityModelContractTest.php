@@ -44,7 +44,7 @@ class P1IdentityModelContractTest extends MysqlDbaTestCase
         $user = User::findOrFail(1);
         $request = Request::create('/api/v1/me');
         $request->setLaravelSession(app('session.store'));
-        $request->session()->put(['identity_role' => 'captain', 'identity_version' => 0]);
+        $request->session()->put(['identity_scope' => $user->barangay_id, 'identity_role' => 'captain', 'identity_version' => 0]);
         Auth::guard('web')->setUser($user);
         $middleware = new CurrentIdentity;
         $this->assertSame(200, $middleware->handle($request, fn () => response('', 200))->getStatusCode());

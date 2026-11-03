@@ -1,60 +1,47 @@
 <?php
 
-use App\Services\Messaging\CreateInAppNotification;
-use App\Services\Messaging\InAppNotificationHandler;
-use App\Services\Messaging\OutboxWriter;
+use Illuminate\Contracts\Console\Kernel;
+use Tests\Compatibility\ConfiguredAdapters;
+use Tests\Compatibility\ContractCheckFailure;
+use Tests\Compatibility\SqlContractProbe;
 
-/** Deliberately separate acceptance gate, not a production adapter or an expected-green unit test. */
-$autoload = getenv('DBA_TEST_AUTOLOAD');
-if (! $autoload || ! is_file($autoload)) {
-    throw new RuntimeException('Set the combined-checkout DBA_TEST_AUTOLOAD.');
-}
-require $autoload;
-$failures = [];
-$writer = OutboxWriter::class;
-$handler = CreateInAppNotification::class;
-$interface = InAppNotificationHandler::class;
-if (! class_exists($writer)) {
-    $failures[] = 'P2 transactional OutboxWriter is absent.';
-} else {
-    if (! is_subclass_of($writer, App\Contracts\Events\OutboxWriter::class)) {
-        $failures[] = 'P2 writer does not implement the shared P1 OutboxWriter interface.';
-    }
-    $method = new ReflectionMethod($writer, 'record');
-    if ((string) $method->getParameters()[5]->getType() !== DateTimeImmutable::class) {
-        $failures[] = 'P2 occurredAt is not the shared DateTimeImmutable argument.';
-    }
-}
-if (! class_exists($handler) || ! is_subclass_of($handler, $interface)) {
-    $failures[] = 'P2 handler does not implement handle(OutboxEvent, OutboxRecipient): void.';
-}
-if (interface_exists(App\Contracts\Events\OutboxWriter::class)) {
-    $p1 = new ReflectionMethod(App\Contracts\Events\OutboxWriter::class, 'record');
-    if (count($p1->getParameters()) !== 7) {
-        $failures[] = 'P1 OutboxWriter still needs the explicit optional bounded context argument.';
-    }
-}
-$base = dirname(__DIR__, 2);
-$support = $base.'/tests/P2/support.php';
-if (is_file($support) && class_exists($writer)) {
-    require $support; // P2-owned MemoryStore is a contract fake only; no SQL or production binding.
-    $store = new MemoryStore;
-    $actual = new $writer($store, static fn () => '2026-11-03T00:00:00Z');
-    try {
-        $store->transaction([], fn () => $actual->record('8c3f1c74-98ef-4f27-a462-48beb6df4620', 'incident.created.v2', 1, 1,
-            [['user_id' => 1, 'audience' => 'official', 'in_app' => true, 'sms' => true]], '2026-11-03T00:00:00Z', ['status' => 'Pending']));
-        $row = $store->select('outbox_events')[0] ?? [];
-        if (($row['version'] ?? null) !== 2 || ($row['type'] ?? null) !== 'incident.created.v2') {
-            $failures[] = 'P2 writer did not persist the canonical v2 fixture.';
-        }
-    } catch (Throwable) {
-        $failures[] = 'P2 writer rejects the canonical UUID/v2/relational-recipient fixture.';
-    }
-}
-foreach ($failures as $message) {
-    echo 'BLOCKED: '.$message.PHP_EOL;
-}
-if ($failures) {
+/** Real SQL acceptance gate. No portable-wrapper names, MemoryStore or test-double production binding. */
+$autoload = getenv('DBA_TEST_AUTOLOAD') ?: dirname(__DIR__, 2).'/vendor/autoload.php';
+if (! is_file($autoload)) {
+    fwrite(STDERR, "BLOCKED: reviewed_autoloader_unavailable\n");
     exit(2);
 }
-echo "Shared writer/handler signatures and canonical fixture pass. Actual SQL/domain race acceptance remains separately required.\n";
+require_once $autoload;
+$options = getopt('', ['app-base:', 'outbox:', 'handler:', 'sms-intent']);
+$base = $options['app-base'] ?? getenv('APP_BASE_PATH') ?: dirname(__DIR__, 2);
+if (! is_string($base) || ! is_file($base.'/bootstrap/app.php')) {
+    fwrite(STDERR, "BLOCKED: p1_application_unavailable\n");
+    exit(2);
+}
+try {
+    $app = require $base.'/bootstrap/app.php';
+    $app->make(Kernel::class)->bootstrap();
+    $probe = new SqlContractProbe($app);
+    $probe->assertDisposable();
+    $selection = (new ConfiguredAdapters($app))->resolve(array_filter(['outbox' => $options['outbox'] ?? null, 'notification' => $options['handler'] ?? null], fn ($v) => $v !== null));
+    foreach ($selection['diagnostics'] as $code) {
+        echo 'BLOCKED: '.$code.PHP_EOL;
+    }
+    if ($selection['diagnostics']) {
+        exit(2);
+    }
+    $report = $probe->run($selection['adapters']['outbox'], $selection['adapters']['notification'], smsIntent: array_key_exists('sms-intent', $options));
+    foreach ($selection['selected'] as $role => $class) {
+        echo 'SELECTED '.$role.': '.$class.PHP_EOL;
+    }
+    foreach ($report['checks'] as $check) {
+        echo 'PASS: '.$check.PHP_EOL;
+    }
+    echo "PASS: configured typed SQL/receipt contract; provider calls=0. SQL-domain races remain a separate gate.\n";
+} catch (ContractCheckFailure $e) {
+    fwrite(STDERR, 'BLOCKED: '.$e->getMessage().PHP_EOL);
+    exit(2);
+} catch (Throwable) {
+    fwrite(STDERR, "BLOCKED: configured_contract_probe_failed (inspect private test diagnostics)\n");
+    exit(2);
+}

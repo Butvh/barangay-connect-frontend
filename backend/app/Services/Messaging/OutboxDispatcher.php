@@ -10,14 +10,18 @@ use Illuminate\Support\Str;
 
 final class OutboxDispatcher
 {
-    public function dispatchOne(): bool
+    public function dispatchOne(?string $eventId = null): bool
     {
         if (DB::transactionLevel() !== 0) {
             throw new \LogicException('dispatcher_requires_committed_connection');
         }
-        $event = DB::transaction(function () {
+        if ($eventId !== null && ! Str::isUuid($eventId)) {
+            throw new \InvalidArgumentException('invalid_dispatch_target');
+        }
+        $event = DB::transaction(function () use ($eventId) {
             $urgentTypes = array_keys(array_filter(config('messaging.events'), fn ($d) => $d['route'] === 'urgent'));
             $event = OutboxEvent::whereNull('blocked_at')->whereNull('dispatched_at')->where('attempts', '<', 10)
+                ->when($eventId !== null, fn ($q) => $q->where('event_id', $eventId))
                 ->where(fn ($q) => $q->whereNull('next_attempt_at')->orWhere('next_attempt_at', '<=', now()))
                 ->where(fn ($q) => $q->whereNull('lease_until')->orWhere('lease_until', '<', now()))
                 ->orderByRaw('CASE WHEN type IN ('.implode(',', array_fill(0, count($urgentTypes), '?')).') THEN 0 ELSE 1 END', $urgentTypes)

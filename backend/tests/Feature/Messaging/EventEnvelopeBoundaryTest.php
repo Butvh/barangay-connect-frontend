@@ -16,6 +16,15 @@ use Illuminate\Support\Str;
 
 class EventEnvelopeBoundaryTest extends MessagingTestCase
 {
+    public function test_targeted_dispatch_does_not_consume_unrelated_committed_events(): void
+    {
+        $older = $this->canonicalEvent(0);
+        $target = $this->canonicalEvent(0);
+        app(OutboxDispatcher::class)->dispatchOne($target->event_id);
+        $this->assertNotNull($target->fresh()->dispatched_at);
+        $this->assertNull($older->fresh()->dispatched_at);
+    }
+
     private function statusEvent(bool $sms = false): OutboxEvent
     {
         $event = OutboxEvent::forceCreate(['event_id' => (string) Str::uuid(), 'version' => 2, 'type' => 'incident.status_changed.v2',

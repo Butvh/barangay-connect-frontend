@@ -22,6 +22,9 @@ final class EventContract
         if (! Str::isUuid($event->event_id) || $event->resource_id < 1 || $event->barangay_id < 1 || $event->resource_id > 9007199254740991 || $event->barangay_id > 9007199254740991) {
             throw new EventContractViolation('invalid_event_identity');
         }
+        if ($event->version === 2 && ! preg_match('/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/D', $event->event_id)) {
+            throw new EventContractViolation('invalid_event_identity');
+        }
         try {
             $at = $event->occurred_at;
         } catch (\Throwable) {

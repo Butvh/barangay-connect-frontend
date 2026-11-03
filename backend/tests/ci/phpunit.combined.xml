@@ -6,6 +6,7 @@
       <directory>../Feature</directory>
       <directory>../Database</directory>
       <directory>../Integration</directory>
+      <directory>../Compatibility</directory>
     </testsuite>
   </testsuites>
   <php>

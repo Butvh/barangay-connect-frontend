@@ -8,6 +8,12 @@ use Tests\DbaTestCase;
 
 class EventContractV2Test extends DbaTestCase
 {
+    public function test_new_v2_ids_must_match_p1_canonical_uuid_v4_contract(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        EventContract::definition($this->incident(['event_id' => '018f1c74-98ef-7f27-a462-48beb6df4620']));
+    }
+
     private function incident(array $overrides = []): OutboxEvent
     {
         return (new OutboxEvent)->forceFill(array_replace([
