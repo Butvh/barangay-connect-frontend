@@ -2,8 +2,10 @@
 
 ## November 3, 2026 — latest DBA v2 follow-up
 
-- Repinned DBA f641918; included its Integration suite. All prior real-model generation/role/status/scope lifecycle skips execute; a stale DBA scope fixture remains owner-blocking.
-- Added exact typed v2 event contexts and explicit recipient audience; interface version1 remains distinct from persisted envelope version2. No new v1 emissions or dispatch-time aliases.
+- Adopted DBA3d2b3a2's corrected scope fixture and configured-production-adapter SQL acceptance. Preserved the reviewed EventContext(status) and RecipientReference(userId,inApp,sms) constructors; new context families use forEvent and audience is server-derived with an optional validated intent hint. Added Compatibility discovery without binding test doubles.
+
+- Initially repinned DBA f641918 and exposed its stale scope fixture; the current3d2b3a2 pin resolves it. All prior real-model generation/role/status/scope lifecycle skips execute.
+- Added exact typed v2 event contexts and validated persisted recipient audience; interface version1 remains distinct from persisted envelope version2. No new v1 emissions or dispatch-time aliases.
 - Published minimal authorized household/approval/facility/personnel/verification/people references, original-generation locking checks, private-photo ports/schema request and explicit503 routes.
 - Fixed deferred/failed polling refresh revision retention and old-account read cancellation. Added a form-owned immutable submission-intent helper; incomplete domains/forms remain unregistered.
 - Real-browser QA exposed competing successful sign-out redirects; explicit sign-in/out now distinguish confirmed caller navigation from automatic background revocation/account-switch redirects.

@@ -4,7 +4,7 @@ Status: P1 compatibility follow-up, November 3, 2026. **Not a completed backend 
 
 November3 update: [compatibility matrix and exact owner requests](COMPATIBILITY.md) supersede the initial interface proposals below. It pins all three actual branches and documents candidate typed contracts, safe registration gates and reproducible combined tests. Joint acceptance remains pending; no live feature is enabled.
 
-The DBA's draft [PR48](https://github.com/Butvh/barangay-connect-frontend/pull/48), head `f641918`, now supplies the additive security generation, v2 event storage and locking helpers. Its source is overlaid unchanged only in private combined tests, not merged into this branch. P2's published `c902d9f` still lacks compatible production adapters. P1 supplies foundation, safe reference contracts, transport/registration and tests; it creates no models, migrations, SMS service or competing business writer.
+The DBA's draft [PR48](https://github.com/Butvh/barangay-connect-frontend/pull/48), head `3d2b3a2`, now supplies the additive security generation, v2 event storage and locking helpers. Its source is overlaid unchanged only in private combined tests, not merged into this branch. P2's published `c902d9f` still lacks compatible production adapters. P1 supplies foundation, safe reference contracts, transport/registration and tests; it creates no models, migrations, SMS service or competing business writer.
 
 ## Runtime and safe local setup
 
@@ -88,7 +88,7 @@ DBA also supplies households/map percentages, unique normalized email, private d
 
 ### P2 event contract request
 
-The candidate signatures now use `AuditSummary`, UUIDv4 `EventId`, `DateTimeImmutable` and a bounded historical `EventContext`; see `COMPATIBILITY.md` and `app/Contracts/Events`. `scope` is the barangay ID; actor/role come from the server; nullable actors are only explicit system actions. `ResourceReference` contains type/id. `RecipientReference(userId,inApp,sms,audience)` maps to PR48's recipient/channel rows, with no phone/email/credential/document payload. P2's current array/32hex/string-time writers are not yet compatible bindings.
+The candidate signatures now use `AuditSummary`, UUIDv4 `EventId`, `DateTimeImmutable` and a bounded historical `EventContext`; see `COMPATIBILITY.md` and `app/Contracts/Events`. `scope` is the barangay ID; actor/role come from the server; nullable actors are only explicit system actions. `ResourceReference` contains type/id. `RecipientReference(userId,inApp=true,sms=false,audience=null)` maps to PR48's recipient/channel rows; P2 derives and persists the intended audience from authorized source and validates any optional server intent hint, with no phone/email/credential/document payload. P2's current array/32hex/string-time writers are not yet compatible bindings.
 
 Both implementations must use the caller's transaction/connection, perform no HTTP, create no independently committed side write, and leave dispatch to DBA. Persist a unique event ID/deduplication key. Resources are reread/authorized by consumers; no client-controlled URL, recipient or arbitrary template. Type names and versioned templates still require all three reviewers' agreement.
 

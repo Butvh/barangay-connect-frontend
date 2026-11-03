@@ -2,7 +2,7 @@
 
 Current baseline pins are in integration-lock.json. Final follow-up P1/synthetic-merge SHAs, CI totals and browser artifacts are recorded in [draft PR49](https://github.com/Butvh/barangay-connect-frontend/pull/49). A standalone green job is not combined acceptance.
 
-## Current measured baseline
+## Historical pre-fix baseline
 
 The follow-up first repinned unchanged owner source to DBA f641918d37ff2ecd49cc47b3437bb0e159d6a10a and P2 c902d9f7239a8fcefdddf293fbc531876548c10a; P1 preflight head41b6c42fc536237b10034b3eb3fe058f9ee71fc1. [Run41604926592](https://github.com/Butvh/barangay-connect-frontend/actions/runs/41604926592) tests clean synthetic merge5a9876c31f7c0a8278a8a371594797d81a44af60.
 
@@ -15,9 +15,13 @@ The follow-up first repinned unchanged owner source to DBA f641918d37ff2ecd49cc4
 | Owner preservation |135 pinned DBA/P2 source files retain their bytes; no owner code was changed. |
 | Known owner gates | Read-only Pint fails on P2 NotificationController. DBA compatibility script reports four P2 writer/time/handler/canonical-fixture mismatches. All later independent gates still run; no failures are suppressed. |
 
+## Current DBA revision and P1 checks
+
+The latest pin is DBA3d2b3a2dd6afa88ea34b9a441f48da3863787bbd. It fixes the identity_scope fixture, accepts the typed PHP boundary, preserves microseconds/strict v2 UUIDv4 and replaces portable-wrapper checks with configured production-port SQL/receipt acceptance. Those earlier fixture/four-wrapper blocker statements in the historical run above are superseded. P1 preserves the reviewed incident-status/recipient constructors, adds all new Compatibility tests to discovery and retains the new CLI's truthful unconfigured-production-port failure.
+
 ## P1 follow-up implementation checks
 
-Local owned PHP: **40 passed,20 skipped,119 assertions** before final committed CI. Skips require the actual combined MySQL/DBA fixture; no local real-MySQL server is claimed. The committed job must execute those tests against the pinned actual models. The six historical identity skips were changed to explicit schema/cast assertions in the combined profile.
+Local owned PHP: **41 passed,20 skipped,123 assertions** before final committed CI. Skips require the actual combined MySQL/DBA fixture; no local real-MySQL server is claimed. The committed job must execute those tests against the pinned actual models. The six historical identity skips were changed to explicit schema/cast assertions in the combined profile.
 
 Local JS: original405 checks plus16 HTTP/session/lifecycle checks, three new polling consistency scenarios, immutable submission intent, sign-out and bridge checks pass. Both frontend/backend artifact gates pass. Test-only Playwright1.64.1 is separately locked under tests/browser and installed outside the repository; npm audit reports no advisories. It is not a frontend runtime dependency.
 

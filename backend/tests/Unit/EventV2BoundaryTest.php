@@ -35,12 +35,23 @@ final class EventV2BoundaryTest extends TestCase
         $context->payloadFor('facility.updated.v2');
     }
 
-    public function test_v2_recipient_requires_an_explicit_valid_audience(): void
+    public function test_v2_recipient_serialization_requires_a_valid_persisted_audience(): void
     {
         $ref = new RecipientReference(42, true, false, 'official');
         $this->assertSame(['user_id' => 42, 'audience' => 'official', 'in_app' => true, 'sms' => false], $ref->toArray());
         $this->expectException(InvalidArgumentException::class);
         new RecipientReference(42, true, false, 'admin');
+    }
+
+    public function test_dba_incident_constructor_and_server_derived_audience_remain_compatible(): void
+    {
+        $context = new EventContext('Pending');
+        $this->assertSame('Pending', $context->status);
+        $this->assertSame(['status' => 'Pending'], $context->payloadFor('incident.created.v2'));
+        $recipient = new RecipientReference(42);
+        $this->assertSame('official', $recipient->toArray('official')['audience']);
+        $this->expectException(InvalidArgumentException::class);
+        $recipient->toArray();
     }
 
     public function test_actual_dba_v2_fixture_agrees_with_the_typed_boundary(): void

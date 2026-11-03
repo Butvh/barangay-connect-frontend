@@ -9,26 +9,37 @@ final readonly class EventContext
 {
     private const STAGES = ['Pending', 'Acknowledged', 'Responding', 'Rescue in progress', 'Resolved'];
 
-    public function __construct(private array $values = [], private ?string $eventType = null)
+    private array $values;
+
+    public function __construct(public ?string $status = null, private ?string $eventType = null, ?array $values = null)
     {
+        $this->values = $values ?? ($status === null ? [] : ['status' => $status]);
         if ($eventType === null) {
-            if ($values !== []) {
-                throw new InvalidArgumentException('Nonempty snapshots require an explicit event family.');
+            if ($values !== null || ($status !== null && ! in_array($status, self::STAGES, true))) {
+                throw new InvalidArgumentException('Only the reviewed incident snapshot has an unbound constructor.');
             }
         } else {
-            self::validate($eventType, $values);
+            self::validate($eventType, $this->values);
+            if (($this->values['status'] ?? null) !== $status) {
+                throw new InvalidArgumentException('The event snapshot fields must agree.');
+            }
         }
     }
 
     public static function forEvent(string $type, array $payload): self
     {
-        return new self($payload, $type);
+        self::validate($type, $payload);
+
+        return new self($payload['status'] ?? null, $type, $payload);
     }
 
     public function payloadFor(string $type): array
     {
         if ($this->eventType !== null && $this->eventType !== $type) {
             throw new InvalidArgumentException('An event snapshot cannot change families.');
+        }
+        if ($this->eventType === null && $this->status !== null && ! in_array($type, ['incident.created.v2', 'incident.assigned.v2', 'incident.status_changed.v2', 'incident.rescue_required.v2'], true)) {
+            throw new InvalidArgumentException('Non-incident snapshots require the exact bound family factory.');
         }
         self::validate($type, $this->values);
 
