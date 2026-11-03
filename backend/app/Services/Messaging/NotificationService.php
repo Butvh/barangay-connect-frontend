@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Messaging;
 
+use App\Contracts\P2\ActorReferences;
 use App\Contracts\P2\ReferenceData;
 use App\Contracts\P2\Store;
 use App\Services\P2\Actor;
@@ -15,7 +16,9 @@ final class NotificationService
 
     private function fresh(Actor $a): void
     {
-        $current = $this->refs->actorFor($a->id);
+        $current = $this->refs instanceof ActorReferences
+            ? $this->store->transaction(['person:'.$a->id], fn () => $this->refs->locked($a))
+            : $this->refs->actorFor($a->id);
         if ($current->role !== $a->role || $current->barangayId !== $a->barangayId) {
             throw new Problem('FORBIDDEN', 'Account access changed.');
         }

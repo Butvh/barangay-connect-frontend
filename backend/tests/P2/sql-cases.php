@@ -1,0 +1,264 @@
+<?php
+
+use App\Contracts\Events\EventContext;
+use App\Contracts\Events\EventId;
+use App\Contracts\Events\OutboxWriter;
+use App\Contracts\P2\ReferenceData;
+use App\Contracts\P2\Store;
+use App\Http\Controllers\P2\RevisionController;
+use App\Models\Barangay;
+use App\Models\DeliveryReceipt;
+use App\Models\Facility;
+use App\Models\Household;
+use App\Models\Notification;
+use App\Models\OutboxEvent;
+use App\Models\PersonnelAppointment;
+use App\Models\User;
+use App\Models\Verification;
+use App\Providers\P2ServiceProvider;
+use App\Services\Audit\AuditRecorder;
+use App\Services\Civic\CivicService;
+use App\Services\Identity\EffectiveIdentity;
+use App\Services\Incidents\IncidentService;
+use App\Services\Messaging\NotificationService;
+use App\Services\Messaging\OutboxDispatcher;
+use App\Services\P2\Actor;
+use App\Services\P2\Persistence\RelationalStore;
+use App\Services\P2\Persistence\TypedOutboxWriter;
+use App\Services\P2\Problem;
+use App\Services\Reports\ReportService;
+use App\Support\ApiProblem;
+use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
+
+function verify(bool $ok, string $message): void
+{
+    if (! $ok) {
+        throw new RuntimeException($message);
+    }
+}
+function saveModel(string $class, array $attributes)
+{
+    $model = new $class;
+    $model->forceFill($attributes)->save();
+
+    return $model;
+}
+function expectsProblem(Closure $work, string $code): void
+{
+    try {
+        $work();
+    } catch (Problem $error) {
+        verify($error->errorCode === $code, 'Wrong rejection: '.$error->errorCode);
+
+        return;
+    }
+    throw new RuntimeException('Expected '.$code);
+}
+function caseTest(string $name, Closure $work): void
+{
+    $work();
+    echo 'PASS '.$name.PHP_EOL;
+}
+
+$version = DB::selectOne('SELECT VERSION() AS version')->version;
+verify(str_starts_with($version, '8.4.') && ! str_contains($version, 'MariaDB'), 'Genuine MySQL 8.4 required.');
+verify(DB::table('users')->count() === 0, 'Use a fresh isolated test database; existing rows are not erased.');
+config(['identity.enabled' => true, 'hashing.bcrypt.rounds' => 4, 'messaging.sms.enabled' => false, 'messaging.make.enabled' => false, 'session.driver' => 'array', 'cache.default' => 'array']);
+require __DIR__.'/bindings.php';
+$selectedStore = new RelationalStore;
+$app->instance(Store::class, $selectedStore);
+$app->register(P2ServiceProvider::class);
+caseTest('P2 provider preserves foundation-selected implementation bindings', function () use ($app, $selectedStore) {
+    verify($app->make(Store::class) === $selectedStore, 'P2 replaced the foundation-selected Store binding.');
+});
+$scope = saveModel(Barangay::class, ['name' => 'P2 isolated fixture']);
+$home = saveModel(Household::class, ['barangay_id' => $scope->id, 'address' => 'Fixture Road', 'map_x' => 23, 'map_y' => 45]);
+$users = [];
+foreach (['resident', 'captain', 'secretary', 'responder', 'rescuer', 'resident', 'responder'] as $index => $role) {
+    $u = saveModel(User::class, ['barangay_id' => $scope->id, 'household_id' => $home->id, 'full_name' => 'Fixture '.$index, 'email' => 'fixture'.$index.'@example.test', 'password' => 'Fixture123', 'account_status' => 'Active', 'is_resident' => $role === 'resident', 'is_captain' => $role === 'captain']);
+    if (in_array($role, ['secretary', 'responder', 'rescuer'])) {
+        saveModel(PersonnelAppointment::class, ['user_id' => $u->id, 'barangay_id' => $scope->id, 'role' => $role, 'source' => 'external', 'status' => 'Active']);
+    }
+    $users[] = $u;
+}
+saveModel(Verification::class, ['resident_id' => $users[0]->id, 'barangay_id' => $scope->id, 'review_status' => 'Approved']);
+$refs = $app->make(ReferenceData::class);
+$store = $app->make(Store::class);
+$incidents = $app->make(IncidentService::class);
+$civic = $app->make(CivicService::class);
+$resident = $refs->actorFor($users[0]->id);
+$captain = $refs->actorFor($users[1]->id);
+$secretary = $refs->actorFor($users[2]->id);
+$alert = null;
+
+caseTest('MySQL durable SOS, hashed retry key and no pointer columns', function () use ($incidents, $resident, &$alert) {
+    $alert = $incidents->create($resident, ['alert_type' => 'Flood', 'victim_count' => null], 'sql-sos-intent');
+    $retry = $incidents->create($resident, ['alert_type' => 'Flood', 'victim_count' => null], 'sql-sos-intent');
+    verify($retry['id'] === $alert['id'] && DB::table('emergency_alerts')->count() === 1, 'Duplicate SOS.');
+    verify($alert['assigned_responder_id'] === null && $alert['map_x'] === 23.0, 'Bad DTO.');
+    verify(DB::table('idempotency_requests')->value('key_digest') === hash_hmac('sha256', $resident->id.'|alerts.create|sql-sos-intent', config('app.key')), 'Raw key storage.');
+    verify(DB::table('incident_status_history')->value('sequence') === 1, 'History sequence missing.');
+    verify(DB::table('activity_logs')->count() === 1 && DB::table('outbox_events')->count() === 1, 'Missing atomic evidence.');
+});
+caseTest('Unverified user and forged tenant denied by current reference data', function () use ($incidents, $refs, $users, $resident) {
+    expectsProblem(fn () => $incidents->create($refs->actorFor($users[5]->id), [], 'unverified-key'), 'FORBIDDEN');
+    expectsProblem(fn () => $incidents->create(new Actor($resident->id, 9999, 'resident'), [], 'forged-scope'), 'AUTH');
+});
+caseTest('Manual assignment, transfer assessment reset, rescue snapshot and explicit resolution use SQL', function () use ($incidents, $secretary, $captain, $refs, $users, $scope, &$alert) {
+    $alert = $incidents->assign($secretary, $alert['id'], ['personnel_id' => $users[3]->id, 'expected_revision' => 0], true);
+    expectsProblem(fn () => $incidents->assign($secretary, $alert['id'], ['personnel_id' => $users[3]->id, 'expected_revision' => 0], true), 'CONFLICT');
+    $alert = $incidents->response($refs->actorFor($users[3]->id), $alert['id'], ['response_type' => 'Assessment', 'response_status' => 'Responding', 'rescue_required' => true], 'response-first');
+    $assignment = DB::table('alert_assignments')->where('alert_id', $alert['id'])->where('role', 'responder')->first();
+    $alert = $incidents->changeAssignment($captain, $assignment->id, ['personnel_id' => $users[6]->id, 'reason' => 'Fixture transfer', 'expected_revision' => $alert['assignment_revision']], true);
+    expectsProblem(fn () => $incidents->assign($secretary, $alert['id'], ['role' => 'rescuer', 'personnel_id' => $users[4]->id, 'expected_revision' => $alert['assignment_revision']]), 'INVALID_STATE');
+    expectsProblem(fn () => $incidents->response($refs->actorFor($users[3]->id), $alert['id'], ['response_type' => 'Assessment', 'response_status' => 'Completed', 'rescue_required' => true], 'former-response'), 'FORBIDDEN');
+    $alert = $incidents->response($refs->actorFor($users[6]->id), $alert['id'], ['response_type' => 'Assessment', 'response_status' => 'Completed', 'rescue_required' => true], 'response-current');
+    $alert = $incidents->assign($secretary, $alert['id'], ['role' => 'rescuer', 'personnel_id' => $users[4]->id, 'expected_revision' => $alert['assignment_revision']]);
+    $facility = saveModel(Facility::class, ['managed_by_barangay_id' => $scope->id, 'name' => 'SQL Shelter', 'type' => 'Evacuation Center', 'address' => 'Shelter Road', 'active' => true]);
+    $alert = $incidents->rescue($refs->actorFor($users[4]->id), $alert['id'], ['facility_id' => $facility->id, 'rescue_status' => 'Completed'], 'rescue-current');
+    verify($alert['status'] === 'Rescue in progress' && DB::table('alert_assignments')->where('status', 'active')->count() === 0, 'Completion resolved automatically or retained capacity.');
+    $facility->forceFill(['name' => 'Changed shelter'])->save();
+    $alert = $incidents->resolve($captain, $alert['id'], ['expected_revision' => $alert['assignment_revision']]);
+    verify($alert['status'] === 'Resolved' && $alert['rescues'][0]['facility']['name'] === 'SQL Shelter', 'Destination snapshot or resolution wrong.');
+});
+caseTest('No-rescue Completed branch still requires explicit official resolution', function () use ($incidents, $resident, $secretary, $captain, $refs, $users) {
+    $r = $incidents->create($resident, [], 'no-rescue-sos');
+    $r = $incidents->assign($secretary, $r['id'], ['personnel_id' => $users[3]->id, 'expected_revision' => 0], true);
+    $r = $incidents->response($refs->actorFor($users[3]->id), $r['id'], ['response_type' => 'Assessment', 'response_status' => 'Completed', 'rescue_required' => false], 'no-rescue-response');
+    verify($r['status'] === 'Responding', 'Response completion resolved alert.');
+    $r = $incidents->resolve($captain, $r['id'], ['expected_revision' => $r['assignment_revision']]);
+    verify($r['status'] === 'Resolved', 'No-rescue explicit resolution failed.');
+});
+caseTest('Typed outbox rejects unimplemented P1 source families and sends no SMS', function () use ($scope) {
+    $writer = new TypedOutboxWriter;
+    expectsProblem(fn () => DB::transaction(fn () => $writer->record(EventId::generate(), 'security.updated.v2', $scope->id, 1, [], new DateTimeImmutable)), 'UNAVAILABLE');
+    verify(DB::table('outbox_recipients')->where('sms', true)->count() === 0, 'SMS implicitly enabled.');
+});
+caseTest('Feedback persists typed nullable data and independent operational statuses', function () use ($civic, $resident, $captain) {
+    $complaint = $civic->submitFeedback($resident, ['type' => 'complaint', 'category' => 'Drainage', 'description' => 'Fixture concern'], 'feedback-fixture');
+    $general = $civic->submitFeedback($resident, ['type' => 'general', 'rating' => 4, 'comment' => 'Fixture feedback'], 'general-fixture');
+    verify($complaint['comment'] === null && $general['status'] === null && $general['rating'] === 4, 'Feedback kind mapping wrong.');
+    $resolved = $civic->resolveFeedback($captain, $complaint['id'], ['expected_revision' => $complaint['revision']]);
+    verify($resolved['status'] === 'Resolved', 'Complaint resolution failed.');
+});
+caseTest('Injected writer failure rolls back SQL state, history, audit and command outcome', function () use ($app, $store, $refs, $scope, $home) {
+    $u = saveModel(User::class, ['barangay_id' => $scope->id, 'household_id' => $home->id, 'full_name' => 'Rollback fixture', 'email' => 'rollback@example.test', 'password' => 'Fixture123', 'account_status' => 'Active', 'is_resident' => true]);
+    saveModel(Verification::class, ['resident_id' => $u->id, 'barangay_id' => $scope->id, 'review_status' => 'Approved']);
+    $before = array_map(fn ($t) => DB::table($t)->count(), ['emergency_alerts', 'incident_status_history', 'activity_logs', 'idempotency_requests', 'outbox_events']);
+    $clock = fn () => gmdate(DATE_ATOM);
+    $fault = new class implements OutboxWriter
+    {
+        public function record(EventId $eventId, string $type, int $scope, int $resourceId, array $recipientRefs, DateTimeImmutable $occurredAt, EventContext $context = new EventContext): void
+        {
+            throw new RuntimeException('injected-storage-failure');
+        }
+    };
+    $service = new IncidentService($store, $refs, $app->make(AuditRecorder::class), new App\Services\Messaging\OutboxWriter($store, $clock, $fault), $clock);
+    try {
+        $service->create($refs->actorFor($u->id), [], 'rollback-fixture');
+        throw new RuntimeException('Fault missing.');
+    } catch (RuntimeException $e) {
+        verify($e->getMessage() === 'injected-storage-failure', 'Unexpected rollback failure: '.$e->getMessage());
+    }
+    $after = array_map(fn ($t) => DB::table($t)->count(), ['emergency_alerts', 'incident_status_history', 'activity_logs', 'idempotency_requests', 'outbox_events']);
+    verify($before === $after, 'Partial SQL write escaped rollback.');
+});
+caseTest('Publish/edit/archive stores actual author columns and immutable snapshot history', function () use ($civic, $captain) {
+    $item = $civic->publish($captain, ['title' => 'Fixture advisory', 'content' => 'Isolated content'], 'publish-fixture');
+    verify($item['author']['id'] === $captain->id && DB::table('announcements')->value('author_role') === 'captain', 'Author mapping wrong.');
+    $edited = $civic->edit($captain, $item['id'], ['expected_revision' => 1, 'title' => 'Edited advisory']);
+    $archived = $civic->archive($captain, $item['id'], ['expected_revision' => $edited['revision']]);
+    verify($archived['archived_by'] === $captain->id && count($archived['history']) === 3, 'Archive history mapping wrong.');
+});
+caseTest('DBA v2 dispatcher persists event-time notifications exactly once without provider sends', function () use ($app) {
+    $dispatcher = $app->make(OutboxDispatcher::class);
+    while ($dispatcher->dispatchOne()) {
+    }
+    verify(Notification::count() > 2 && DeliveryReceipt::where('state', 'complete')->count() === Notification::count(), 'In-app receipts incomplete.');
+    verify(OutboxEvent::whereNull('dispatched_at')->count() === 0 && OutboxEvent::whereNotNull('blocked_at')->count() === 0, 'Blocked or incomplete event.');
+    $first = Notification::query()->where('resource_type', 'incident')->orderBy('id')->first();
+    verify($first->event_status === 'Pending', 'Delayed delivery substituted later source status.');
+    $count = Notification::count();
+    $dispatcher->dispatchOne();
+    verify(Notification::count() === $count && DB::table('sms_deliveries')->count() === 0 && DB::table('make_dispatches')->count() === 0, 'Duplicate/provider intent.');
+});
+caseTest('SQL notification mutations and source revocation preserve recipient privacy', function () use ($app, $captain, $secretary, $users) {
+    $service = $app->make(NotificationService::class);
+    $rows = $service->list($secretary);
+    verify(count($rows) > 0, 'No authorized notification.');
+    verify(is_string($rows[0]['event_id']) && Str::isUuid($rows[0]['event_id']), 'Notification event UUID was corrupted.');
+    $id = $rows[0]['id'];
+    expectsProblem(fn () => $service->get($captain, $id), 'NOT_FOUND');
+    verify($service->setRead($secretary, $id, true)['is_read'] === true, 'Read failed.');
+    verify($service->setRead($secretary, $id, false)['is_read'] === false, 'Unread failed.');
+    $service->markAllRead($secretary);
+    $service->clearRead($secretary);
+    verify($service->list($secretary) === [], 'Clear read failed.');
+    $users[2]->forceFill(['account_status' => 'Inactive'])->save();
+    try {
+        $service->list($secretary);
+        throw new RuntimeException('Revoked account read succeeded.');
+    } catch (ApiProblem $e) {
+        verify($e->getCode() === 0, 'Unexpected revocation exception.');
+    }
+});
+caseTest('Real P1 HTTP denies anonymous access in the SQL composition', function () use ($app) {
+    verify(Schema::hasColumn('users', 'auth_version'), 'Actual owner security generation is missing.');
+    $kernel = $app->make(Kernel::class);
+    $response = $kernel->handle(Request::create('/api/v1/alerts', 'GET', [], [], [], ['HTTP_ACCEPT' => 'application/json']));
+    verify($response->getStatusCode() === 401, 'Expected guest 401; received '.$response->getStatusCode().'.');
+});
+$revisionController = $app->make(RevisionController::class);
+$residentRequest = Request::create('/api/v1/revisions/alerts');
+$residentRequest->setUserResolver(fn () => $users[0]);
+$residentRequest->attributes->set('effective_identity', EffectiveIdentity::fromUser($users[0]->fresh()));
+$beforeNearby = $revisionController->show($residentRequest, 'alerts')->getData(true)['data']['revision'];
+caseTest('Independent processes serialize same-resident SOS through real guards and idempotency', function () use ($users, $scope) {
+    saveModel(Verification::class, ['resident_id' => $users[5]->id, 'barangay_id' => $scope->id, 'review_status' => 'Approved']);
+    $barrier = tempnam(sys_get_temp_dir(), 'p2-race-');
+    unlink($barrier);
+    $workers = [];
+    try {
+        for ($i = 0; $i < 2; $i++) {
+            $pipes = [];
+            $process = proc_open([PHP_BINARY, __DIR__.'/sql-worker.php', (string) $users[5]->id, $barrier], [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
+            verify(is_resource($process), 'Unable to start SQL race worker.');
+            fclose($pipes[0]);
+            $workers[] = [$process, $pipes];
+        }
+        touch($barrier);
+        $ids = [];
+        foreach ($workers as [$process, $pipes]) {
+            $output = stream_get_contents($pipes[1]);
+            $error = stream_get_contents($pipes[2]);
+            fclose($pipes[1]);
+            fclose($pipes[2]);
+            verify(proc_close($process) === 0, 'Race worker failed: '.$error);
+            $ids[] = json_decode($output, true, flags: JSON_THROW_ON_ERROR)['id'];
+        }
+        verify($ids[0] === $ids[1] && DB::table('emergency_alerts')->where('resident_id', $users[5]->id)->count() === 1, 'SOS race produced duplicates.');
+    } finally {
+        if (is_file($barrier)) {
+            unlink($barrier);
+        }
+    }
+});
+caseTest('Resident alert revision includes sanitized nearby changes and stays stable otherwise', function () use ($revisionController, $residentRequest, $beforeNearby) {
+    $current = $revisionController->show($residentRequest, 'alerts')->getData(true)['data']['revision'];
+    verify($current !== $beforeNearby, 'Nearby SOS did not invalidate the subscribed alerts source.');
+    verify($current === $revisionController->show($residentRequest, 'alerts')->getData(true)['data']['revision'], 'Unchanged source revision is unstable.');
+});
+caseTest('SQL reports retain Captain-only joins and truthful monthly counts', function () use ($app, $captain, $resident) {
+    $reports = $app->make(ReportService::class);
+    $snapshot = $reports->snapshot($captain);
+    verify(count($snapshot['alerts']) === 3 && is_string($snapshot['activity_logs'][0]['summary']), 'Incomplete joined report snapshot.');
+    expectsProblem(fn () => $reports->snapshot($resident), 'FORBIDDEN');
+});
+require __DIR__.'/http-cases.php';
+require __DIR__.'/sql-races.php';
+require __DIR__.'/sql-review.php';
+echo 'MySQL '.$version.'; original-UI form handoffs and remaining cross-owner races are separate acceptance gates.'.PHP_EOL;

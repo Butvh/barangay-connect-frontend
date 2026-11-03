@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace App\Services\P2;
 
+use App\Contracts\P2\ActorReferences;
 use App\Contracts\P2\ReferenceData;
+use App\Contracts\P2\ScopedReferences;
 use App\Contracts\P2\Store;
 use App\Services\Audit\AuditRecorder;
 use App\Services\Messaging\OutboxWriter;
 
 abstract class Module
 {
+    use UsesScopedReferences;
+
     public function __construct(protected Store $store, protected ReferenceData $refs, protected AuditRecorder $audit, protected OutboxWriter $outbox, protected \Closure $clock) {}
 
     protected function row(string $table, int $id, Actor $actor): array
@@ -28,7 +32,7 @@ abstract class Module
         }
 
         return $this->store->transaction($locks, function () use ($actor, $work) {
-            $fresh = $this->refs->actorFor($actor->id);
+            $fresh = $this->refs instanceof ActorReferences ? $this->refs->locked($actor) : $this->refs->actorFor($actor->id);
             if ($fresh->role !== $actor->role || $fresh->barangayId !== $actor->barangayId) {
                 throw new Problem('FORBIDDEN', 'Account access changed. Sign in again.');
             }
@@ -69,23 +73,39 @@ abstract class Module
         });
     }
 
-    protected function officials(int $scope): array
+    protected function officials(Actor $actor): array
     {
-        return array_values(array_filter($this->refs->people($scope), fn ($p) => in_array($p['role'], ['captain', 'secretary'], true) && ($p['personnel_status'] ?? 'Active') === 'Active'));
+        if ($this->refs instanceof ScopedReferences) {
+            return $this->refs->officialRecipients($actor);
+        }
+
+        return array_values(array_filter($this->refs->people($actor->barangayId), fn ($p) => in_array($p['role'], ['captain', 'secretary'], true) && ($p['personnel_status'] ?? 'Active') === 'Active'));
     }
 
     protected function event(Actor $actor, string $type, int $id, array $people): array
     {
         $recipients = [];
         foreach ($people as $p) {
-            if (! $p || $p['barangay_id'] !== $actor->barangayId) {
+            if (! $p || $p['barangay_id'] !== $actor->barangayId || ! in_array($p['role'], ['resident', 'captain', 'secretary', 'responder', 'rescuer'], true) || ($p['account_status'] ?? 'Active') !== 'Active' || ($p['personnel_status'] ?? 'Active') !== 'Active') {
                 continue;
-            } $recipients[$p['id']] = ['user_id' => $p['id'], 'audience' => $p['role'] === 'resident' ? 'resident' : 'official', 'channels' => ['in_app', 'sms']];
+            } $recipients[$p['id']] = ['user_id' => $p['id'], 'audience' => $p['role'] === 'resident' ? 'resident' : 'official', 'channels' => ['in_app']];
         }
 
         $context = str_starts_with($type, 'incident.') ? ['status' => $this->row('emergency_alerts', $id, $actor)['status']] : [];
 
-        return $this->outbox->record(bin2hex(random_bytes(16)), $type, $actor->barangayId, $id, array_values($recipients), ($this->clock)(), $context);
+        $at = $type === 'incident.created' ? $this->row('emergency_alerts', $id, $actor)['reported_at'] : ($this->clock)();
+
+        $result = [];
+        foreach (array_chunk(array_values($recipients), 1000) ?: [[]] as $chunk) {
+            $bytes = random_bytes(16);
+            $bytes[6] = chr((ord($bytes[6]) & 15) | 64);
+            $bytes[8] = chr((ord($bytes[8]) & 63) | 128);
+            $hex = bin2hex($bytes);
+            $uuid = substr($hex, 0, 8).'-'.substr($hex, 8, 4).'-'.substr($hex, 12, 4).'-'.substr($hex, 16, 4).'-'.substr($hex, 20);
+            $result = $this->outbox->record($uuid, $type, $actor->barangayId, $id, $chunk, $at, $context);
+        }
+
+        return $result;
     }
 
     protected function audit(Actor $a, string $type, int $id, string $action, array $summary = []): void

@@ -11,9 +11,13 @@ use App\Services\Incidents\IncidentService;
 use App\Services\P2\Actor;
 use App\Services\P2\Problem;
 use App\Services\P2\Rules;
+use App\Services\P2\UsesScopedReferences;
 
 final class ReportService
 {
+    use UsesScopedReferences;
+    use UsesScopedReferences;
+
     public function __construct(private Store $store, private ReferenceData $refs, private \Closure $clock, private IncidentService $incidents, private CivicService $civic) {}
 
     private function month(string $month): array
@@ -49,7 +53,7 @@ final class ReportService
         }
         $responses = array_filter($this->store->select('alert_responses', ['barangay_id' => $a->barangayId]), fn ($r) => $r['response_status'] === 'Completed' && $this->during($r['responded_at'], $range));
         $rescues = array_filter($this->store->select('rescues', ['barangay_id' => $a->barangayId]), fn ($r) => $r['rescue_status'] === 'Completed' && $this->during($r['rescued_at'], $range));
-        $verification = array_filter($this->refs->verifications($a->barangayId), fn ($v) => in_array($v['review_status'], ['Approved', 'Rejected'], true) && $this->during($v['reviewed_at'] ?? null, $range));
+        $verification = array_filter($this->references($a)->verifications($a->barangayId), fn ($v) => in_array($v['review_status'], ['Approved', 'Rejected'], true) && $this->during($v['reviewed_at'] ?? null, $range));
 
         return ['month' => $month, 'incidents' => count($alerts), 'average_response_minutes' => $times ? (float) (array_sum($times) / count($times)) : null, 'response_measure' => 'Report to first recorded response; unknown/negative samples excluded.', 'response_samples' => count($times), 'completed_response_logs' => count($responses), 'completed_rescue_logs' => count($rescues), 'completed_verifications' => count($verification), 'types' => array_count_values(array_column($alerts, 'alert_type'))];
     }
@@ -79,7 +83,7 @@ final class ReportService
             default => null
         };
 
-        return array_replace($row, ['summary' => $summary, 'summary_data' => $details, 'at' => $row['created_at'], 'entity' => $row['resource_type'], 'record_id' => $row['resource_id'], 'title' => $row['action'], 'actor_name' => isset($row['actor_id']) ? ($this->refs->person($row['actor_id'], $a->barangayId)['full_name'] ?? null) : null, 'href' => $href]);
+        return array_replace($row, ['summary' => $summary, 'summary_data' => $details, 'at' => $row['created_at'], 'entity' => $row['resource_type'], 'record_id' => $row['resource_id'], 'title' => $row['action'], 'actor_name' => isset($row['actor_id']) ? ($this->references($a)->person($row['actor_id'], $a->barangayId)['full_name'] ?? null) : null, 'href' => $href]);
     }
 
     public function snapshot(Actor $a): array
@@ -88,7 +92,7 @@ final class ReportService
         // P1 gateway must return its explicit report DTOs, never raw Eloquent attributes.
         $activity = $this->activity($a);
 
-        return ['alerts' => $this->incidents->list($a), 'verifications' => $this->refs->verifications($a->barangayId), 'feedback' => $this->civic->feedback($a), 'announcements' => $this->civic->announcements($a), 'facilities' => $this->refs->facilities($a->barangayId), 'users' => array_map(Rules::publicPerson(...), $this->refs->people($a->barangayId)), 'personnel' => $this->refs->personnel($a->barangayId), 'activity_logs' => $activity, 'barangays' => [$this->refs->barangay($a->barangayId)], 'at' => ($this->clock)(), 'barangay_id' => $a->barangayId];
+        return ['alerts' => $this->incidents->list($a), 'verifications' => $this->references($a)->verifications($a->barangayId), 'feedback' => $this->civic->feedback($a), 'announcements' => $this->civic->announcements($a), 'facilities' => $this->references($a)->facilities($a->barangayId), 'users' => array_map(Rules::publicPerson(...), $this->references($a)->people($a->barangayId)), 'personnel' => $this->references($a)->personnel($a->barangayId), 'activity_logs' => $activity, 'barangays' => [$this->references($a)->barangay($a->barangayId)], 'at' => ($this->clock)(), 'barangay_id' => $a->barangayId];
     }
 
     public function performance(Actor $a, string $month, string $role): array
@@ -98,7 +102,7 @@ final class ReportService
         $range = $this->month($month);
         $activity = $this->activity($a, ['month' => $month]);
         $people = [];
-        foreach ($this->refs->people($a->barangayId) as $p) {
+        foreach ($this->references($a)->people($a->barangayId) as $p) {
             if ($p['role'] === $role) {
                 $people[$p['id']] = Rules::publicPerson($p) + ['activities' => 0, 'completed_responses' => 0, 'completed_rescues' => 0];
             }
@@ -106,7 +110,7 @@ final class ReportService
         foreach ($activity as $log) {
             if ($log['actor_role'] === $role) {
                 $id = $log['actor_id'];
-                $p = $this->refs->person($id, $a->barangayId);
+                $p = $this->references($a)->person($id, $a->barangayId);
                 if (! $p) {
                     continue;
                 } $people[$id] ??= Rules::publicPerson($p) + ['activities' => 0, 'completed_responses' => 0, 'completed_rescues' => 0];
@@ -117,7 +121,7 @@ final class ReportService
             foreach ($this->store->select($table, ['barangay_id' => $a->barangayId]) as $r) {
                 if ($role === ($table === 'alert_responses' ? 'responder' : 'rescuer') && $r[$status] === 'Completed' && $this->during($r[$time], $range)) {
                     $id = $r[$person];
-                    $p = $this->refs->person($id, $a->barangayId);
+                    $p = $this->references($a)->person($id, $a->barangayId);
                     if (! $p) {
                         continue;
                     } $people[$id] ??= Rules::publicPerson($p) + ['activities' => 0, 'completed_responses' => 0, 'completed_rescues' => 0];

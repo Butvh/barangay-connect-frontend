@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\P2;
 
+use App\Contracts\P2\ActorReferences;
 use App\Contracts\P2\ReferenceData;
 use App\Services\P2\Actor;
 use App\Services\P2\Problem;
@@ -17,12 +18,11 @@ abstract class P2Controller
 
     protected function actor(Request $request): Actor
     {
-        $id = $request->user()?->getAuthIdentifier();
-        if (! is_int($id) && ! (is_string($id) && ctype_digit($id))) {
-            throw new Problem('AUTH', 'Sign in to continue.');
+        if (! $this->refs instanceof ActorReferences) {
+            throw new Problem('UNAVAILABLE', 'Captured identity integration is required.');
         }
 
-        return $this->refs->actorFor(Rules::id((int) $id));
+        return $this->refs->current($request);
     }
 
     protected function id(string $id): int

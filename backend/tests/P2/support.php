@@ -52,6 +52,9 @@ final class MemoryStore implements Store
 
     public function insert(string $table, array $row): array
     {
+        if ($table === 'emergency_alerts' && (array_key_exists('assigned_responder_id', $row) || array_key_exists('assigned_rescuer_id', $row))) {
+            throw new LogicException('Assignment pointers are read projections, not database columns.');
+        }
         if ($this->failTable === $table) {
             throw new RuntimeException('Storage failure');
         } if ($table === 'alert_assignments' && $row['status'] === 'active' && $this->select($table, ['alert_id' => $row['alert_id'], 'role' => $row['role'], 'status' => 'active'])) {
@@ -64,6 +67,9 @@ final class MemoryStore implements Store
 
     public function update(string $table, int $id, array $patch): array
     {
+        if ($table === 'emergency_alerts' && (array_key_exists('assigned_responder_id', $patch) || array_key_exists('assigned_rescuer_id', $patch))) {
+            throw new LogicException('Assignment pointers are read projections, not database columns.');
+        }
         foreach ($this->rows[$table] ?? [] as $k => $row) {
             if ($row['id'] === $id) {
                 return $this->rows[$table][$k] = array_replace($row, $patch);

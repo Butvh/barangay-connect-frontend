@@ -2,10 +2,12 @@
 
 use App\Http\Controllers\P2\CivicController as Civic;
 use App\Http\Controllers\P2\NotificationController as Notifications;
+use App\Http\Middleware\CurrentIdentity;
+use App\Http\Middleware\P2Enabled;
 use App\Http\Middleware\P2Errors;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth:sanctum', P2Errors::class])->group(function () {
+Route::middleware([CurrentIdentity::class, P2Errors::class, P2Enabled::class])->group(function () {
     Route::get('announcements', [Civic::class, 'announcements']);
     Route::post('announcements', [Civic::class, 'publish']);
     Route::post('announcements/expire-overdue', [Civic::class, 'expire']);

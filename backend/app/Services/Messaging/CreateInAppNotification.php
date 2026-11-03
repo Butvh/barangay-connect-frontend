@@ -15,7 +15,7 @@ final class CreateInAppNotification
     public function handle(array $event): int
     {
         $id = $event['event_id'] ?? '';
-        if (! is_string($id) || ! preg_match('/^[a-f0-9]{32}$/D', $id)) {
+        if (! is_string($id) || ! preg_match('/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/D', $id)) {
             throw new \InvalidArgumentException('Invalid event.');
         }
 

@@ -38,7 +38,14 @@ final class NotificationAccess
             return $r;
         }
 
-        return $n['resource_type'] === 'incident' && in_array($a->role, ['responder', 'rescuer'], true) && ($r['assigned_'.$a->role.'_id'] ?? null) === $a->id ? $r : null;
+        if ($n['resource_type'] !== 'incident' || ! in_array($a->role, ['responder', 'rescuer'], true)) {
+            return null;
+        }
+        $assignments = $s->select('alert_assignments', ['alert_id' => $r['id'], 'barangay_id' => $a->barangayId, 'role' => $a->role]);
+        usort($assignments, fn ($x, $y) => $y['id'] <=> $x['id']);
+        $latest = $assignments[0] ?? null;
+
+        return $latest && in_array($latest['status'], ['active', 'completed', 'closed'], true) && $latest['user_id'] === $a->id ? $r : null;
     }
 
     public static function link(array $n, ?array $source = null): string

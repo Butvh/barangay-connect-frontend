@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Incidents;
 
+use App\Contracts\P2\ActorReferences;
+use App\Contracts\P2\DestinationReferences;
 use App\Services\P2\Actor;
 use App\Services\P2\Module;
 use App\Services\P2\Problem;
@@ -23,13 +25,11 @@ final class IncidentService extends Module
         $where = ['barangay_id' => $actor->barangayId];
         if ($actor->role === 'resident') {
             $where['resident_id'] = $actor->id;
-        } elseif (! $actor->administrator()) {
-            $where['assigned_'.$actor->role.'_id'] = $actor->id;
         }
         if (isset($options['resident_id'])) {
             $where['resident_id'] = (int) $options['resident_id'];
         }
-        $rows = $this->store->select('emergency_alerts', $where);
+        $rows = array_map(fn ($r) => $this->assignmentProjection($r), $this->store->select('emergency_alerts', $where));
         if ($actor->role === 'resident' && isset($options['resident_id']) && (int) $options['resident_id'] !== $actor->id) {
             throw new Problem('FORBIDDEN', 'View your own incidents.');
         }
@@ -48,6 +48,26 @@ final class IncidentService extends Module
         return $r['barangay_id'] === $a->barangayId && ($a->administrator() || ($a->role === 'resident' ? $r['resident_id'] === $a->id : ($r['assigned_'.$a->role.'_id'] ?? null) === $a->id));
     }
 
+    protected function row(string $table, int $id, Actor $actor): array
+    {
+        $row = parent::row($table, $id, $actor);
+
+        return $table === 'emergency_alerts' ? $this->assignmentProjection($row) : $row;
+    }
+
+    /** Derived only from retained assignment rows; never written to emergency_alerts. */
+    private function assignmentProjection(array $row): array
+    {
+        foreach (['responder', 'rescuer'] as $role) {
+            $rows = $this->assignments($row, $role);
+            usort($rows, fn ($a, $b) => $a['id'] <=> $b['id']);
+            $last = $rows ? end($rows) : null;
+            $row['assigned_'.$role.'_id'] = $last && in_array($last['status'], ['active', 'completed', 'closed'], true) ? $last['user_id'] : null;
+        }
+
+        return $row;
+    }
+
     public function get(Actor $a, int $id): array
     {
         $r = $this->row('emergency_alerts', $id, $a);
@@ -61,7 +81,7 @@ final class IncidentService extends Module
     public function nearby(Actor $a, array $options = []): array
     {
         $a->allow(['resident']);
-        $name = $this->refs->barangay($a->barangayId)['name'];
+        $name = $this->references($a)->barangay($a->barangayId)['name'];
         $rows = $this->store->select('emergency_alerts', ['barangay_id' => $a->barangayId]);
 
         $result = array_values(array_map(fn ($r) => ['id' => $r['id'], 'barangay_id' => $a->barangayId, 'alert_type' => $r['alert_type'], 'status' => $r['status'], 'created_at' => $r['created_at'], 'location_label' => $name, 'description' => $r['alert_type'].' incident reported in '.$name.'.', 'map_x' => $r['map_x'] === null ? null : (int) (round($r['map_x'] / 10) * 10), 'map_y' => $r['map_y'] === null ? null : (int) (round($r['map_y'] / 10) * 10)], array_filter($rows, fn ($r) => (! isset($options['status']) || $r['status'] === $options['status']) && (! isset($options['alert_type']) || $r['alert_type'] === $options['alert_type']))));
@@ -115,8 +135,8 @@ final class IncidentService extends Module
         ksort($in);
         $hash = hash('sha256', json_encode($in, JSON_THROW_ON_ERROR));
 
-        return $this->atomic($a, [], null, function () use ($a, $key, $hash, $in) {
-            if (! $this->refs->approved($a->id, $a->barangayId)) {
+        return $this->store->transaction(['person:'.$a->id, 'sos:'.$a->id], fn () => $this->atomic($a, [], null, function () use ($a, $key, $hash, $in) {
+            if (! $this->references($a)->approved($a->id, $a->barangayId)) {
                 throw new Problem('FORBIDDEN', 'Approved residency is required before SOS.');
             }
             $previous = $this->store->select('idempotency_requests', ['actor_id' => $a->id, 'route' => 'alerts.create', 'request_key' => $key]);
@@ -127,20 +147,21 @@ final class IncidentService extends Module
 
                 return $this->get($a, $previous[0]['resource_id']) + ['was_created' => false];
             }
-            $home = $this->refs->household($a->id, $a->barangayId) ?? throw new Problem('FORBIDDEN', 'A registered household is required.');
+            $home = $this->references($a)->household($a->id, $a->barangayId) ?? throw new Problem('FORBIDDEN', 'A registered household is required.');
             $details = $this->detailsInput($in, $home);
             $active = array_values(array_filter($this->store->select('emergency_alerts', ['barangay_id' => $a->barangayId, 'resident_id' => $a->id]), fn ($r) => $r['status'] !== 'Resolved'));
             $r = $active[0] ?? null;
             if (! $r) {
-                $r = $this->store->insert('emergency_alerts', array_merge($details, ['resident_id' => $a->id, 'household_id' => $home['id'], 'barangay_id' => $a->barangayId, 'status' => 'Pending', 'assignment_revision' => 0, 'assigned_responder_id' => null, 'assigned_rescuer_id' => null, 'acknowledged_by' => null, 'created_at' => ($this->clock)(), 'acknowledged_at' => null, 'resolved_at' => null]));
-                $this->history($a, $r, 'Pending');
+                $at = ($this->clock)();
+                $r = $this->store->insert('emergency_alerts', array_merge($details, ['resident_id' => $a->id, 'household_id' => $home['id'], 'barangay_id' => $a->barangayId, 'status' => 'Pending', 'assignment_revision' => 0, 'acknowledged_by' => null, 'created_at' => $at, 'reported_at' => $at, 'address_snapshot' => $home['address'], 'acknowledged_at' => null, 'resolved_at' => null]));
+                $this->history($a, $r, 'Pending', $at);
                 $this->audit($a, 'alert', $r['id'], 'Incident reported');
-                $this->event($a, 'incident.created', $r['id'], $this->officials($a->barangayId));
+                $this->event($a, 'incident.created', $r['id'], $this->officials($a));
             }
             $this->store->insert('idempotency_requests', ['actor_id' => $a->id, 'route' => 'alerts.create', 'request_key' => $key, 'request_hash' => $hash, 'resource_id' => $r['id']]);
 
             return $this->project($a, $r) + ['was_created' => ! $active];
-        });
+        }));
     }
 
     public function details(Actor $a, int $id, array $in): array
@@ -153,7 +174,7 @@ final class IncidentService extends Module
                 throw new Problem('NOT_FOUND', 'This incident is unavailable.');
             } if ($r['status'] === 'Resolved') {
                 throw new Problem('INVALID_STATE', 'This incident is resolved.');
-            } $patch = $this->detailsInput($in, $this->refs->household($a->id, $a->barangayId) ?? [], true);
+            } $patch = $this->detailsInput($in, $this->references($a)->household($a->id, $a->barangayId) ?? [], true);
             $r = $this->store->update('emergency_alerts', $id, $patch);
             $this->audit($a, 'alert', $id, 'Incident details updated');
 
@@ -186,7 +207,7 @@ final class IncidentService extends Module
         $limit = $role === 'responder' ? 2 : 1;
         $people = [];
         $current = $this->assignments($r, $role, true)[0] ?? null;
-        foreach ($this->refs->people($a->barangayId) as $p) {
+        foreach ($this->references($a)->people($a->barangayId) as $p) {
             if ($p['role'] === $role && ($p['personnel_status'] ?? 'Active') === 'Active') {
                 $work = count($this->store->select('alert_assignments', ['user_id' => $p['id'], 'role' => $role, 'status' => 'active']));
                 $people[] = Rules::publicPerson($p) + ['workload' => $work, 'limit' => $limit, 'at_capacity' => $work >= $limit, 'assigned' => ($current['user_id'] ?? null) === $p['id'], 'available' => $work < $limit && ($current['user_id'] ?? null) !== $p['id']];
@@ -220,7 +241,7 @@ final class IncidentService extends Module
                 throw new Problem('INVALID_STATE', 'Record rescue-needed assessment first.');
             }
             $assignment = $this->addAssignment($a, $r, $role, $person, $in);
-            $patch = ['assigned_'.$role.'_id' => $person, 'assignment_revision' => $r['assignment_revision'] + 1];
+            $patch = ['assignment_revision' => $r['assignment_revision'] + 1];
             if ($acknowledge) {
                 $patch += ['status' => 'Acknowledged', 'acknowledged_at' => ($this->clock)(), 'acknowledged_by' => $a->id];
             }
@@ -229,7 +250,7 @@ final class IncidentService extends Module
                 $this->history($a, $r, 'Acknowledged');
             }
             $this->audit($a, 'alert', $id, ucfirst($role).' assigned', ['assignment_id' => $assignment['id'], 'user_id' => $person, 'reason' => $assignment['override_reason']]);
-            $this->event($a, 'incident.assigned', $id, [$this->refs->person($person, $a->barangayId), $this->refs->person($r['resident_id'], $a->barangayId), ...$this->officials($a->barangayId)]);
+            $this->event($a, 'incident.assigned', $id, [$this->references($a)->person($person, $a->barangayId), $this->references($a)->person($r['resident_id'], $a->barangayId), ...$this->officials($a)]);
 
             return $this->project($a, $r);
         });
@@ -237,7 +258,7 @@ final class IncidentService extends Module
 
     private function addAssignment(Actor $a, array $r, string $role, int $person, array $in): array
     {
-        $p = $this->refs->person($person, $a->barangayId);
+        $p = $this->references($a)->person($person, $a->barangayId);
         if (! $p || $p['role'] !== $role || ($p['personnel_status'] ?? 'Active') !== 'Active') {
             throw new Problem('VALIDATION', 'Choose active eligible local personnel.');
         }
@@ -254,7 +275,7 @@ final class IncidentService extends Module
             throw new Problem('CAPACITY', 'This person is at assignment capacity.');
         }
 
-        return $this->store->insert('alert_assignments', ['alert_id' => $r['id'], 'barangay_id' => $a->barangayId, 'role' => $role, 'user_id' => $person, 'personnel_name' => $p['full_name'], 'assigned_by' => $a->id, 'assigned_at' => ($this->clock)(), 'status' => 'active', 'ended_at' => null, 'ended_by' => null, 'end_reason' => null, 'override_by' => $reason ? $a->id : null, 'override_reason' => $reason, 'override_at' => $reason ? ($this->clock)() : null]);
+        return $this->store->insert('alert_assignments', ['alert_id' => $r['id'], 'barangay_id' => $a->barangayId, 'role' => $role, 'user_id' => $person, 'personnel_name' => $p['full_name'], 'assigned_by' => $a->id, 'assigned_by_name' => $this->references($a)->person($a->id, $a->barangayId)['full_name'], 'assigned_at' => ($this->clock)(), 'status' => 'active', 'ended_at' => null, 'ended_by' => null, 'end_reason' => null, 'override_by' => $reason ? $a->id : null, 'override_reason' => $reason, 'override_at' => $reason ? ($this->clock)() : null]);
     }
 
     public function changeAssignment(Actor $a, int $assignmentId, array $in, bool $transfer): array
@@ -276,9 +297,9 @@ final class IncidentService extends Module
             if ($transfer) {
                 $this->addAssignment($a, $r, $old['role'], $next, $in);
             }
-            $r = $this->store->update('emergency_alerts', $r['id'], ['assigned_'.$old['role'].'_id' => $next, 'assignment_revision' => $r['assignment_revision'] + 1]);
+            $r = $this->store->update('emergency_alerts', $r['id'], ['assignment_revision' => $r['assignment_revision'] + 1]);
             $this->audit($a, 'alert', $r['id'], $transfer ? 'Assignment transferred' : 'Assignment cancelled', ['previous_user_id' => $old['user_id'], 'user_id' => $next, 'reason' => $reason]);
-            $this->event($a, 'incident.assigned', $r['id'], [$this->refs->person($old['user_id'], $a->barangayId), $next ? $this->refs->person($next, $a->barangayId) : null, ...$this->officials($a->barangayId)]);
+            $this->event($a, 'incident.assigned', $r['id'], [$this->references($a)->person($old['user_id'], $a->barangayId), $next ? $this->references($a)->person($next, $a->barangayId) : null, ...$this->officials($a)]);
 
             return $this->project($a, $r);
         });
@@ -318,7 +339,7 @@ final class IncidentService extends Module
                 $this->end($a, $assignment, 'completed');
             }
             $r = $this->advance($a, $r, $r['status'] === 'Rescue in progress' ? $r['status'] : 'Responding');
-            $this->event($a, $in['rescue_required'] ? 'incident.rescue_required' : 'incident.status_changed', $id, [$this->refs->person($r['resident_id'], $a->barangayId), ...$this->officials($a->barangayId)]);
+            $this->event($a, $in['rescue_required'] ? 'incident.rescue_required' : 'incident.status_changed', $id, [$this->references($a)->person($r['resident_id'], $a->barangayId), ...$this->officials($a)]);
 
             return $this->project($a, $r);
         });
@@ -339,7 +360,7 @@ final class IncidentService extends Module
 
         // Store must lock destination after person/incident guards, sharing this key with facility mutation.
         return $this->store->transaction(['person:'.$a->id, 'incident:'.$id, 'facility:'.$facility], function () use ($a, $id, $status, $facility, $notes) {
-            $fresh = $this->refs->actorFor($a->id);
+            $fresh = $this->refs instanceof ActorReferences ? $this->refs->locked($a) : $this->refs->actorFor($a->id);
             if ($fresh->role !== $a->role || $fresh->barangayId !== $a->barangayId) {
                 throw new Problem('FORBIDDEN', 'Account access changed.');
             }
@@ -348,13 +369,18 @@ final class IncidentService extends Module
             if (! in_array($r['status'], ['Responding', 'Rescue in progress'], true)) {
                 throw new Problem('INVALID_STATE', 'Rescue is unavailable at this stage.');
             }
-            $f = array_values(array_filter($this->refs->facilities($a->barangayId), fn ($f) => $f['id'] === $facility && $f['is_active'] === true))[0] ?? throw new Problem('VALIDATION', 'Choose an active visible destination.');
+            $f = $this->refs instanceof DestinationReferences
+                ? $this->references($a)->destination($facility, $a->barangayId)
+                : (array_values(array_filter($this->references($a)->facilities($a->barangayId), fn ($f) => $f['id'] === $facility))[0] ?? null);
+            if (! $f || $f['is_active'] !== true) {
+                throw new Problem('VALIDATION', 'Choose an active visible destination.');
+            }
             $snapshot = array_intersect_key($f, array_flip(['id', 'name', 'type', 'address', 'capacity', 'contact_number', 'map_x', 'map_y']));
             $this->store->insert('rescues', ['alert_id' => $id, 'barangay_id' => $a->barangayId, 'assignment_id' => $assignment['id'], 'rescuer_id' => $a->id, 'facility_id' => $facility, 'facility_snapshot' => $snapshot, 'rescue_status' => $status, 'notes' => $notes, 'rescued_at' => ($this->clock)()]);
             if ($status === 'Completed') {
                 $this->end($a, $assignment, 'completed');
             } $r = $this->advance($a, $r, 'Rescue in progress');
-            $this->event($a, 'incident.status_changed', $id, [$this->refs->person($r['resident_id'], $a->barangayId), ...$this->officials($a->barangayId)]);
+            $this->event($a, 'incident.status_changed', $id, [$this->references($a)->person($r['resident_id'], $a->barangayId), ...$this->officials($a)]);
 
             return $this->project($a, $r);
         });
@@ -387,7 +413,7 @@ final class IncidentService extends Module
             foreach ($this->assignments($r, null, true) as $x) {
                 $this->end($a, $x, 'closed');
             } $r = $this->advance($a, $r, 'Resolved');
-            $this->event($a, 'incident.status_changed', $id, [$this->refs->person($r['resident_id'], $a->barangayId), ...$this->officials($a->barangayId)]);
+            $this->event($a, 'incident.status_changed', $id, [$this->references($a)->person($r['resident_id'], $a->barangayId), ...$this->officials($a)]);
 
             return $this->project($a, $r);
         });
@@ -395,29 +421,30 @@ final class IncidentService extends Module
 
     private function advance(Actor $a, array $r, string $status): array
     {
-        $r = $this->store->update('emergency_alerts', $r['id'], ['status' => $status, 'assignment_revision' => $r['assignment_revision'] + 1] + ($status === 'Resolved' ? ['resolved_at' => ($this->clock)()] : []));
+        $r = $this->store->update('emergency_alerts', $r['id'], ['status' => $status, 'assignment_revision' => $r['assignment_revision'] + 1] + ($status === 'Resolved' ? ['resolved_at' => ($this->clock)(), 'resolved_by' => $a->id] : []));
         $this->history($a, $r, $status);
         $this->audit($a, 'alert', $r['id'], 'Incident '.$status, ['status' => $status]);
 
         return $r;
     }
 
-    private function history(Actor $a, array $r, string $status): void
+    private function history(Actor $a, array $r, string $status, ?string $at = null): void
     {
-        $this->store->insert('incident_status_history', ['alert_id' => $r['id'], 'barangay_id' => $a->barangayId, 'status' => $status, 'actor_id' => $a->id, 'actor_role' => $a->role, 'occurred_at' => ($this->clock)()]);
+        $this->store->insert('incident_status_history', ['alert_id' => $r['id'], 'barangay_id' => $a->barangayId, 'status' => $status, 'actor_id' => $a->id, 'actor_role' => $a->role, 'occurred_at' => $at ?? ($this->clock)()]);
     }
 
     private function project(Actor $a, array $r): array
     {
+        $r = $this->assignmentProjection($r);
         $assignments = $this->assignments($r);
-        $assignments = array_map(fn ($x) => $x + ['assigned_by_name' => isset($x['assigned_by']) ? ($this->refs->person($x['assigned_by'], $r['barangay_id'])['full_name'] ?? null) : null], $assignments);
+        $assignments = array_map(fn ($x) => $x + ['assigned_by_name' => isset($x['assigned_by']) ? ($this->references($a)->person($x['assigned_by'], $r['barangay_id'])['full_name'] ?? null) : null], $assignments);
         $responses = $this->store->select('alert_responses', ['alert_id' => $r['id'], 'barangay_id' => $r['barangay_id']]);
         $rescues = $this->store->select('rescues', ['alert_id' => $r['id'], 'barangay_id' => $r['barangay_id']]);
         $history = $this->store->select('incident_status_history', ['alert_id' => $r['id'], 'barangay_id' => $r['barangay_id']]);
-        $r['resident'] = Rules::publicPerson($this->refs->person($r['resident_id'], $r['barangay_id']));
-        $r['household'] = $this->refs->household($r['resident_id'], $r['barangay_id']);
+        $r['resident'] = Rules::publicPerson($this->references($a)->person($r['resident_id'], $r['barangay_id']));
+        $r['household'] = $this->references($a)->household($r['resident_id'], $r['barangay_id']);
         foreach (['responder', 'rescuer'] as $role) {
-            $r['assigned_'.$role] = isset($r['assigned_'.$role.'_id']) ? Rules::publicPerson($this->refs->person($r['assigned_'.$role.'_id'], $r['barangay_id'])) : null;
+            $r['assigned_'.$role] = isset($r['assigned_'.$role.'_id']) ? Rules::publicPerson($this->references($a)->person($r['assigned_'.$role.'_id'], $r['barangay_id'])) : null;
             $xs = array_values(array_filter($assignments, fn ($x) => $x['role'] === $role));
             $last = $xs ? end($xs) : null;
             $r['active_'.$role.'_assignment'] = (bool) array_filter($xs, fn ($x) => $x['status'] === 'active');
@@ -430,8 +457,8 @@ final class IncidentService extends Module
         $r['response_completed'] = ($r['responder_assignment_status'] ?? null) === 'completed';
         $r['can_assign_responder'] = $r['status'] !== 'Pending' && $r['status'] !== 'Resolved' && $r['assigned_responder_id'] === null;
         $r['can_assign_rescuer'] = in_array($r['status'], ['Responding', 'Rescue in progress'], true) && $r['rescue_required'] === true && ! $r['active_rescuer_assignment'] && ! in_array($r['rescuer_assignment_status'], ['completed', 'closed'], true);
-        $r['responses'] = array_map(fn ($x) => $x + ['responder' => Rules::publicPerson($this->refs->person($x['responder_id'], $r['barangay_id']))], $responses);
-        $r['rescues'] = array_map(fn ($x) => $x + ['rescuer' => Rules::publicPerson($this->refs->person($x['rescuer_id'], $r['barangay_id'])), 'facility' => $x['facility_snapshot']], $rescues);
+        $r['responses'] = array_map(fn ($x) => $x + ['responder' => Rules::publicPerson($this->references($a)->person($x['responder_id'], $r['barangay_id']))], $responses);
+        $r['rescues'] = array_map(fn ($x) => $x + ['rescuer' => Rules::publicPerson($this->references($a)->person($x['rescuer_id'], $r['barangay_id'])), 'facility' => $x['facility_snapshot']], $rescues);
         $r['timeline'] = array_map(function ($stage) use ($r, $history) {
             $match = array_values(array_filter($history, fn ($h) => $h['status'] === $stage));
 

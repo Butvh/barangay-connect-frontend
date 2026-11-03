@@ -1,11 +1,15 @@
 <?php
 
 use App\Http\Controllers\P2\IncidentController as Incidents;
+use App\Http\Controllers\P2\RevisionController;
+use App\Http\Middleware\CurrentIdentity;
+use App\Http\Middleware\P2Enabled;
 use App\Http\Middleware\P2Errors;
 use Illuminate\Support\Facades\Route;
 
 // P1 includes this file inside the authenticated /api/v1 API group.
-Route::middleware(['auth:sanctum', P2Errors::class])->group(function () {
+Route::middleware([CurrentIdentity::class, P2Errors::class, P2Enabled::class])->group(function () {
+    Route::get('revisions/{entity}', [RevisionController::class, 'show']);
     Route::get('dashboard', [Incidents::class, 'dashboard']);
     Route::get('map', [Incidents::class, 'map']);
     Route::get('nearby-alerts', [Incidents::class, 'nearby']);

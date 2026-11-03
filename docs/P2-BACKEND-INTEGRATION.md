@@ -1,21 +1,20 @@
 # P2 backend modules — integration handoff
 
-Status: **prepared modules, not a running backend** (November 2, 2026).
-P1's Laravel foundation and the DBA's schema are not available. The user authorized preparing P2 modules against documented contracts. The original browser demo remains connected to its existing store. No database, authentication system, migration, model, provider client, Make endpoint, SMS job or live deployment was created by P2.
+Status: **P2 compatibility candidate** (November3,2026). Actual P1/DBA sources are composed privately for SQL/HTTP tests; production and original-UI registration remain gated. Read [the current compatibility matrix and evidence](P2-COMPATIBILITY.md) first. It supersedes provisional storage/event assumptions below and records exact revisions, owner requests and untested gates. No main merge or live deployment is performed.
 
 ## Ownership and registration
 
-P2 supplies domain services, transaction/event contracts, controllers, route fragments, injectable frontend adapters and isolated tests. Domain code has no Laravel dependency; it uses PHP 8.2+ and `mbstring`. The controller/provider bridge targets the shared Laravel application once P1 selects and installs it. Local checks used PHP 8.5.12; this is not a claim of a Laravel installation.
+P2 supplies portable domain services plus real Laravel/DBA persistence, identity/event adapters, controllers, route fragments, factories/readers and isolated/SQL/HTTP tests. The current composed runtime is PHP8.5.12/Laravel13.39.0/MySQL8.4.13. P1 owns framework/authentication and reviewed binding selection.
 
 P1 must:
 
 1. Preserve these `backend/app` modules while adding the foundation. Configure `App\` => `app/` using the application's Composer autoload.
-2. Register `App\Providers\P2ServiceProvider` in the foundation's provider list. Bind `App\Contracts\P2\Store` to the DBA-approved transactional adapter and `ReferenceData` to P1's identity/reference gateway. **No production fake bindings are supplied.** Missing bindings fail closed.
-3. Include `operations.php`, `communications.php` and `reports.php` from `routes/api.php` inside its `/v1` group (the framework supplies `/api`). Each fragment applies `auth:sanctum`; no browser identity or role is accepted as authority. Add shared rate limits, CSRF/session setup, HTTPS and the common error renderer. P2's middleware only formats domain `Problem` errors; auth/419/429/unexpected errors need P1's global envelope and redacted logs.
+2. Keep P1 IntegrationServiceProvider as the single registration entry point; it selects the reviewed Store, reference, typed audit/outbox and optional handler bindings before registering P2. Do not register P2 directly a second time. P2 preserves these bindings; its HTTP gateway must implement ActorReferences. **No production fake bindings are supplied.** Missing bindings fail closed.
+3. Preserve P1's existing conditional includes for `operations.php`, `communications.php` and `reports.php` under `/api/v1`. Each fragment uses P1 CurrentIdentity plus P2 error/enable middleware in the foundation web/session/CSRF group; no browser identity or role is accepted as authority. P2's middleware only formats domain `Problem` errors; auth/419/429/unexpected errors remain P1's global envelope and redacted logs. Shared rate-limit/release policy remains an owner review gate.
 4. Inject the authenticated HTTP transport into the adapter factories; coordinate the small facade/config/form integration PR. Do not enable backend mode for incomplete modules. Existing public demo and backend release coverage must be separate.
-5. Narrow `.github/workflows/pages.yml` from `path: .` to an explicit frontend artifact **before these files reach a deployed main revision**. Backend source/private files must never be served as static Pages assets. P2 has not edited P1's CI/foundation files.
+5. Preserve P1's new explicit static artifact staging when composing the eventual merge result; its artifact/module-graph tests pass on the pinned composition. Main's older whole-root upload must not deploy backend sources. P2 has not edited P1's CI/foundation files. Update P1's snapshot owner pins and P2 allowlist only after this P2 revision is published/reviewed.
 
-DBA supplies schema/models/casts/indexes, the concrete Store adapter, factories, real MySQL tests and dispatcher registration. Binding the Store without implementing the locking semantics below is not sufficient.
+DBA supplies schema/models/casts/indexes, guard helpers, factories, MySQL integrity tests and the single dispatcher. P2 supplies the relational Store/reference adapter candidate; P1 selects reviewed bindings. Binding the Store without implementing the locking semantics below is not sufficient.
 
 ## HTTP transport and facade mapping
 
@@ -72,7 +71,7 @@ Logical row fields below define the module boundary, **not approved migrations**
 
 | Logical table | Required fields beyond numeric id |
 | --- | --- |
-| emergency_alerts | barangay_id, resident_id, household_id, alert_type, description, location_label, victim_count(nullable), map_x/y(nullable paired), status, assignment_revision, assigned_responder_id/rescuer_id(nullable), acknowledged_by(nullable), created_at, acknowledged_at/resolved_at(nullable) |
+| emergency_alerts | barangay_id, resident_id, household_id, alert_type, description, location_label, victim_count(nullable), map_x/y(nullable paired), status, assignment_revision, assigned_responder_id/rescuer_id(derived read projections only), acknowledged_by(nullable), created_at, acknowledged_at/resolved_at(nullable) |
 | alert_assignments | barangay_id, alert_id, role, user_id, personnel_name(snapshot), assigned_by/at, status(active/completed/cancelled/reassigned/closed), ended_at/by/end_reason(nullable), override_by/reason/at(nullable) |
 | incident_status_history | barangay_id, alert_id, status, actor_id/role, occurred_at |
 | alert_responses | barangay_id, alert_id, assignment_id, responder_id, response_type, response_status(Responding/Completed), rescue_required(boolean), notes, responded_at |
@@ -82,12 +81,12 @@ Logical row fields below define the module boundary, **not approved migrations**
 | community_feedback | barangay_id, resident_id, type(complaint/suggestion/general), title, created_at/submitted_at, category, description, location, rating(nullable1–5), comment, status(nullable for general), assigned_tanod_id, assigned_at/resolved_at(nullable), revision |
 | activity_logs | barangay_id, actor_id, actor_role, resource_type/id, action, summary(JSON allowlisted), created_at, evidence |
 | idempotency_requests | actor_id, route, request_key, request_hash(SHA256), resource_id |
-| outbox_events | event_id(unique32hex), event_type, barangay_id, resource_id, payload(JSONversion1), occurred_at, created_at, dispatched_at(nullable; DBA owns dispatch) |
+| outbox_events | event_id(canonical UUIDv4), version2, type, barangay_id, resource_type/id, payload(bounded source context), occurred_at, template_key; separate outbox_recipients per DBA registry |
 | notifications | event_id, user_id, barangay_id, channel(in_app), resource_type/id, audience(resident/official), kind, title, description, link, event_status(nullable), created_at, read_at/dismissed_at(nullable) |
 
-Required integrity/index requests: tenant/resource indexes on all scoped reads; `(user_id,role,status)` assignments; **unique active `(alert_id,role)`** (MySQL generated nullable active-role key or equivalent approved design); one active unresolved SOS per resident via shared guard + DBA-approved uniqueness; unique idempotency `(actor_id,route,request_key)`; unique event_id; unique notification `(event_id,user_id,channel)`. Template version is fixed at1 for these in-app records; DBA delivery receipts use `(event_id,recipient,channel,template_version)` for transport independently. Index source dates/actor IDs and review report query plans with realistic scopes before release.
+Required integrity/index requests: tenant/resource indexes on all scoped reads; `(user_id,role,status)` assignments; **unique active `(alert_id,role)`** (MySQL generated nullable active-role key or equivalent approved design); one active unresolved SOS per resident via shared guard + DBA-approved uniqueness; unique idempotency `(actor_id,route,key_digest)` with keyed digest, not raw command key; unique event_id; unique notification `(event_id,user_id,channel)`. Template key/version follow the explicitly registered DBA event definition; DBA delivery receipts use `(event_id,recipient,channel,template_version)` for transport independently. Index source dates/actor IDs and review report query plans with realistic scopes before release.
 
-`ReferenceData.actorFor` must derive the current effective role and tenant from the authenticated P1 account, reject inactive/unassigned/revoked access, and use current reads inside mutations. Independent resident membership remains P1's responsibility. `person/people` are safe public role/status/name DTOs; `household` is the registered resident's safe address/pin projection; `approved` checks latest valid residency; `facilities` is the active/inactive visible referral directory, including shared read-only facilities; `verifications/personnel` are the existing Captain-report projections. P1 owns private contact/document authorization. No raw ORM arrays.
+`ActorReferences.current(Request)` and `locked(observed)` preserve P1 request identity/security generation. `actorFor` is a trusted internal recipient/test lookup, never browser identity authority. Current locking user/appointment reads are used for mutation eligibility. P1 must review the candidate safe-source projections before production binding. Independent resident membership remains P1's responsibility. `person/people` are safe public role/status/name DTOs; `household` is the registered resident's safe address/pin projection; `approved` checks latest valid residency; `facilities` is the active/inactive visible referral directory, including shared read-only facilities; `verifications/personnel` are the existing Captain-report projections. P1 owns private contact/document authorization. No raw ORM arrays.
 
 ### Transaction and lock protocol — release gate
 
@@ -101,42 +100,37 @@ Normal incident capacity: Responder2/Rescuer1. Override remains **disabled** by 
 
 ## Committed-event contract for DBA
 
-`AuditRecorder.record(Actor, roleAtAction, scope, {type,id}, action, summary)` and `OutboxWriter.record(eventId,type,scope,resourceId,recipientRefs,occurredAt,context=[])` require an existing authorized database transaction. They only append records; no network or queue dispatch occurs inside them. Optional context is allowlisted to an incident status snapshot, so delayed notification handling cannot substitute a later status for the actual event. Other business domains use empty context until agreed templates exist.
+Production implementations are Persistence/TypedAuditRecorder and Persistence/TypedOutboxWriter, implementing P1 Contracts/Events interfaces. The domain wrappers preserve portable tests while delegating production writes through typed resources, audit summaries, UUIDv4 EventId, RecipientReference, DateTimeImmutable and EventContext. They join the same caller transaction and never independently commit or send HTTP.
 
-```json
-{
-  "event_id":"0123456789abcdef0123456789abcdef",
-  "event_type":"incident.created",
-  "barangay_id":1,
-  "resource_id":1042,
-  "payload":{"version":1,"context":{"status":"Pending"},"recipients":[{"user_id":2,"audience":"official","channels":["in_app","sms"]}]},
-  "occurred_at":"2026-11-02T08:00:00Z"
-}
-```
+P2 maps its seven internal incident/announcement/feedback event names explicitly to the registered .v2 types. Incident status and feedback kind/status freeze at write time. Relational recipients are in-app-only. Deduplicated fanouts over1000 are chunked into distinct UUIDs within the same transaction. No32hex conversion or implicit SMS occurs.
 
-Event ID is server-generated unique32hex. Allowlist: incident.created/assigned/status_changed/rescue_required, announcement.published, feedback.submitted/updated, verification.updated, personnel.updated, facility.updated, security.updated. Business writers currently emit P2 events only. Recipients are server-selected same-barangay references; no telephone numbers, document bytes or secret message bodies appear in the envelope. Event type+payload version define template selection for the DBA. `sms` is a channel intent, **not an authorized real send or a delivery claim**; DBA applies consent/urgency/recipient controls.
+Canonical event-context fixtures (resource ID and recipients always come from the authorized transaction, never these documentation examples):
 
-The single DBA dispatcher reads committed outbox rows and calls `CreateInAppNotification.handle(event)`. Handler reloads the persisted event by ID, ignores caller-modified payloads, reauthorizes source access and deduplicates per recipient/channel. Retry creates no second in-app notification. SMS failures must not roll back committed domain data or force a duplicate in-app notification; independent channel receipts are required.
+| Persisted type | Exact example payload |
+| --- | --- |
+| incident.created.v2 | `{ "status": "Pending" }` |
+| incident.assigned.v2 | `{ "status": "Acknowledged" }` |
+| incident.status_changed.v2 | `{ "status": "Responding" }` |
+| incident.rescue_required.v2 | `{ "status": "Responding" }` |
+| announcement.published.v2 | `{}` |
+| feedback.submitted.v2 | `{ "kind": "general", "status": null }` |
+| feedback.updated.v2 | `{ "kind": "complaint", "status": "Assigned" }` |
 
-**Cross-domain gate:** the current in-app resolver supports P2 incidents/feedback/announcements. P1's verification/personnel/facility/security events are allowlisted for transactional writing but intentionally fail closed in this handler until P1 supplies authorized source projections and P2 registers their templates/targets. Do not route those event types to this handler in production yet or mark them successfully consumed. P1/DBA/P2 must freeze that extension before integration. No second dispatcher/SMS client/Make scenario was added.
+The typed boundary is `EventContext::forEvent($type, $payload)`, read with `payloadFor($type)`. `RecipientReference($id, true, false, 'official')->toArray($derivedAudience)` rejects audience changes. The writer stores relational recipients and never puts contact details, private comments, arbitrary text or files in the outbox payload. Actual SQL/HTTP fixtures are committed in `backend/tests/P2/sql-cases.php`, `http-cases.php` and `sql-review.php`; DBA's full v2 fixture registry is retained unchanged in the composed owner tests.
 
-## Explicit remaining gates
+DBA's one dispatcher calls Persistence/InAppHandler.handle(OutboxEvent,OutboxRecipient) in its receipt transaction. It reauthorizes recipient/source, preserves event-time status and UUIDs, reconstructs category-specific safe links, and deduplicates. An unavailable source/recipient is not falsely completed. Unsupported P1 verification/personnel/facility/security events remain unavailable pending owner projections/context/templates.
 
-- Authenticated Laravel HTTP tests and global policy/envelope/rate-limit checks; production SQL Store binding and source DTOs; real persistence and schema compatibility.
-- MySQL race tests: last responder/rescuer slot across different incidents, same-incident double assignment, stale revision, transfer vs role change, resolution vs reassignment, facility deactivation vs rescue. Isolated contract tests do **not** prove these races safe.
-- Private incident photo upload/storage interface with P1: accept validated JPEG/PNG bytes up to5MB through authorized private storage, verify MIME/content and stage/cleanup with transactions. Until agreed, P2 endpoints reject `photo_name`/arbitrary upload IDs and do not pretend filename metadata is uploaded content. Existing demo photos remain unchanged.
-- Shared dispatcher + P1-domain notification extensions, actual worker recovery and delivery receipts. No real mail/SMS or paid provider test occurred. DBA owns urgency, Make/Semaphore transport, retries and uncertain-delivery reconciliation.
-- P1 facade/form/polling/clock integration and five-role browser E2E. These adapters are tested with a fake transport, not a live Laravel server. Current report pages still use their existing snapshot model and native print.
-- Query optimization/index review, report/performance source parity under real schema, authenticated CSV download and full frontend/backend gates on the integrated revision.
-- Main deployment must wait for P1's Pages artifact change. No main merge or live release is part of this preparation slice.
+See [current mappings, executable fixtures and precise owner requests](P2-COMPATIBILITY.md). The portable CreateInAppNotification array handler is not the production binding. P1 owns registration and DBA owns receipts/dispatch/Semaphore/Make; P2 creates no parallel transport.
 
-Run now from the repository root:
+## Explicit remaining gates and reproduction
 
-```powershell
-php backend/tests/P2/run.php
-node --test tests/p2-adapters.mjs
-node scripts/run-tests.mjs
-node scripts/check.mjs
-```
+The current [compatibility/evidence document](P2-COMPATIBILITY.md) is authoritative: P1 safe-reference ratification, original facade/form key/revision and reader registration, private photo bytes, P1-domain event consumers, actual cross-owner mutation races, full browser/scale/release acceptance. SQL fixtures and HTTP harnesses do not replace those tests. Production stays disabled; demo and native print remain intact.
 
-Run PHP syntax on all new `.php` files and Pint test using P1's eventual `backend/vendor/bin/pint`. An isolated official Pint tool can check these files without creating P1's Composer manifest. After the foundation/schema arrive, add/run `php artisan test`, Pint, Composer validate/audit, MySQL races and authenticated browser E2E. Passing contract tests is readiness to integrate, not completion of the full P2 production prompt.
+From the P2 checkout, portable checks remain:
+
+    php backend/tests/P2/run.php
+    node --test tests/p2-adapters.mjs
+    node scripts/run-tests.mjs
+    node scripts/check.mjs
+
+The current matrix additionally gives composed real SQL/HTTP/race, actual P1 transport, artifact and combined owner-suite commands. Preserve all owner tests and source hashes. No live SMS/mail, shared database, deployment or main merge is part of this slice.

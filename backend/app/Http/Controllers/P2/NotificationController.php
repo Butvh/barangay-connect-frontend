@@ -26,7 +26,7 @@ final class NotificationController extends P2Controller
             };
         }
 
-return $this->listing($this->notifications->list($this->actor($r), $q));
+        return $this->listing($this->notifications->list($this->actor($r), $q));
     }
 
     public function show(Request $r, string $id)
@@ -42,7 +42,7 @@ return $this->listing($this->notifications->list($this->actor($r), $q));
             throw new Problem('VALIDATION', 'Choose read or unread.');
         }
 
-return $this->data($this->notifications->setRead($this->actor($r), $this->id($id), $in['is_read']));
+        return $this->data($this->notifications->setRead($this->actor($r), $this->id($id), $in['is_read']));
     }
 
     public function dismiss(Request $r, string $id)
@@ -64,6 +64,6 @@ return $this->data($this->notifications->setRead($this->actor($r), $this->id($id
             throw new Problem('FORBIDDEN', 'Reopen Notifications for the current account.');
         }
 
-return $this->data($this->notifications->clearRead($a));
+        return $this->data($this->notifications->clearRead($a));
     }
 }

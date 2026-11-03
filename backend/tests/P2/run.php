@@ -518,5 +518,17 @@ check('SOS retry fingerprint uses submitted payload rather than mutable househol
     eq(sos($i)['id'], 1);
     eq($i->get(who(1), 1)['location_label'], 'Private Street');
 });
+check('SOS history and outbox share event time even when the clock advances between calls', function () {
+    $store = new MemoryStore;
+    $refs = new References;
+    $tick = 0;
+    $clock = function () use (&$tick) {
+        return gmdate(DATE_ATOM, 1793606400 + $tick++);
+    };
+    $service = new IncidentService($store, $refs, new AuditRecorder($store, $clock), new OutboxWriter($store, $clock), $clock);
+    $service->create(who(1), [], 'advancing-clock');
+    eq($store->select('incident_status_history')[0]['occurred_at'], $store->select('outbox_events')[0]['occurred_at']);
+});
+
 echo "$count P2 contract checks passed; $failures failed. Database/HTTP integration is not tested by this runner.\n";
 exit($failures ? 1 : 0);

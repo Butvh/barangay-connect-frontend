@@ -9,9 +9,13 @@ use App\Contracts\P2\Store;
 use App\Services\Civic\CivicService;
 use App\Services\P2\Actor;
 use App\Services\P2\Rules;
+use App\Services\P2\UsesScopedReferences;
 
 final class OverviewService
 {
+    use UsesScopedReferences;
+    use UsesScopedReferences;
+
     public function __construct(private Store $store, private ReferenceData $refs, private IncidentService $incidents, private CivicService $civic, private \Closure $clock) {}
 
     public function dashboard(Actor $actor): array
@@ -27,7 +31,7 @@ final class OverviewService
         $open = null;
         if ($actor->administrator()) {
             $latest = [];
-            foreach ($this->refs->verifications($actor->barangayId) as $v) {
+            foreach ($this->references($actor)->verifications($actor->barangayId) as $v) {
                 $id = $v['user_id'];
                 if (! isset($latest[$id]) || $v['id'] > $latest[$id]['id']) {
                     $latest[$id] = $v;
@@ -42,6 +46,6 @@ final class OverviewService
 
     public function map(Actor $actor, array $options = []): array
     {
-        return ['alerts' => $actor->role === 'resident' ? $this->incidents->nearby($actor, $options) : $this->incidents->list($actor, $options), 'facilities' => $this->refs->facilities($actor->barangayId), 'household' => $actor->role === 'resident' ? $this->refs->household($actor->id, $actor->barangayId) : null, 'barangay' => $this->refs->barangay($actor->barangayId)];
+        return ['alerts' => $actor->role === 'resident' ? $this->incidents->nearby($actor, $options) : $this->incidents->list($actor, $options), 'facilities' => $this->references($actor)->facilities($actor->barangayId), 'household' => $actor->role === 'resident' ? $this->references($actor)->household($actor->id, $actor->barangayId) : null, 'barangay' => $this->references($actor)->barangay($actor->barangayId)];
     }
 }

@@ -6,11 +6,16 @@ namespace App\Services\P2;
 
 final readonly class Actor
 {
-    public function __construct(public int $id, public int $barangayId, public string $role)
+    public function __construct(public int $id, public int $barangayId, public string $role, private ?object $observedIdentity = null)
     {
         if ($id < 1 || $barangayId < 1 || ! in_array($role, ['resident', 'captain', 'secretary', 'responder', 'rescuer'], true)) {
             throw new Problem('AUTH', 'Sign in to continue.');
         }
+    }
+
+    public function observedIdentity(): ?object
+    {
+        return $this->observedIdentity;
     }
 
     public function allow(array $roles): void

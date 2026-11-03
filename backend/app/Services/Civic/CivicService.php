@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Civic;
 
+use App\Contracts\P2\ActorReferences;
 use App\Services\P2\Actor;
 use App\Services\P2\Module;
 use App\Services\P2\Problem;
@@ -32,9 +33,14 @@ final class CivicService extends Module
         if (! $a->administrator() && $this->status($r) !== 'Active') {
             throw new Problem('NOT_FOUND', 'This announcement is unavailable.');
         } $r['status'] = $this->status($r);
-        $r['author'] = Rules::publicPerson($this->refs->person($r['posted_by'], $a->barangayId));
+        $r['author'] = Rules::publicPerson($this->references($a)->person($r['posted_by'], $a->barangayId));
         if ($a->administrator()) {
             $r['history'] = $this->store->select('announcement_history', ['announcement_id' => $id, 'barangay_id' => $a->barangayId]);
+            foreach ($r['history'] as $history) {
+                if (in_array($history['action'], ['Archived', 'Retracted'], true)) {
+                    $r[strtolower($history['action']).'_by'] = $history['by'];
+                }
+            }
         }
 
         return $r;
@@ -65,9 +71,9 @@ final class CivicService extends Module
         $expires = $this->expires($in['expires_at'] ?? null);
 
         return $this->atomic($a, [], null, function () use ($a, $title, $content, $expires) {
-            $r = $this->store->insert('announcements', ['barangay_id' => $a->barangayId, 'posted_by' => $a->id, 'title' => $title, 'content' => $content, 'status' => 'Active', 'expires_at' => $expires, 'created_at' => ($this->clock)(), 'published_at' => ($this->clock)(), 'updated_at' => ($this->clock)(), 'revision' => 1]);
+            $r = $this->store->insert('announcements', ['barangay_id' => $a->barangayId, 'posted_by' => $a->id, 'author_role' => $a->role, 'title' => $title, 'content' => $content, 'status' => 'Active', 'expires_at' => $expires, 'created_at' => ($this->clock)(), 'published_at' => ($this->clock)(), 'updated_at' => ($this->clock)(), 'revision' => 1]);
             $this->announcementHistory($a, $r, 'Published');
-            $this->event($a, 'announcement.published', $r['id'], array_values(array_filter($this->refs->people($a->barangayId), fn ($p) => in_array($p['role'], ['resident', 'captain', 'secretary'], true))));
+            $this->event($a, 'announcement.published', $r['id'], array_values(array_filter($this->references($a)->people($a->barangayId), fn ($p) => in_array($p['role'], ['resident', 'captain', 'secretary'], true))));
 
             return $this->announcement($a, $r['id']);
         });
@@ -94,7 +100,7 @@ final class CivicService extends Module
         $count = 0;
         foreach ($this->store->select('announcements', ['barangay_id' => $a->barangayId, 'status' => 'Active']) as $before) {
             $count += $this->store->transaction(['person:'.$a->id, 'announcement:'.$before['id']], function () use ($a, $before) {
-                $fresh = $this->refs->actorFor($a->id);
+                $fresh = $this->refs instanceof ActorReferences ? $this->refs->locked($a) : $this->refs->actorFor($a->id);
                 if ($fresh->role !== $a->role || $fresh->barangayId !== $a->barangayId) {
                     throw new Problem('FORBIDDEN', 'Account access changed.');
                 }
@@ -102,7 +108,7 @@ final class CivicService extends Module
                 if ($row['status'] !== 'Active' || $this->status($row) !== 'Archived') {
                     return 0;
                 }
-                $row = $this->store->update('announcements', $row['id'], ['status' => 'Archived', 'revision' => $row['revision'] + 1, 'updated_at' => ($this->clock)(), 'archived_at' => $row['expires_at'], 'archived_by' => null]);
+                $row = $this->store->update('announcements', $row['id'], ['status' => 'Archived', 'revision' => $row['revision'] + 1, 'updated_at' => ($this->clock)(), 'archived_at' => $row['expires_at']]);
                 $this->store->insert('announcement_history', ['announcement_id' => $row['id'], 'barangay_id' => $a->barangayId, 'action' => 'Expired', 'by' => null, 'at' => $row['expires_at'], 'title' => $row['title'], 'content' => $row['content'], 'expires_at' => $row['expires_at'], 'reason' => '']);
                 $this->audit($a, 'announcement', $row['id'], 'Announcement expiry recorded', ['revision' => $row['revision']]);
 
@@ -119,7 +125,7 @@ final class CivicService extends Module
         Rules::only($in, $action === 'Edited' ? ['title', 'content', 'expires_at', 'expected_revision'] : ['reason', 'expected_revision']);
 
         return $this->store->transaction(['person:'.$a->id, 'announcement:'.$id], function () use ($a, $id, $in, $action) {
-            $fresh = $this->refs->actorFor($a->id);
+            $fresh = $this->refs instanceof ActorReferences ? $this->refs->locked($a) : $this->refs->actorFor($a->id);
             if (! $fresh->administrator() || $fresh->barangayId !== $a->barangayId) {
                 throw new Problem('FORBIDDEN', 'Account access changed.');
             } $r = $this->row('announcements', $id, $a);
@@ -139,7 +145,7 @@ final class CivicService extends Module
             } else {
                 $patch['status'] = $action;
                 $reason = Rules::text($in['reason'] ?? '', 'reason', 500, $action === 'Retracted');
-                $patch += $action === 'Retracted' ? ['retracted_at' => ($this->clock)(), 'retracted_by' => $a->id, 'retraction_reason' => $reason] : ['archived_at' => ($this->clock)(), 'archived_by' => $a->id];
+                $patch += $action === 'Retracted' ? ['retracted_at' => ($this->clock)(), 'retraction_reason' => $reason] : ['archived_at' => ($this->clock)()];
             }
             $r = $this->store->update('announcements', $id, $patch);
             $this->announcementHistory($a, $r, $action, $reason);
@@ -150,7 +156,7 @@ final class CivicService extends Module
 
     private function announcementHistory(Actor $a, array $r, string $action, string $reason = ''): void
     {
-        $this->store->insert('announcement_history', ['announcement_id' => $r['id'], 'barangay_id' => $a->barangayId, 'action' => $action, 'by' => $a->id, 'at' => ($this->clock)(), 'title' => $r['title'], 'content' => $r['content'], 'expires_at' => $r['expires_at'], 'reason' => $reason]);
+        $this->store->insert('announcement_history', ['announcement_id' => $r['id'], 'barangay_id' => $a->barangayId, 'action' => $action, 'by' => $a->id, 'role_at_action' => $a->role, 'at' => ($this->clock)(), 'title' => $r['title'], 'content' => $r['content'], 'expires_at' => $r['expires_at'], 'reason' => $reason]);
         $this->audit($a, 'announcement', $r['id'], 'Announcement '.$action, ['revision' => $r['revision']]);
     }
 
@@ -182,8 +188,8 @@ final class CivicService extends Module
         $r = $this->row('community_feedback', $id, $a);
         if ($a->role === 'resident' && $r['resident_id'] !== $a->id) {
             throw new Problem('NOT_FOUND', 'This feedback is unavailable.');
-        } $r['resident'] = Rules::publicPerson($this->refs->person($r['resident_id'], $a->barangayId));
-        $r['assigned_tanod'] = $r['assigned_tanod_id'] ? Rules::publicPerson($this->refs->person($r['assigned_tanod_id'], $a->barangayId)) : null;
+        } $r['resident'] = Rules::publicPerson($this->references($a)->person($r['resident_id'], $a->barangayId));
+        $r['assigned_tanod'] = $r['assigned_tanod_id'] ? Rules::publicPerson($this->references($a)->person($r['assigned_tanod_id'], $a->barangayId)) : null;
 
         return $r;
     }
@@ -198,7 +204,7 @@ final class CivicService extends Module
         $a->allow(['resident']);
         Rules::only($in, ['type', 'category', 'description', 'location', 'rating', 'comment']);
         $type = Rules::choice($in['type'] ?? null, ['complaint', 'suggestion', 'general'], 'type');
-        $base = ['barangay_id' => $a->barangayId, 'resident_id' => $a->id, 'type' => $type, 'assigned_tanod_id' => null, 'created_at' => ($this->clock)(), 'submitted_at' => ($this->clock)(), 'assigned_at' => null, 'resolved_at' => null, 'revision' => 0, 'rating' => null, 'comment' => '', 'category' => '', 'location' => '', 'description' => '', 'status' => $type === 'general' ? null : 'Pending'];
+        $base = ['barangay_id' => $a->barangayId, 'resident_id' => $a->id, 'type' => $type, 'assigned_tanod_id' => null, 'created_at' => ($this->clock)(), 'submitted_at' => ($this->clock)(), 'assigned_at' => null, 'resolved_at' => null, 'revision' => 0, 'rating' => null, 'comment' => null, 'category' => '', 'location' => '', 'description' => '', 'status' => $type === 'general' ? null : 'Pending'];
         if ($type === 'general') {
             if (! is_int($in['rating'] ?? null) || $in['rating'] < 1 || $in['rating'] > 5) {
                 throw new Problem('VALIDATION', 'Choose a rating from 1 to 5.');
@@ -214,7 +220,7 @@ final class CivicService extends Module
         return $this->atomic($a, [], null, function () use ($a, $base) {
             $r = $this->store->insert('community_feedback', $base);
             $this->audit($a, 'feedback', $r['id'], 'Feedback submitted');
-            $this->event($a, 'feedback.submitted', $r['id'], $this->officials($a->barangayId));
+            $this->event($a, 'feedback.submitted', $r['id'], $this->officials($a));
 
             return $this->feedbackItem($a, $r['id']);
         });
@@ -236,7 +242,7 @@ final class CivicService extends Module
         Rules::only($in, $assign ? ['tanod_id', 'expected_revision'] : ['expected_revision']);
 
         return $this->store->transaction(['person:'.$a->id, 'feedback:'.$id], function () use ($a, $id, $in, $assign) {
-            $fresh = $this->refs->actorFor($a->id);
+            $fresh = $this->refs instanceof ActorReferences ? $this->refs->locked($a) : $this->refs->actorFor($a->id);
             if (! $fresh->administrator() || $fresh->barangayId !== $a->barangayId) {
                 throw new Problem('FORBIDDEN', 'Account access changed.');
             } $r = $this->row('community_feedback', $id, $a);
@@ -246,7 +252,7 @@ final class CivicService extends Module
             $patch = ['revision' => $r['revision'] + 1];
             if ($assign) {
                 $idTanod = Rules::id($in['tanod_id'] ?? null, 'tanod_id');
-                $p = $this->refs->person($idTanod, $a->barangayId);
+                $p = $this->references($a)->person($idTanod, $a->barangayId);
                 if (! $p || ! ($p['is_tanod'] ?? false)) {
                     throw new Problem('VALIDATION', 'Choose an existing local Tanod.');
                 } $patch += ['assigned_tanod_id' => $idTanod, 'assigned_at' => ($this->clock)(), 'status' => 'Assigned'];
@@ -255,7 +261,7 @@ final class CivicService extends Module
             }
             $r = $this->store->update('community_feedback', $id, $patch);
             $this->audit($a, 'feedback', $id, 'Feedback '.$r['status'], ['status' => $r['status']]);
-            $this->event($a, 'feedback.updated', $id, [$this->refs->person($r['resident_id'], $a->barangayId)]);
+            $this->event($a, 'feedback.updated', $id, [$this->references($a)->person($r['resident_id'], $a->barangayId)]);
 
             return $this->feedbackItem($a, $id);
         });
