@@ -46,8 +46,8 @@ if (!Config.DEMO_MODE) {
     if (previous && (!currentUser || switched) && !Auth.error()) {
       const host = globalThis.document?.querySelector('#app');
       if (host) host.textContent = switched ? 'Your account changed. Opening your current workspace.' : 'Your session ended. Sign in to continue.';
-      // Explicit sign out has a confirmed caller-owned destination. Revocation/account switches redirect here.
-      if (reason !== 'signed_out') globalThis.location?.replace?.(switched ? Auth.homeFor(currentUser) : roleOf(previous) === 'resident' ? 'resident-login.html' : 'login.html');
+      // Explicit sign-in/out forms own their confirmed destination. Background revocation/account switches redirect here.
+      if (!['signed_in', 'signed_out'].includes(reason)) globalThis.location?.replace?.(switched ? Auth.homeFor(currentUser) : roleOf(previous) === 'resident' ? 'resident-login.html' : 'login.html');
     }
     previous = currentUser;
   });

@@ -128,4 +128,11 @@ await test('confirmed sign out signals one caller-owned navigation after clearin
   auth.onChange(event => { observed = { reason: event.reason, user: auth.current(), cleared }; });
   await auth.logout(); assert.deepEqual(observed, { reason: 'signed_out', user: null, cleared: true });
 });
+await test('explicit sign in identifies caller-owned navigation separately from session refresh', async () => {
+  let observed;
+  const auth = createBackendAuth({ http: { request: async () => ({ id: 7, barangay_id: 1, role: 'resident', is_resident: true }), onUnauthorized: () => () => {} } });
+  auth.onChange(event => { observed = event.reason; });
+  await auth.login('fictional@example.invalid', 'Fictional123');
+  assert.equal(observed, 'signed_in');
+});
 console.log(`${count} backend transport checks passed.`);

@@ -29,7 +29,7 @@ export function createBackendAuth({ http, location = globalThis.location } = {})
     const request = ++version;
     const result = await http.request('auth/login', { method: 'POST', body: { email: String(email).trim().toLowerCase(), password } });
     if (request !== version) throw new ApiError('AUTH', 'Your session changed. Try signing in again.');
-    accept(result); emit(); return current();
+    accept(result); emit('signed_in'); return current();
   }
   async function logout() {
     version++;

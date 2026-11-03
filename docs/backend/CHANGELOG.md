@@ -6,7 +6,7 @@
 - Added exact typed v2 event contexts and explicit recipient audience; interface version1 remains distinct from persisted envelope version2. No new v1 emissions or dispatch-time aliases.
 - Published minimal authorized household/approval/facility/personnel/verification/people references, original-generation locking checks, private-photo ports/schema request and explicit503 routes.
 - Fixed deferred/failed polling refresh revision retention and old-account read cancellation. Added a form-owned immutable submission-intent helper; incomplete domains/forms remain unregistered.
-- Real-browser QA exposed competing successful sign-out redirects; session changes now distinguish confirmed caller navigation from automatic revocation/account-switch redirects.
+- Real-browser QA exposed competing successful sign-out redirects; explicit sign-in/out now distinguish confirmed caller navigation from automatic background revocation/account-switch redirects.
 - Added isolated test-only Playwright with a lockfile for original UI cookie/session evidence against actual DBA rows. No frontend runtime dependency or visual redesign.
 - Preserved every owner source and added their failing compatibility gate to CI without suppressing format failures. Exact final results and SHAs are recorded in PR49.
 
