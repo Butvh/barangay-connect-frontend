@@ -44,7 +44,7 @@ await overlay(lock.p2, p2, 'p2');
 // Add DBA suite discovery in the private snapshot only; preserve root P1 suites and every owner's source bytes.
 const xmlPath = resolve(destination, 'backend/phpunit.xml');
 const xml = await readFile(xmlPath, 'utf8');
-await writeFile(resolve(destination, 'backend/phpunit.combined.xml'), xml.replace('</testsuites>', '<testsuite name="Database"><directory>tests/Database</directory></testsuite></testsuites>'));
+await writeFile(resolve(destination, 'backend/phpunit.combined.xml'), xml.replace('</testsuites>', '<testsuite name="Database"><directory>tests/Database</directory></testsuite><testsuite name="Integration"><directory>tests/Integration</directory></testsuite></testsuites>'));
 const manifest = { ...lock, p1: git('rev-parse', 'HEAD').toString().trim(), dirty: Boolean(git('status', '--porcelain').toString().trim()), ownerHashes };
 await writeFile(resolve(destination, 'integration-manifest.json'), JSON.stringify(manifest, null, 2));
 if (process.env.GITHUB_ENV) await appendFile(process.env.GITHUB_ENV, `SNAPSHOT_DIR=${destination}\n`);

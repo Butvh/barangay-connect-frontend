@@ -129,9 +129,11 @@ jobs:
         working-directory: ${{ env.SNAPSHOT_DIR }}/backend
         run: php vendor/phpunit/phpunit/phpunit -c phpunit.combined.xml --display-warnings --fail-on-warning --log-junit combined-junit.xml
       - name: Unchanged P2 contract suite
+        if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
         working-directory: ${{ env.SNAPSHOT_DIR }}
         run: php backend/tests/P2/run.php
       - name: P2 adapters through shared transport and original frontend gates
+        if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
         working-directory: ${{ env.SNAPSHOT_DIR }}
         run: |
           node --experimental-default-type=module --test tests/p2-adapters.mjs
@@ -142,8 +144,13 @@ jobs:
           node scripts/stage-backend-frontend.mjs
           node --experimental-default-type=module tests/backend-live.mjs
       - name: Read-only format check of all owners
+        if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
         working-directory: ${{ env.SNAPSHOT_DIR }}/backend
         run: vendor/bin/pint --test
+      - name: Cross-owner shared writer and handler acceptance
+        if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
+        working-directory: ${{ env.SNAPSHOT_DIR }}/backend
+        run: DBA_TEST_AUTOLOAD="$PWD/vendor/autoload.php" php tests/Compatibility/check-shared-contracts.php
       - name: Verify owner source preservation
         if: ${{ always() && env.SNAPSHOT_DIR != '' }}
         working-directory: ${{ env.SNAPSHOT_DIR }}
