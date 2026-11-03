@@ -19,7 +19,7 @@ The follow-up first repinned unchanged owner source to DBA f641918d37ff2ecd49cc4
 
 Local owned PHP: **40 passed,20 skipped,119 assertions** before final committed CI. Skips require the actual combined MySQL/DBA fixture; no local real-MySQL server is claimed. The committed job must execute those tests against the pinned actual models. The six historical identity skips were changed to explicit schema/cast assertions in the combined profile.
 
-Local JS: original405 checks plus14 HTTP/session/lifecycle checks, three new polling consistency scenarios, immutable submission intent, sign-out and bridge checks pass. Both frontend/backend artifact gates pass. Test-only Playwright1.64.1 is separately locked under tests/browser; npm audit reports no advisories. It is not a frontend runtime dependency.
+Local JS: original405 checks plus15 HTTP/session/lifecycle checks, three new polling consistency scenarios, immutable submission intent, sign-out and bridge checks pass. Both frontend/backend artifact gates pass. Test-only Playwright1.64.1 is separately locked under tests/browser and installed outside the repository; npm audit reports no advisories. It is not a frontend runtime dependency.
 
 Named failures reproduced before implementation:
 - EventV2BoundaryTest: missing family-bound context factory and recipient serialization.
@@ -27,6 +27,7 @@ Named failures reproduced before implementation:
 - IncidentPhotoContractTest: missing opaque typed receipt; implementation is a contract, not an actual upload service.
 - polling-consistency: dirty/focus deferral consumed its revision; failed callback and account-switch cancellation were also covered.
 - submission-intent: missing helper; the final check preserves one key/body/observed revision and rejects a new account or stale replacement.
+- Real Chromium in run41608664260 caught two competing navigations after successful sign-out. P1 now emits signed_out after clearing identity and leaves explicit navigation to the awaited caller; revocation/account-switch navigation remains automatic. The browser assertion was retained for rerun.
 
 New real-SQL tests cover safe household/approval/visible-facility/personnel projections,403/cross-scope policy, locked original-generation comparison (including a stale REPEATABLE READ snapshot), stale-tab409 and photo503. Browser QA uses real random fictional DBA accounts, the original sign-in/sign-out forms and shared-origin cookies, captures screenshots and tests generation revocation/private paths. **Results of these added SQL/browser cases are reported from the committed CI, not inferred from the baseline above.**
 

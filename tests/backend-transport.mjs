@@ -120,4 +120,12 @@ await test('a missing polling reader is explicitly unavailable', async () => {
   try { assert.throws(() => polling.subscribe('alerts', () => {}), error => error.code === 'NOT_AVAILABLE'); }
   finally { polling.destroy(); }
 });
+await test('confirmed sign out signals one caller-owned navigation after clearing identity', async () => {
+  let observed, cleared = false;
+  const auth = createBackendAuth({ http: { request: async path => path === 'me' ? { id: 7, barangay_id: 1, role: 'secretary', is_secretary: true } : { signed_out: true },
+    onUnauthorized: () => () => {}, setIdentity: value => { if (value === null) cleared = true; } } });
+  await auth.hydrateSession();
+  auth.onChange(event => { observed = { reason: event.reason, user: auth.current(), cleared }; });
+  await auth.logout(); assert.deepEqual(observed, { reason: 'signed_out', user: null, cleared: true });
+});
 console.log(`${count} backend transport checks passed.`);

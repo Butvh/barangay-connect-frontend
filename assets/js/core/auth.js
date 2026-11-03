@@ -40,13 +40,14 @@ export const Auth = Config.DEMO_MODE ? createAuth() : createBackendAuth({ http: 
 if (!Config.DEMO_MODE) await Auth.hydrateSession();
 if (!Config.DEMO_MODE) {
   let previous = Auth.current();
-  Auth.onChange(() => {
+  Auth.onChange(({ reason } = {}) => {
     const currentUser = Auth.current();
     const switched = previous && currentUser && (previous.id !== currentUser.id || previous.barangay_id !== currentUser.barangay_id || roleOf(previous) !== roleOf(currentUser));
     if (previous && (!currentUser || switched) && !Auth.error()) {
       const host = globalThis.document?.querySelector('#app');
       if (host) host.textContent = switched ? 'Your account changed. Opening your current workspace.' : 'Your session ended. Sign in to continue.';
-      globalThis.location?.replace?.(switched ? Auth.homeFor(currentUser) : roleOf(previous) === 'resident' ? 'resident-login.html' : 'login.html');
+      // Explicit sign out has a confirmed caller-owned destination. Revocation/account switches redirect here.
+      if (reason !== 'signed_out') globalThis.location?.replace?.(switched ? Auth.homeFor(currentUser) : roleOf(previous) === 'resident' ? 'resident-login.html' : 'login.html');
     }
     previous = currentUser;
   });

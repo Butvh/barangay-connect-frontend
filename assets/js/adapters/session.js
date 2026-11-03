@@ -4,7 +4,7 @@ import { roleOf } from '../core/permissions.js';
 export function createBackendAuth({ http, location = globalThis.location } = {}) {
   let user = null, hydrated = false, failure = null, version = 0;
   const listeners = new Set();
-  const emit = () => { for (const callback of listeners) { try { callback(); } catch { /* Isolate page listeners. */ } } };
+  const emit = (reason = 'refresh') => { for (const callback of listeners) { try { callback({ reason }); } catch { /* Isolate page listeners. */ } } };
   const homeFor = person => roleOf(person) === 'resident' ? 'resident-dashboard.html' : 'official-dashboard.html';
   const current = () => user ? copy(user) : null;
   function accept(value) {
@@ -14,7 +14,7 @@ export function createBackendAuth({ http, location = globalThis.location } = {})
     http.setIdentity?.({ id: safe.id, barangay_id: safe.barangay_id, role: roleOf(safe) });
     user = copy(safe); hydrated = true; failure = null;
   }
-  http.onUnauthorized(() => { version++; user = null; hydrated = true; failure = null; emit(); });
+  http.onUnauthorized(() => { version++; user = null; hydrated = true; failure = null; emit('revoked'); });
   async function hydrateSession() {
     const request = ++version;
     try { const result = await http.request('me'); if (request === version) accept(result); }
@@ -35,8 +35,9 @@ export function createBackendAuth({ http, location = globalThis.location } = {})
     version++;
     const result = await http.request('auth/logout', { method: 'POST', body: {} });
     if (result?.signed_out !== true) throw new ApiError('SERVER', 'Sign out could not be confirmed. Try again.');
-    user = null; failure = null; hydrated = true; emit();
+    user = null; failure = null; hydrated = true;
     http.setIdentity?.(null);
+    emit('signed_out');
   }
   function requireRole(roles = []) {
     if (!hydrated) throw new ApiError('NOT_READY', 'Checking your session.');
