@@ -1,34 +1,39 @@
-# P1 foundation validation
+# P1 validation — November 3, 2026
 
-## November 3 compatibility update
+Current baseline pins are in integration-lock.json. Final follow-up P1/synthetic-merge SHAs, CI totals and browser artifacts are recorded in [draft PR49](https://github.com/Butvh/barangay-connect-frontend/pull/49). A standalone green job is not combined acceptance.
 
-See [candidate canonical matrix / owner requests](COMPATIBILITY.md) and `integration-lock.json` for the pinned P1/DBA/P2 baselines. The focused slice adds tenant/generation/stale-tab regressions, minimal current/locked reference tests, typed event validation, explicit module/reader gates and real shared transport composition.
+## Current measured baseline
 
-Local P1 checks retain all405 original frontend checks; the transport/lifecycle suite now has14 checks plus the domain bridge/sign-out tests. P2's untouched snapshot suite passes47 PHP checks and8 adapter tests, plus8 new checks exercising its actual factories through P1's real shared HTTP implementation. Normal root tests deliberately skip unavailable combined-DB cases. Final committed CI totals and each positive real-model skip are reported in PR49; green standalone CI is not evidence of domain compatibility.
+The follow-up first repinned unchanged owner source to DBA f641918d37ff2ecd49cc47b3437bb0e159d6a10a and P2 c902d9f7239a8fcefdddf293fbc531876548c10a; P1 preflight head41b6c42fc536237b10034b3eb3fe058f9ee71fc1. [Run41604926592](https://github.com/Butvh/barangay-connect-frontend/actions/runs/41604926592) tests clean synthetic merge5a9876c31f7c0a8278a8a371594797d81a44af60.
 
-Local root Laravel result: **35 passed, 9 skipped, 105 assertions**. The skips are eight combined-model cases requiring the disposable MySQL job and one engine check. Composer strict validation/platform checks/locked audit, Pint, both artifact gates and the414-file scanner pass. Live loopback probes in the private development snapshot pass cookie continuity across clients, CSRF419, actual P2 adapter401, disabled-login503 and private-path404 checks. All120 pinned DBA/P2 source files retain their SHA256 hashes. That snapshot is marked dirty development evidence; the committed CI run supplies reproducible SQL evidence.
-
-Local combined discovery without MySQL: **99 tests, 121 assertions, 58 skipped**; no SQL pass is claimed from this run. Combined read-only Pint finds three formatting rules in P2's unchanged NotificationController.php (unary_operator_spaces, statement_indentation, not_operator_with_successor_space). This is an explicit P2 owner request and the combined gate remains blocking; P1 has not edited that file or suppressed the check.
-
-The new combined job preserves both root and DBA suites on disposable MySQL8.4, adds actual DBA-model negative/positive-conditional session tests, stages the backend frontend, executes live loopback HTTP probes through the actual P2 factories, and verifies every owner source hash. Missing auth_version/cast blocks the positive lifecycle and five revocation cases; no test migration or fake production authentication is substituted. Workers, scheduled delivery, full P2 Store/domain races and live external services remain unverified/disabled.
-
-The November2 table below is historical evidence, not the current slice's completion claim.
-
-Environment: Windows, PHP8.5.12, Composer2.11.1, Node22.14.0. Base main `3014ad6`. DBA draft PR48 was inspected for contract compatibility but not imported; no production host assumed.
-
-| Check | Observed result / limit |
+| Gate | Observed result / limit |
 | --- | --- |
-| Existing frontend suite | Original405 checks pass: core354, facility4, SOS5, Alert Detail6, verification7, profile12, recovery9, recovery dialog8. |
-| New transport/session lifecycle | Same-origin/CSRF, safe status mapping, malformed response and network failures, no write replay, hydration, logout failure, polling revocation/teardown tests pass. |
-| Pages artifact | Allowlist and stale-output/destination safety tests pass; root/backend/secrets/docs/tests/uploads/vendor excluded. |
-| Backend artifact/module graph | Runtime switches only in generated copy; seed excluded; actual staged module imports hydrate `/me` before guards, read no browser storage, and use server time. |
-| Sign-out interaction | Real helper waits for invalidation; failed invalidation retains the page with safe error copy. |
-| Laravel tests | 18 pass /75 assertions, including the DBA account-status/relational-appointment projection and isolated encryption key. One actual-MySQL engine test explicitly skipped locally because no MySQL server is available. Test-only user provider covers guard behavior; it is not real MySQL persistence. |
-| Composer | Strict validation/platform checks pass; locked audit reports no security advisories at time of run. |
-| Pint / diff | Formatting and whitespace checks pass. |
-| Live local HTTP on temporary loopback port8011 | Session/CSRF cookies issued; missing-token POST419; configured-disabled login503; forged demo header cannot authenticate `/me` (401); frontend HTML/runtime served. |
-| Private-path HTTP probes | `/.env`, `/backend/.env`, `/vendor/autoload.php`, `/storage/private.pdf`, `/frontend/assets/js/data/seed.js` return404 through Laravel's public root. |
+| Actual DBA identity | All six earlier lifecycle/revocation dependency skips execute successfully with the new migration/cast. They are no longer missing-column blockers. |
+| Combined root + DBA discovery |124 tests,529 assertions,0 skips,1 error. Error is the unchanged DBA Integration/P1IdentityModelContractTest session fixture omitting identity_scope before expecting200. P1 requests the actual scope in that fixture and preserves the middleware. |
+| P2 contract/adapter/shared HTTP |47 PHP checks,8 original adapters and8 actual-factory/shared-transport checks pass. The PHP runner is MemoryStore evidence, not SQL/domain races. |
+| Existing frontend / artifacts | All405 original checks retained. Static scanner, allowlisted Pages artifact, backend module graph and private-path HTTP checks pass. |
+| Owner preservation |135 pinned DBA/P2 source files retain their bytes; no owner code was changed. |
+| Known owner gates | Read-only Pint fails on P2 NotificationController. DBA compatibility script reports four P2 writer/time/handler/canonical-fixture mismatches. All later independent gates still run; no failures are suppressed. |
 
-CI adds actual MySQL8.4 engine/InnoDB verification. That engine check must pass in CI; this table does not claim a CI result before the PR runs. MySQL domain persistence/races, DBA model integration, real sign-in browser walkthroughs, upload authorization/cleanup, queued mail/SMS/Make delivery, production hosting and integrated-main acceptance remain pending their reviewed slices.
+## P1 follow-up implementation checks
 
-Named failing checks during development: transport tests initially could not import the absent adapter; PHP session tests exposed the test-provider mismatch on logout; the private-storage test caught Laravel merging its public disk default; the profile regression suite caught the newly imported sign-out helper missing from its module harness; the fresh DBA contract check exposed an account-status mismatch before publication. Each was corrected and targeted checks rerun. No framework guard was disabled to make the tests pass.
+Local owned PHP: **40 passed,20 skipped,119 assertions** before final committed CI. Skips require the actual combined MySQL/DBA fixture; no local real-MySQL server is claimed. The committed job must execute those tests against the pinned actual models. The six historical identity skips were changed to explicit schema/cast assertions in the combined profile.
+
+Local JS: original405 checks plus14 HTTP/session/lifecycle checks, three new polling consistency scenarios, immutable submission intent, sign-out and bridge checks pass. Both frontend/backend artifact gates pass. Test-only Playwright1.64.1 is separately locked under tests/browser; npm audit reports no advisories. It is not a frontend runtime dependency.
+
+Named failures reproduced before implementation:
+- EventV2BoundaryTest: missing family-bound context factory and recipient serialization.
+- SourceReferenceBoundaryTest: missing safe source gateway (after correcting the test fixture's GenericUser flags).
+- IncidentPhotoContractTest: missing opaque typed receipt; implementation is a contract, not an actual upload service.
+- polling-consistency: dirty/focus deferral consumed its revision; failed callback and account-switch cancellation were also covered.
+- submission-intent: missing helper; the final check preserves one key/body/observed revision and rejects a new account or stale replacement.
+
+New real-SQL tests cover safe household/approval/visible-facility/personnel projections,403/cross-scope policy, locked original-generation comparison (including a stale REPEATABLE READ snapshot), stale-tab409 and photo503. Browser QA uses real random fictional DBA accounts, the original sign-in/sign-out forms and shared-origin cookies, captures screenshots and tests generation revocation/private paths. **Results of these added SQL/browser cases are reported from the committed CI, not inferred from the baseline above.**
+
+## Disabled / unverified
+
+Production identity/P2/dispatch flags remain false; P2 Store/reference/writer/handler/readers and global factories are not registered. P2 has published no actual SQL/HTTP/race commands at its pinned head. No actual-domain race acceptance or real worker/scheduler delivery is claimed.
+
+Private incident-photo metadata/policy/byte service is absent; authenticated routes intentionally return503. DTO tests prove neither uploaded bytes nor download authorization/cleanup. P1 password/reset/verification/personnel/facility mutation services remain later reviewed slices; the test-only guarded generation change is not a production endpoint.
+
+No shared/live migration, production host, deploy, main/teammate merge, real mail/SMS or Make activation. Existing private .env/APP_KEY are preserved. Public artifacts exclude backend/vendor/private files/config/logs/dumps/tests and the backend-mode seed; Laravel's only web root is backend/public.

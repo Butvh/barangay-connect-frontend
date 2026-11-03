@@ -35,11 +35,11 @@ final class EventBoundaryTest extends TestCase
 
     public function test_recipient_defaults_to_in_app_without_sms_authorization(): void
     {
-        $recipient = new RecipientReference(42);
+        $recipient = new RecipientReference(42, true, false, 'official');
         $this->assertTrue($recipient->inApp);
         $this->assertFalse($recipient->sms);
         $this->expectException(InvalidArgumentException::class);
-        new RecipientReference(0);
+        new RecipientReference(0, true, false, 'official');
     }
 
     public function test_resource_reference_is_an_allowlisted_server_reference(): void

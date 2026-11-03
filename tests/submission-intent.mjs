@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+import { createSubmissionIntent } from '../assets/js/adapters/submission-intent.js';
+
+let actor = { id: 1, barangay_id: 1, role: 'captain' }, generated = 0;
+const intent = createSubmissionIntent({ auth: { current: () => actor }, keyFactory: () => `intent-key-${++generated}` });
+const input = { personnel_id: 7, reason: 'Fictional test' };
+const original = intent.prepare(input, 4);
+input.reason = 'Changed after submission';
+assert.deepEqual(intent.retry(), original);
+assert.equal(generated, 1);
+assert.equal(intent.retry().body.expected_revision, 4);
+assert.throws(() => intent.prepare(input, 5), error => error.code === 'CONFLICT');
+assert.equal(generated, 1);
+actor = { id: 2, barangay_id: 1, role: 'secretary' };
+assert.throws(() => intent.retry(), error => error.code === 'AUTH');
+intent.discard();
+const second = intent.prepare({ personnel_id: 8 }, 0);
+assert.notEqual(second.idempotencyKey, original.idempotencyKey);
+assert.equal(second.body.expected_revision, 0);
+intent.complete(); assert.throws(() => intent.retry(), error => error.code === 'INVALID_STATE');
+console.log('PASS submit intent retains one key, immutable body and observed revision on retry; changed accounts and stale replacements fail closed');

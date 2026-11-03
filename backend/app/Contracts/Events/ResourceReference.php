@@ -9,7 +9,7 @@ final readonly class ResourceReference
 {
     public function __construct(public string $type, public int $id)
     {
-        if ($id < 1 || ! in_array($type, ['alert', 'announcement', 'feedback', 'verification', 'personnel', 'facility', 'user', 'household', 'security'], true)) {
+        if ($id < 1 || $id > 9007199254740991 || ! in_array($type, ['incident', 'personnel_appointment', 'alert', 'announcement', 'feedback', 'verification', 'personnel', 'facility', 'user', 'household', 'security'], true)) {
             throw new InvalidArgumentException('Unsupported server resource reference.');
         }
     }

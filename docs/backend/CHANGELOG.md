@@ -1,13 +1,22 @@
 # Backend work log
 
-## November 3, 2026 — focused compatibility slice
+## November 3, 2026 — latest DBA v2 follow-up
+
+- Repinned DBA f641918; included its Integration suite. All prior real-model generation/role/status/scope lifecycle skips execute; a stale DBA scope fixture remains owner-blocking.
+- Added exact typed v2 event contexts and explicit recipient audience; interface version1 remains distinct from persisted envelope version2. No new v1 emissions or dispatch-time aliases.
+- Published minimal authorized household/approval/facility/personnel/verification/people references, original-generation locking checks, private-photo ports/schema request and explicit503 routes.
+- Fixed deferred/failed polling refresh revision retention and old-account read cancellation. Added a form-owned immutable submission-intent helper; incomplete domains/forms remain unregistered.
+- Added isolated test-only Playwright with a lockfile for original UI cookie/session evidence against actual DBA rows. No frontend runtime dependency or visual redesign.
+- Preserved every owner source and added their failing compatibility gate to CI without suppressing format failures. Exact final results and SHAs are recorded in PR49.
+
+## Earlier November 3 work — historical focused compatibility slice
 
 - Rechecked main and PR48/49/50 at the pinned review SHAs; preserved a clean P1 branch and every DBA/P2 source byte.
 - Added the candidate canonical compatibility matrix and exact requests; no unilateral owner agreement or substitute production writer/Store.
 - Fixed tenant-bound session snapshots, negative generation denial and stale-tab write preconditions; supplied private effective-identity/current-locked-reference boundaries.
 - Added the P2 envelope/path/header bridge and actual factory composition, preserving submit keys and observed revisions; missing readers/modules explicitly unavailable.
 - Gated provider/routes/handler/scheduler registration on reviewed implementations, retained cookie/CSRF authentication and stateless DBA callbacks, and set the database retry window to180 seconds. All enablement flags remain false.
-- Added the exact Testbench dependency and pinned private snapshot/combined CI job, retaining existing frontend, P2 and DBA suites. Real DBA-model positive auth/revocation checks remain conditional on the missing DBA generation field/cast; no substitute migration or shared-database write.
+- Added the exact Testbench dependency and pinned private snapshot/combined CI job, retaining existing frontend, P2 and DBA suites. At that earlier pin, real-model positive checks awaited the generation field; the latest follow-up above supersedes that blocker. No substitute migration or shared-database write.
 
 ## November 2, 2026 — initial P1 foundation
 

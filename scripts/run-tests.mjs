@@ -32,7 +32,7 @@ if (!process.exitCode) {
   if (profile.error) console.error(profile.error.message);
   process.exitCode = profile.status ?? 1;
 }
-for (const file of ['tests/password-recovery.mjs', 'tests/recovery-pages.mjs', 'tests/backend-transport.mjs', 'tests/sign-out.mjs', 'tests/domain-transport.mjs']) {
+for (const file of ['tests/password-recovery.mjs', 'tests/recovery-pages.mjs', 'tests/backend-transport.mjs', 'tests/polling-consistency.mjs', 'tests/submission-intent.mjs', 'tests/sign-out.mjs', 'tests/domain-transport.mjs']) {
   if (process.exitCode) break;
   const recovery = spawnSync(process.execPath, [...flags, file], { cwd: root, stdio: 'inherit' });
   if (recovery.error) console.error(recovery.error.message);

@@ -1,10 +1,10 @@
 # Backend foundation — P1 / DBA / P2 review
 
-Status: initial P1 foundation, November 2, 2026. **Not a completed backend release.**
+Status: P1 compatibility follow-up, November 3, 2026. **Not a completed backend release.**
 
 November3 update: [compatibility matrix and exact owner requests](COMPATIBILITY.md) supersede the initial interface proposals below. It pins all three actual branches and documents candidate typed contracts, safe registration gates and reproducible combined tests. Joint acceptance remains pending; no live feature is enabled.
 
-The DBA's draft [PR48](https://github.com/Butvh/barangay-connect-frontend/pull/48), head `32ff81f`, is available for contract review; it has not been merged or imported here. No P2 implementation or production host is assumed. This slice supplies Laravel configuration, the session boundary, shared transport, isolated tests, and integration contracts. It creates **no models, migrations, factories, domain persistence, provider credentials, SMS service, or business-event writer**.
+The DBA's draft [PR48](https://github.com/Butvh/barangay-connect-frontend/pull/48), head `f641918`, now supplies the additive security generation, v2 event storage and locking helpers. Its source is overlaid unchanged only in private combined tests, not merged into this branch. P2's published `c902d9f` still lacks compatible production adapters. P1 supplies foundation, safe reference contracts, transport/registration and tests; it creates no models, migrations, SMS service or competing business writer.
 
 ## Runtime and safe local setup
 
@@ -76,11 +76,11 @@ The generated frontend is still an **integration build**, not an approved produc
 3. P2's first small PR binds the agreed `AuditRecorder` and `OutboxWriter` contracts, using DBA models, with transaction rollback tests. Domain writes must remain disabled until those bindings exist; no P1 alternative writer.
 4. P1 implements persistent identity/registration/profile/recovery, verification, personnel and facilities against those reviewed models. P2 implements incidents against the same transport/identity boundary. Use reviewed short PRs, then integrate on main with all checks green.
 
-### DBA identity request — proposed, not a migration
+### DBA identity contract — migration present, enablement reviewed separately
 
 `App\Models\User` implements Laravel `Authenticatable`, uses a full-length Argon2id hash and the standard guard contract. P1 now matches PR48's relational design: only `is_captain` and `is_resident` are stored booleans; Secretary/Responder/Rescuer flags and personnel status are derived from the scoped `appointment` relationship; Tanod membership is derived from `tanodMembership`. `account_status` must be Active even for a resident or Captain. No duplicate operational role columns are requested. Needed scalar fields include integer `id`/`barangay_id`, nullable integer `household_id`, name/email/contact and nullable genuine `created_at`. Laravel remember-token behavior must be supported even though remember-me login is disabled. Never return hashes/tokens or raw models.
 
-**DBA request before identity enablement:** PR48 currently lacks a security generation. Please add an additive migration for integer-cast, nonnegative `users.auth_version` (initial0) to support reliable session/password/reset revocation. Missing/non-integer versions deliberately deny login. P1 does not create that migration or modify User. Root Composer now declares the DBA factory/seeder namespaces, without adding files there.
+**DBA implementation present:** the pinned PR48 contains additive users.auth_version with a nonnegative integer cast/default0. All six earlier positive real-model identity/revocation skips execute against it. P1 keeps missing/invalid generations denying access and creates no model/migration. Production identity remains disabled pending the reviewed environment/integration gates, not a missing-column claim.
 
 Every request loads current DB identity. Inactive/Unassigned staff fall back only to an independent resident membership; no remaining effective role is denied. A changed role or security version invalidates the existing portal session. Increment `auth_version` for password/recovery reset, role/scope/status revocation, and other security resets. Agree atomic locking around concurrent login/password/role changes. A scope must be an actual positive barangay ID, never a cast-from-null zero.
 
@@ -88,11 +88,11 @@ DBA also supplies households/map percentages, unique normalized email, private d
 
 ### P2 event contract request
 
-The candidate signatures now use `AuditSummary`, UUIDv4 `EventId`, `DateTimeImmutable` and a bounded historical `EventContext`; see `COMPATIBILITY.md` and `app/Contracts/Events`. `scope` is the barangay ID; actor/role come from the server; nullable actors are only explicit system actions. `ResourceReference` contains type/id. `RecipientReference(userId,inApp=true,sms=false)` maps to PR48's recipient/channel rows, with no phone/email/credential/document payload. P2's current array/32hex/string-time writers are not yet compatible bindings.
+The candidate signatures now use `AuditSummary`, UUIDv4 `EventId`, `DateTimeImmutable` and a bounded historical `EventContext`; see `COMPATIBILITY.md` and `app/Contracts/Events`. `scope` is the barangay ID; actor/role come from the server; nullable actors are only explicit system actions. `ResourceReference` contains type/id. `RecipientReference(userId,inApp,sms,audience)` maps to PR48's recipient/channel rows, with no phone/email/credential/document payload. P2's current array/32hex/string-time writers are not yet compatible bindings.
 
 Both implementations must use the caller's transaction/connection, perform no HTTP, create no independently committed side write, and leave dispatch to DBA. Persist a unique event ID/deduplication key. Resources are reread/authorized by consumers; no client-controlled URL, recipient or arbitrary template. Type names and versioned templates still require all three reviewers' agreement.
 
-Proposed P1 event families: resident registered; profile/household updated; verification submitted/resubmitted/Approved/Rejected/Resubmission requested/Expired; personnel added/appointed/reassigned/removed; facility created/edited/deactivated/reactivated/pin changed; password changed/reset. PR48 currently allows only alert.created.v1 and announcement.published.v1; P1 in-app-only event definitions/handlers must be agreed with DBA/P2 before domain writes are enabled. This is not permission to send them by SMS. Recovery codes and reset authorizations **never** enter audit summaries, outbox, SMS, Make, request logs or user DTOs. P1 owns recovery mail, queued after commit; queue acceptance is not mail-delivery evidence.
+Proposed P1 event families: resident registered; profile/household updated; verification submitted/resubmitted/Approved/Rejected/Resubmission requested/Expired; personnel added/appointed/reassigned/removed; facility created/edited/deactivated/reactivated/pin changed; password changed/reset. PR48 now defines all14 explicit v2 envelope families and preserves legacy v1 rows. PHP interface version1 is distinct from persisted envelope version2. P1 typed contexts match the unchanged DBA fixture; actual producer, recipient/source-policy and one-recipient handler adoption remains P2-owned and unbound.
 
 ### Lock protocol to ratify before domain merges
 

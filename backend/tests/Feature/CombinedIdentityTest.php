@@ -6,10 +6,13 @@ use App\Http\Resources\Identity\UserResource;
 use App\Models\Barangay;
 use App\Models\PersonnelAppointment;
 use App\Models\User;
+use App\Services\Identity\IdentityReferences;
+use App\Services\Identity\SourceReferences;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
@@ -41,9 +44,8 @@ final class CombinedIdentityTest extends TestCase
 
     private function ready(): void
     {
-        if (! Schema::hasColumn('users', 'auth_version') || ! in_array((new User)->getCasts()['auth_version'] ?? null, ['int', 'integer'], true)) {
-            $this->markTestSkipped('DBA request: additive users.auth_version and integer cast missing. No replacement schema/model added.');
-        }
+        $this->assertTrue(Schema::hasColumn('users', 'auth_version'), 'The pinned DBA migration must be installed.');
+        $this->assertContains((new User)->getCasts()['auth_version'] ?? null, ['int', 'integer']);
     }
 
     private function fixture(bool $staff = false): User
@@ -111,6 +113,33 @@ final class CombinedIdentityTest extends TestCase
         $this->postJson('/api/v1/auth/logout')->assertOk()->assertJsonPath('data.signed_out', true);
         Auth::forgetGuards();
         $this->getJson('/api/v1/me')->assertUnauthorized();
+    }
+
+    public function test_real_cookie_account_switch_rejects_the_old_tab_write(): void
+    {
+        $this->ready();
+        $first = $this->fixture();
+        $second = $this->fixture();
+        $this->login($first);
+        $observed = $first->id.':'.$first->barangay_id.':resident';
+        $this->login($second);
+        $this->postJson('/api/v1/auth/logout', [], ['X-BC-Identity' => $observed])->assertConflict();
+        $this->getJson('/api/v1/me')->assertOk()->assertJsonPath('data.id', $second->id);
+    }
+
+    public function test_actual_session_middleware_and_source_policy_return_forbidden(): void
+    {
+        $this->ready();
+        Route::middleware(['web', 'current.identity'])->get('/api/v1/p1-reference-probe/{resident}', function (Request $request, int $resident) {
+            $actor = app(IdentityReferences::class)->current($request);
+
+            return response()->json(['data' => app(SourceReferences::class)->household($actor, $resident)]);
+        });
+        $user = $this->fixture();
+        $other = $this->fixture();
+        $this->login($user);
+        $this->getJson('/api/v1/p1-reference-probe/'.$other->id)->assertForbidden()->assertJsonPath('code', 'FORBIDDEN');
+        $this->getJson('/api/v1/incident-photos/1/download')->assertStatus(503)->assertJsonPath('code', 'NOT_AVAILABLE');
     }
 
     public static function revocations(): array

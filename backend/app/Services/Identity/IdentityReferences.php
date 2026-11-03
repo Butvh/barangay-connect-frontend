@@ -21,6 +21,20 @@ final class IdentityReferences
         return $identity;
     }
 
+    /** Read authorization never replaces the session-observed generation. */
+    public function assertCurrent(EffectiveIdentity $observed): void
+    {
+        if (! config('identity.enabled') || ! class_exists(User::class)) {
+            throw new ApiProblem('NOT_AVAILABLE', 503, 'Identity integration is not available yet.');
+        }
+        $user = User::on(config('integration.connection', 'mysql'))->where('id', $observed->id)
+            ->where('barangay_id', $observed->barangayId)->with('appointment')->first();
+        $fresh = $user ? EffectiveIdentity::fromUser($user) : null;
+        if (! $fresh || ! $observed->sameAs($fresh)) {
+            throw new ApiProblem('AUTH', 401, 'Account access changed. Sign in again.');
+        }
+    }
+
     /** Caller must already hold the sorted operations-person guards on the named connection. */
     public function locked(EffectiveIdentity $observed): EffectiveIdentity
     {
@@ -48,6 +62,7 @@ final class IdentityReferences
     /** Minimal person directory: administrative scope or own identity only. */
     public function person(EffectiveIdentity $actor, int $id): ?array
     {
+        $this->assertCurrent($actor);
         if ($id < 1 || ($id !== $actor->id && ! in_array($actor->role, ['captain', 'secretary'], true))) {
             throw new ApiProblem('FORBIDDEN', 403, 'This person reference is not available for your account.');
         }

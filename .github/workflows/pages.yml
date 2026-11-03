@@ -147,6 +147,24 @@ jobs:
         if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
         working-directory: ${{ env.SNAPSHOT_DIR }}/backend
         run: vendor/bin/pint --test
+      - name: Original identity UI on real browser cookies and DBA rows
+        if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
+        working-directory: ${{ env.SNAPSHOT_DIR }}
+        run: |
+          BROWSER_RUNTIME="$RUNNER_TEMP/bc-browser-runtime"
+          mkdir -p "$BROWSER_RUNTIME"
+          cp tests/browser/package.json tests/browser/package-lock.json "$BROWSER_RUNTIME/"
+          npm ci --prefix "$BROWSER_RUNTIME" --ignore-scripts --no-fund
+          npm audit --prefix "$BROWSER_RUNTIME" --omit=optional
+          node "$BROWSER_RUNTIME/node_modules/playwright/cli.js" install --with-deps chromium
+          P1_BROWSER_MODULE="$BROWSER_RUNTIME/node_modules/playwright/index.mjs" node tests/browser/identity.mjs
+      - name: Identity browser evidence
+        if: ${{ always() && env.SNAPSHOT_DIR != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: p1-identity-browser
+          path: ${{ env.SNAPSHOT_DIR }}/tests/browser/evidence
+          if-no-files-found: ignore
       - name: Cross-owner shared writer and handler acceptance
         if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
         working-directory: ${{ env.SNAPSHOT_DIR }}/backend
