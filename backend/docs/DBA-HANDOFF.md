@@ -1,5 +1,7 @@
 # DBA schema and delivery handoff
 
+**Current worker update:** actual P1 CurrentSmsConsent is published at c087eb7/2e8161e; [DBA current reservation/retry/final pre-send integration](CURRENT-SMS-WORKER.md) adds an eleventh append-only evidence migration, leaving the prior ten unchanged. Targeted37/234 passes; full owner/actual P2 producer acceptance is being measured separately. Older missing-authority statements are historical at their stated pins. All normal delivery flags remain off.
+
 **Current November4 update:** photo metadata remains active and ratified [SMS consent persistence](SMS-CONSENT-PROPOSAL.md) adds the tenth migration/40th table; all nine preceding migrations remain unchanged. P2 ratification is complete. P1 actual byte/current-authority implementation and subsequent worker/producer acceptance remain runtime dependencies. Earlier absent/pending-contract statements below are historical at their stated pins. No byte route or SMS producer is enabled by DBA persistence.
 
 P12e70538 subsequently publishes actual private bytes, now tested against this schema; final P2 public caller integration stays gated. [Current consent/photo evidence](CONSENT-PERSISTENCE-ACCEPTANCE.md) separates231/1024/zero-skip baseline from251/1133/one-Windows-symlink-skip newer run. P1 current consent authority and subsequent DBA worker/P2 positive SMS intent still remain unavailable.

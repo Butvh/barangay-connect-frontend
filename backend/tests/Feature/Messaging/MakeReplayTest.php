@@ -25,7 +25,7 @@ class MakeReplayTest extends MessagingTestCase
 
     private function command($event, array $override = []): array
     {
-        return array_replace(['event_id' => $event->event_id, 'barangay_id' => 1, 'type' => 'announcement.published.v1', 'template_key' => 'announcement-review.v1', 'timestamp' => now()->timestamp], $override);
+        return array_replace(['event_id' => $event->event_id, 'barangay_id' => 1, 'type' => $event->type, 'template_key' => $event->template_key, 'timestamp' => now()->timestamp], $override);
     }
 
     private function authenticated(): static
@@ -35,7 +35,7 @@ class MakeReplayTest extends MessagingTestCase
 
     public function test_nonurgent_waits_for_make_and_replays_queue_only_one_logical_sms(): void
     {
-        $d = $this->prepare('announcement.published.v1');
+        $d = $this->prepare('announcement.published.v2');
         $event = $d->receipt->event;
         app(SmsDeliveryService::class)->send($d->id);
         Http::assertNothingSent();
@@ -50,7 +50,7 @@ class MakeReplayTest extends MessagingTestCase
 
     public function test_forged_stale_cross_scope_and_arbitrary_relay_commands_are_rejected(): void
     {
-        $event = $this->prepare('announcement.published.v1')->receipt->event;
+        $event = $this->prepare('announcement.published.v2')->receipt->event;
         $this->postJson('/api/v1/integrations/make/sms-commands', $this->command($event))->assertStatus(401);
         $this->authenticated()->postJson('/api/v1/integrations/make/sms-commands', $this->command($event, ['timestamp' => now()->subMinutes(10)->timestamp]))->assertStatus(422);
         $this->authenticated()->postJson('/api/v1/integrations/make/sms-commands', $this->command($event, ['barangay_id' => 2]))->assertStatus(403);
@@ -61,7 +61,7 @@ class MakeReplayTest extends MessagingTestCase
 
     public function test_make_webhook_payload_has_no_recipient_or_private_content_and_is_authenticated(): void
     {
-        $this->prepare('announcement.published.v1');
+        $this->prepare('announcement.published.v2');
         Http::fake(['*' => Http::response('Accepted', 200)]);
         app(MakeAutomationService::class)->dispatch(DB::table('make_dispatches')->value('id'));
         Http::assertSent(fn ($r) => $r->hasHeader('x-make-apikey', 'fake-key') && array_keys($r->data()) === ['event_id', 'barangay_id', 'type', 'template_key', 'timestamp']);

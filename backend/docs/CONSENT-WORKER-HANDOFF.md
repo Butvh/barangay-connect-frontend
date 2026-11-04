@@ -1,5 +1,7 @@
 # Current worker integration handoff — dependency gated
 
+**Implemented update:** P1 c087eb7/current2e8161e now publishes ACTUAL CurrentSmsConsent. DBA has implemented [the current worker and private evidence](CURRENT-SMS-WORKER.md), with37 targeted real-authority/fake-transport tests/234 assertions passing. Earlier missing-authority statements below describe their stated older pins. Actual positive P2 producer fixtures/full joint acceptance remain separate; no approval blocker is reintroduced.
+
 Consent approval is complete and persistence is published at3e632f37e5090295b665c0a0907c492d34af9997. Reviewed P1bbb690e still publishes only unbound SmsEligibilityReferences/SmsDeliveryEligibility interfaces; actual current authority is absent. P25e61893 deliberately rejects SMS intent. This document prepares the DBA phase; it does not claim it is implemented.
 
 Newer P12e70538 publishes actual private-photo services and retains the SAME two unbound SMS interfaces. Photo service tests are now measured; no actual current consent authority is published at that head.
