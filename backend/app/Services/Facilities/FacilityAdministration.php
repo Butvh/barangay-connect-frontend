@@ -2,11 +2,11 @@
 
 namespace App\Services\Facilities;
 
+use App\Models\FacilityHistory;
 use App\Services\Administration\AdministrativeContext;
 use App\Services\Administration\CommandReceipt;
 use App\Services\Identity\EffectiveIdentity;
 use App\Support\ApiProblem;
-use Carbon\CarbonImmutable;
 
 final class FacilityAdministration
 {
@@ -22,7 +22,9 @@ final class FacilityAdministration
 
     private function snapshot(object $row): array
     {
-        return ['id' => (int) $row->id, 'name' => $row->name, 'type' => $row->type === 'Hospital' ? 'Hospital' : 'EvacuationCenter',
+        return ['id' => (int) $row->id, 'managed_by_barangay_id' => (int) $row->managed_by_barangay_id,
+            'visibility' => $row->visibility, 'map_scope' => $row->map_scope,
+            'name' => $row->name, 'type' => $row->type === 'Hospital' ? 'Hospital' : 'EvacuationCenter',
             'address' => $row->address, 'capacity' => $row->capacity === null ? null : (int) $row->capacity,
             'contact' => $row->contact ?? '', 'notes' => $row->notes ?? '', 'barangay_id' => $row->visibility === 'shared' ? null : (int) $row->managed_by_barangay_id,
             'status' => $row->active ? 'Active' : 'Inactive', 'map_x' => $row->map_x === null ? null : (float) $row->map_x,
@@ -34,10 +36,12 @@ final class FacilityAdministration
         $manage = in_array($actor->role, ['captain', 'secretary'], true) && (int) $row->managed_by_barangay_id === $actor->barangayId;
         $result = $this->snapshot($row) + ['revision' => (int) $row->revision, 'can_manage' => $manage, 'map_scope' => $row->map_scope];
         if ($manage) {
-            $history = $this->context->db()->table('activity_logs')->where('barangay_id', $actor->barangayId)
-                ->where('resource_type', 'facility')->where('resource_id', $row->id)->orderBy('id')->get()
-                ->map(fn ($h) => ['action' => $h->action, 'by' => $h->actor_id, 'by_name' => $h->actor_name,
-                    'at' => $h->occurred_at ? CarbonImmutable::parse($h->occurred_at, 'UTC')->toISOString() : null])->all();
+            $history = $this->context->db()->getSchemaBuilder()->hasTable('facility_history')
+                ? FacilityHistory::on($this->context->db()->getName())->where('barangay_id', $actor->barangayId)
+                    ->where('facility_id', $row->id)->orderBy('revision')->get()->map(fn ($h) => [
+                        'action' => $h->action, 'by' => $h->actor_id, 'by_name' => $h->actor_name, 'role_at_action' => $h->role_at_action,
+                        'revision' => $h->revision, 'snapshot' => $h->snapshot, 'at' => $h->occurred_at?->toISOString(),
+                    ])->all() : [];
             $result += ['managed_by_barangay_id' => (int) $row->managed_by_barangay_id, 'created_at' => $row->created_at,
                 'updated_at' => $row->updated_at, 'created_by' => $row->created_by, 'updated_by' => $row->updated_by, 'history' => $history];
         }
@@ -124,6 +128,9 @@ final class FacilityAdministration
 
         $work = function () use ($actor, $id, $input, $incidents): array {
             $db = $this->context->db();
+            if (! $db->getSchemaBuilder()->hasTable('facility_history')) {
+                throw new ApiProblem('NOT_AVAILABLE', 503, 'Facility history persistence is awaiting the reviewed database upgrade.');
+            }
             $old = $id ? $db->table('facilities')->where('id', $id)->lockForUpdate()->first() : null;
             if ($id && ! $old) {
                 throw new ApiProblem('NOT_FOUND', 404, 'Facility not found.');
@@ -162,6 +169,14 @@ final class FacilityAdministration
                 $action = 'Created';
             }
             $row = $db->table('facilities')->where('id', $id)->first();
+            // Use the actual DBA model/table with explicit allowlisted fields.
+            // UTF-8 JSON keeps all valid multibyte display fields within the
+            // agreed bounded snapshot, without escaped-surrogate inflation.
+            FacilityHistory::on($db->getName())->insert(['facility_id' => $id, 'barangay_id' => $actor->barangayId,
+                'actor_id' => $actor->id, 'actor_name' => $db->table('users')->where('id', $actor->id)->value('full_name'),
+                'role_at_action' => $actor->role, 'action' => $action, 'revision' => $row->revision,
+                'snapshot' => json_encode($this->snapshot($row), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                'occurred_at' => now('UTC')->format('Y-m-d H:i:s.u')]);
             $this->context->record($actor, 'facility', $id, 'facility.updated.v2', ['status' => $row->active ? 'Active' : 'Inactive'],
                 $action, ['status' => $row->active ? 'Active' : 'Inactive', 'revision' => $row->revision], $this->context->administrators($actor->barangayId));
 
