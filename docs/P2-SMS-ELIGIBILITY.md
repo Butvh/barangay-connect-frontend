@@ -1,6 +1,6 @@
 # SMS recipient authority — P2 proposal1, November4,2026
 
-Status: **not ratified, not enabled**. Reviewed P1 96632bf, DBA 9d6c699 and previous P2 acc9f56. Current DBA migrations contain provider delivery records but no persisted notification-purpose consent. P2 Module::event emits in_app only and TypedOutboxWriter rejects sms=true. Those defaults remain unchanged. No working SMS producer or provider acceptance is claimed here.
+Status: **concrete contract ratified; not enabled**. The original proposal below was reviewed with P1 `96632bf`, DBA `9d6c699` and previous P2 `acc9f56`. P2 now accepts P1 `a821d5d`'s two unbound interfaces and DBA `1dceb0e`'s concrete proposal, including exact versions and transaction placement, in the [joint acceptance handoff](P2-JOINT-ACCEPTANCE.md) and [explicit owner reply](https://github.com/Butvh/barangay-connect-frontend/pull/48#issuecomment-6623812692). Those decisions supersede tentative wording below. Active consent persistence, actual P1 authority and current worker integration are still missing. P2 Module::event emits in_app only and TypedOutboxWriter rejects sms=true. No working SMS producer or provider acceptance is claimed.
 
 ## Exact proposed purpose/audience rules
 
@@ -10,7 +10,7 @@ Status: **not ratified, not enabled**. Reviewed P1 96632bf, DBA 9d6c699 and prev
 | announcement.published.v2 | barangay_announcements | Current active same-barangay Resident/Captain/Secretary in P2's actual publication audience, already authorized to read the announcement. No operator-only role or cross-barangay audience is newly added. | announcement-review.v1; nonurgent Make -> authenticated scoped Laravel command -> same SMS ledger/queue. |
 | Every other v2/v1 family for new producers | none | none | SMS denied; existing explicit legacy compatibility tests remain isolated. |
 
-Proposal: publication by the authorized Captain/Secretary is the announcement content-approval event; it is not recipient consent. There is no new browser channel/phone/template input and no inferred SMS approval from a registry entry, phone number, role, global feature flag or in-app permission. P1/DBA must explicitly ratify that content-approval interpretation before implementation. Existing announcements are not retroactively enqueued.
+Agreed: publication by the authorized Captain/Secretary is the announcement content-approval event; it is not recipient consent. There is no new browser channel/phone/template input and no inferred SMS approval from a registry entry, phone number, role, global feature flag or in-app permission. Existing announcements are not retroactively enqueued.
 
 ## Concrete missing persisted authority request to DBA/P1
 
@@ -26,7 +26,7 @@ Missing binding/data returns unavailable/default-deny, never true. The implement
 
 ## Source transaction and delivery boundary
 
-After ratification, the existing P2 domain event producer will intersect its authorized in-app recipient set with the agreed purpose eligibility inside the same source transaction. It will pass distinct typed `RecipientReference(userId, inApp:true, sms:<approved decision>, audience:<server derived>)` to the existing writer. The writer will persist the separate booleans and allow SMS only for the two exact v2 families above. UUID, event-time context, actor scope, replay receipts and source rollback stay unchanged. No second writer, dispatcher, webhook client or provider adapter is added.
+After real authority and worker integration exist, P2 will obtain the agreed short current single-recipient preflight **outside** its source transaction, before source locks. Within the source transaction, intersect those decisions with the actual minimal authorized in-app recipients. Never call a locking `allows` from `Module::event` after source locks. Pass distinct typed `RecipientReference(userId, inApp:true, sms:<approved decision>, audience:<server derived>)` to the existing writer. Persist separate booleans and permit SMS only for the two exact v2 families. Original body/key/revision and successful-command replay must remain frozen; a changed optional preflight cannot produce another event for an already successful command. UUID, event-time context and source rollback remain unchanged. No second writer, dispatcher, webhook client or provider adapter is added.
 
 Do not lock an entire audience or read fresh identities after incident locks to construct fanout. Candidate recipient/reference selection stays nonlocking/minimal. Consent evidence seen while constructing the event is insufficient to guarantee eligibility at delivery; DBA's worker must obtain current single-recipient authority and source authorization before reserving/sending SMS, following the reviewed recipient-before-source lock order. A revoked preference/account/role/scope or withdrawn announcement denies SMS even if the outbox previously requested it. Default-deny if that worker capability is not present. The P1/DBA handoff must settle the current-read/worker port before accepting producer integration.
 
@@ -40,4 +40,4 @@ DBA owns destination normalization, current contact/allowlist, one-segment/daily
 4. Consent/account/role/scope/source revocation after event creation blocks SMS at the actual worker. Include stale repeatable-read snapshots, concurrent preference revocation, source retraction and worker retry.
 5. DBA default in-app and separate `--sms-intent` configured-production probes plus fake Make/Semaphore timeout/authentication/replay/budget tests must all pass. Existing fake transport fixtures alone do not prove an actual P2 producer requests SMS.
 
-Current acceptance in this slice verifies denial and preserved in-app transactions only. Agreement, new preference authority/schema and worker recheck are external dependencies. Keep SMS/Make/production dispatch off; no live recipient/budget approval or real send is requested.
+Current acceptance in this slice verifies denial and preserved in-app transactions only. Contract agreement is recorded above; implemented preference persistence/authority and worker recheck remain external dependencies at the frozen heads. Keep SMS/Make/production dispatch off; no live recipient/budget approval or real send is requested.

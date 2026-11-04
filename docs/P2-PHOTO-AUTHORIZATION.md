@@ -1,6 +1,6 @@
 # Exact incident-photo authorization — candidate 1
 
-Status: **unratified and unbound**. No photo route, upload control, byte service, metadata migration or attachment write is enabled by this change. This port supplements P1's `Contracts/Photos/IncidentPhotos` / `StagedIncidentPhoto`; it does not replace them. Reviewed current owner heads: P1 `96632bfe320997b3e239be6dbe9444f7ff18b151`, DBA `9d6c699250078a54551944fe4e109bde0cb4fb7c`; previous P2 `acc9f56`.
+Status: **source contract adopted; integration unbound**. P1 `a821d5dd4cb45ffc4cbe0d5bf9531e214eb308c6` adopts this policy and a fourth required original-revision argument on `IncidentPhotos::attach`. DBA `1dceb0e4234d8bbfd1d467164f257ab45e574bab` adopts the source boundary and supplies an additive metadata migration/model. The original review used P1 `96632bf`, DBA `9d6c699` and previous P2 `acc9f56`. No actual P1 byte service, photo route, upload control or source attachment integration is enabled here. This port supplements P1's `Contracts/Photos/IncidentPhotos` / `StagedIncidentPhoto`; it does not replace them.
 
 ## Port and implementation
 
@@ -13,7 +13,7 @@ public function assertDownload(EffectiveIdentity $observed, int $incidentId): vo
 
 The identity is the original P1 session-observed identity, including security generation. Never replace it with a freshly constructed identity to recover a failed authorization. The incident ID must come from the persisted attachment's incident relationship on download, or the exact source command on attach. A household ID, nearby incident, filename, supplied token or client photo metadata is not source authority.
 
-## Candidate access decisions requiring ratification
+## Adopted source access decisions
 
 | Operation | Required authority |
 | --- | --- |
@@ -24,7 +24,7 @@ The identity is the original P1 session-observed identity, including security ge
 | Download: replaced/cancelled/unassigned/removed/inactive | Denied. Do not search for any older matching assignment before selecting the latest role assignment. |
 | Other resident/household member, nearby, cross-scope, unknown authority | Denied; household membership is not an incident-photo grant. |
 
-P2 accepts P1's November4 narrower photo-purpose proposal: historical operator access is denied even where the operational incident remains readable. P1/DBA must ratify the concrete port/transaction boundary before binding. `closed` here is an assignment state; it does not create a new incident state. Photo access is deliberately narrower than operational incident access. No actor is implicitly allowed to attach for another resident.
+P1/P2/DBA adopt the November4 narrower photo-purpose rules: historical operator access is denied even where the operational incident remains readable. Actual byte/source integration must pass before binding. `closed` here is an assignment state; it does not create a new incident state. Photo access is deliberately narrower than operational incident access. No actor is implicitly allowed to attach for another resident.
 
 ## Locking and caller obligations
 
@@ -40,6 +40,8 @@ P2 accepts the DBA/P1 reporter-owned scoped-FK mapping and people -> incident/as
 
 ## Integration gate and evidence
 
-No DBA photo metadata migration/model or actual P1 byte service exists on the reviewed heads. The metadata proposal remains a proposal. P1 should ratify the two operations and historical access; DBA should ratify the declared lock protocol and publish reviewed additive schema/models. Only then can P2 integrate actual attach/replay/concurrent-consumption/cleanup tests. Until then all backend photo controls stay unavailable.
+The [joint call-sequence and acceptance matrix](P2-JOINT-ACCEPTANCE.md) adopts P1's four-required-argument attach port, authorizing the original revision inside the first-execution write callback and replaying a successful command without consuming again. DBA also adopts that placement. Actual byte/source integration tests remain required; agreement does not activate attachment.
+
+DBA's additive metadata migration/model now exists at `1dceb0e`; the actual P1 byte service is still absent at `a821d5d`. The agreed source and metadata boundaries do not substitute for that service. P2 will integrate actual attach/replay/concurrent-consumption/cleanup tests after it is published. Backend photo controls stay unavailable until joint acceptance succeeds.
 
 The genuine MySQL cases in `backend/tests/P2/sql-photo-policy.php` exercise the actual P1 identity/approval boundary, DBA schema and P2 services. They cover declared locks, own/other residents, both administrators, assigned/unassigned/replaced staff, rescuer assignment and history denial, cancelled assignments, inactive/unassigned appointments, inactive accounts, generation revocation, cross-scope access, original revision, resolved attach, current approval after an earlier snapshot, and sanitized nearby projections. Existing notification projections still contain no photo/token/object-key fields; they use the existing recipient/source-authorization tests. These are source-policy tests, not proof of the still-missing byte integration.
