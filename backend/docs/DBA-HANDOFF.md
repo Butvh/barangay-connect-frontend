@@ -2,6 +2,8 @@
 
 **Current November4 update:** photo metadata remains active and ratified [SMS consent persistence](SMS-CONSENT-PROPOSAL.md) adds the tenth migration/40th table; all nine preceding migrations remain unchanged. P2 ratification is complete. P1 actual byte/current-authority implementation and subsequent worker/producer acceptance remain runtime dependencies. Earlier absent/pending-contract statements below are historical at their stated pins. No byte route or SMS producer is enabled by DBA persistence.
 
+P12e70538 subsequently publishes actual private bytes, now tested against this schema; final P2 public caller integration stays gated. [Current consent/photo evidence](CONSENT-PERSISTENCE-ACCEPTANCE.md) separates231/1024/zero-skip baseline from251/1133/one-Windows-symlink-skip newer run. P1 current consent authority and subsequent DBA worker/P2 positive SMS intent still remain unavailable.
+
 Owner: DBA + SMS/automation engineer. Base: main `3014ad60ca41a9a5aa4d5a0152faed09d0dfdaf0`. Schedule: November2–6,2026, Asia/Manila. **November4:** [P2 acc9f56 lock correction independently accepted](P2-LOCK-ORDER-REVIEW.md); final P1 5447d87 composition passes184 tests/811 assertions,0 errors/failures/skips. Photo migration/model and actual SMS intent await [explicit owner decisions](PHOTO-SMS-CONTRACT-DECISIONS.md). The [photo candidate](INCIDENT-PHOTO-METADATA-PROPOSAL.md) remains outside active migrations; [delivery fakes](DELIVERY-FAKE-ACCEPTANCE.md) and real in-app probe pass. [Current evidence](INTEGRATION-ACCEPTANCE.md) separates old failures from current results. No production enablement or joint release approval is implied.
 
 ## Integration order and boundaries

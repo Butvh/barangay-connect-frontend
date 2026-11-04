@@ -1,5 +1,7 @@
 # Agreed photo persistence — November 4, 2026
 
+**Actual byte update:** P1 now publishes PrivateIncidentPhotos/PhotoInspector/PrivatePhotoObjects/PhotoCleanup at2e70538. [Measured actual-service acceptance](CONSENT-PERSISTENCE-ACCEPTANCE.md#supplemental-actual-photo-head-separately-measured) includes12 real service/HTTP/concurrency cases against this unchanged metadata and the new consent schema. Normal photo/source-policy bindings and P2 public caller integration remain gated; earlier absent-byte statements are historical at their pins.
+
 Reviewed P1 526ef0bc12ac54e8a654085d7617288ccb074a92 and P2 5f3828566f73c40c9473b6b2276206ae07f17b8c. Existing independent lock acceptance stands.
 
 P1 subsequently published explicit policy adoption at a821d5dd4cb45ffc4cbe0d5bf9531e214eb308c6. Its unbound IncidentPhotos.attach now has four required arguments including original expectedRevision. DBA [accepted that handoff](https://github.com/Butvh/barangay-connect-frontend/pull/50#issuecomment-6623587475): exact policy/revision preflight belongs inside the once-miss command callback before source revision mutation/photo locks. Reauthorize original current identity/source on successful replay, then replay its original outcome without rerunning obsolete revision preflight or consuming again. P1/P2 own final caller/byte integration.
@@ -37,6 +39,8 @@ Same scoped/generation intent while processing is retryable in progress, never r
 After P2 checks, lock the exact ready/unexpired/unclaimed upload and validate scope/uploader/generation. Consume inside the original command result/history/audit/outbox transaction. Same-command success replays its original result. Cleanup winning first denies attach and rolls back source work; attach winning first permanently excludes cleanup.
 
 Cleanup commits its claim before byte I/O. Finalize using exact id/state/fencing token and unexpired lease; stale outcomes affect zero rows. Rotate UUIDv4 after expiry, increment attempts, retain exhausted failures. Retain removed tombstones and attached evidence indefinitely pending separate retention agreement. Staging expiry never deletes attached bytes. Actual P1/P2 service races remain required; DBA SQL fixtures do not replace them.
+
+For multi-token attach, resolve immutable metadata IDs without locking, reject duplicates/scope mismatches, then acquire the entire photo set in ascending numeric ID after all people/source locks. Do not consume in client token order or discover another user/source lock after metadata. P1/P2 own the real ordered caller/byte tests; the PK/immutable token mapping supports this protocol without changing the photo migration.
 
 ## Partial DDL and downgrade
 

@@ -1080,3 +1080,27 @@ Foreign keys:
 - `verification_current_submission_fk`: (current_submission_id,id) -> verification_submissions(id,verification_id); DELETE RESTRICT; UPDATE NO ACTION
 - `verification_resident_scope_fk`: (resident_id,barangay_id) -> users(id,barangay_id); DELETE RESTRICT; UPDATE NO ACTION
 - `verifications_reviewer_id_foreign`: (reviewer_id) -> users(id); DELETE RESTRICT; UPDATE NO ACTION
+
+
+## notification_preferences (additive November4)
+
+Generated from the tested MySQL8.4.13 table, not proposed API fields. Purpose/channel/versions, state/time pairs, scoped self-recorder FKs, revision updates and retained-data rules are specified in [the ratified handoff](SMS-CONSENT-PROPOSAL.md).
+
+| Column | Actual type | Nullable | Default |
+| --- | --- | --- | --- |
+| id | bigint unsigned | NO | none |
+| user_id | bigint unsigned | NO | none |
+| barangay_id | bigint unsigned | NO | none |
+| purpose | enum('incident_review','barangay_announcements') | NO | none |
+| channel | enum('sms') | NO | none |
+| state | enum('granted','revoked') | NO | none |
+| revision | bigint unsigned | NO | none |
+| policy_version | varchar(80) | NO | none |
+| template_version | varchar(80) | NO | none |
+| recorded_by | bigint unsigned | NO | none |
+| granted_at | timestamp(6) | YES | NULL |
+| revoked_at | timestamp(6) | YES | NULL |
+| created_at | timestamp(6) | NO | none |
+| updated_at | timestamp(6) | NO | none |
+
+Unique: preference_user_purpose_channel(user_id,barangay_id,purpose,channel). Indexes: preference_scoped_audience(barangay_id,purpose,channel,state,id), preference_recorder_scope(recorded_by,barangay_id). Scoped RESTRICT FKs to users(id,barangay_id) for both user and recorder; recorded_by=user_id. CHECKs: self, safe revision1..9007199254740991, exact purpose/version pair, grant/revoke state and UTC timestamp chronology. BEFORE UPDATE trigger freezes identity/creation, enforces exact next revision and retained prior-grant evidence. No rows are seeded; model output is private.

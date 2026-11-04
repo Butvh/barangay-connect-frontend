@@ -6,6 +6,8 @@ Deadline5PM Asia/Manila. Keep the passing core fallback tonight8PM; accept stret
 
 Ten ordered migrations/40 InnoDB tables. The tenth adds ratified self-only purpose SMS preferences; the ninth retains private reporter-owned photo metadata. All nine preceding migrations remain unchanged. No consent grant is seeded from fictional phone/role data. [Consent fields/constraints](SMS-CONSENT-PROPOSAL.md) and [photo metadata](PHOTO-METADATA-AGREEMENT.md) are persistence, not proof of actual authority or bytes.
 
+The [complete implemented40-table ERD](DATABASE-ERD.md) is generated from actual MySQL key metadata. The compact view below highlights only the newly integrated relationships.
+
 ~~~mermaid
 erDiagram
   barangays ||--o{ users : scopes
@@ -41,3 +43,5 @@ DBA tests separately use whitelisted fresh bc_dba_*/p2_test_* schemas and scoped
 ## Real versus fake
 
 Real local evidence: MySQL constraints/transactions/row locks, actual owner identity/source services where published, typed audit/outbox adapters and in-app receipts. Fake-only: Semaphore/Make HTTP, budgets/replay/timeout/reconciliation. External provider/sender/credits/recipient prerequisites are unmeasured; carrier/Make delivery is untested. Actual P1 bytes and persisted-consent worker revocation require their implementations and joint tests. GitHub Pages cannot execute Laravel.
+
+P12e70538 now adds measured actual photo services: all12 service/HTTP/concurrency cases pass; full newer composition251/1133 has one explicit Windows symlink skip, with matching P1 Linux combined/browser CI green. P2 public upload/caller integration remains gated. Persisted-consent current authority/worker/positive producer acceptance is still pending implementation, not approval.

@@ -1,0 +1,17 @@
+# Current worker integration handoff — dependency gated
+
+Consent approval is complete and persistence is published at3e632f37e5090295b665c0a0907c492d34af9997. Reviewed P1bbb690e still publishes only unbound SmsEligibilityReferences/SmsDeliveryEligibility interfaces; actual current authority is absent. P25e61893 deliberately rejects SMS intent. This document prepares the DBA phase; it does not claim it is implemented.
+
+Newer P12e70538 publishes actual private-photo services and retains the SAME two unbound SMS interfaces. Photo service tests are now measured; no actual current consent authority is published at that head.
+
+The current SmsDeliveryService starts by locking the delivery row. Calling P1 authority inside that callback would introduce a new person/consent lock after delivery/source locks. Refactor only after P1 publishes its actual implementation and tests; do not bind a fabricated default-true authority or infer consent from config/phone/in-app.
+
+The accepted sequence is a nonlocking lookup of immutable event/recipient references, then P1 withCurrentEligibility OUTSIDE every transaction: current recipient/account/appointment -> scoped preference -> DBA callback current exact source authorization -> ledger/receipt/attempt reservation -> rate/budget. The callback uses the same named connection, rechecks event/recipient/channel/template/scope and performs no network/bytes. Preserve independent in-app receipt completion. Pending routing intent is not a provider reservation.
+
+Repeat real current authority on reservation, retry and the final pre-send gate. Revalidate the winning claim/lease/source, persist private consent revision/policy/template evidence, commit, then call the EXISTING Semaphore client. Existing ledger/attempt tables need a reviewed additive evidence change in that phase; never rewrite prior migrations or expose evidence in public DTOs. Account/role/scope/purpose/template/source/consent denial must reserve/send nothing. Revocation committed before the final gate denies; cancellation of a request already started is not promised.
+
+Preserve timeout uncertainty and fencing: an expired sending claim remains uncertain, including crash-before-POST ambiguity; never blindly retry an uncertain POST. Reconciliation only GETs known provider IDs and cannot authorize another POST. Keep one dispatcher/client, original independent receipts, Make bearer/event/scope/replay checks and budget/segment/rate/allowlist gates.
+
+Only incident.created.v2 / incident_review / sms-consent.v1 / alert-review.v1 may use urgent direct Laravel->Semaphore. Only approved nonurgent announcement.published.v2 / barangay_announcements / sms-consent.v1 / announcement-review.v1 may use Make->authenticated Laravel command->same ledger. Content approval is distinct from recipient consent. Other new producer families deny SMS.
+
+Acceptance requires ACTUAL P1 authority plus P2 service-produced fixtures: persisted missing/granted/revoked/version/purpose/scope cases; account/appointment/source changes at enqueue/reservation/retry/final gate; stale RR/current reads; independent-process revoke/reservation races; source/audit/outbox rollback and original intent replay; existing Make/receipt/budget/timeout/reconciliation suites. Fakes cover transport only, provider_calls=0. Until dependencies exist, the default in-app probe passes and separate SMS probe exits2 unsupported; it is not positive SMS acceptance.
