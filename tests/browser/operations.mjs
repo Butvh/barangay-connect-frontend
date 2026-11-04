@@ -101,6 +101,12 @@ async function sos(who, lostReply = false) {
   assert.equal(await page.locator('#photo').isDisabled(), true);
   await page.locator('#submit-details').click(); await page.waitForURL('**/resident-alert.html?id=' + id);
   assert.equal(JSON.parse(cli('inspect', String(id))).resident_alerts, 1);
+  const stale = await page.evaluate(async id => {
+    const { Http } = await import('/frontend/assets/js/core/auth.js');
+    try { await Http.request('alerts/' + id, { method: 'PATCH', body: { expected_revision: 0, description: 'Rejected stale details' }, headers: { 'Idempotency-Key': crypto.randomUUID() } }); return 200; }
+    catch (error) { return error.status; }
+  }, id);
+  assert.equal(stale, 409, 'Original pending details revision cannot be replaced after the confirmed save.');
   return id;
 }
 try {
@@ -122,7 +128,11 @@ try {
     await stale.locator(`[name=personnel_id][value="${records.people.replacement.id}"]`).check();
     await openAlert(people.secretary, noRescue); await pick(people.secretary, noRescue);
     await stale.locator('[type=submit]').click(); await stale.locator('[data-error]:visible').waitFor();
-    assert.equal(await stale.locator('[type=submit]').isDisabled(), true); await stale.locator('[data-cancel]').click();
+    // The owned UI permits a same-selection retry, but it must never adopt the fresh revision or write.
+    if (!await stale.locator('[type=submit]').isDisabled()) { await stale.locator('[type=submit]').click(); await stale.locator('[data-error]:visible').waitFor(); }
+    const saved = JSON.parse(cli('inspect', String(noRescue)));
+    assert.equal(saved.assignments, 1); assert.equal(saved.active_responder, records.people.responder.id);
+    await stale.locator('[data-cancel]').click();
   });
   await check('Original response retries the lost reply with one record; no-rescue completion still needs explicit Secretary resolution', async () => {
     await openAlert(people.responder, noRescue); await response(people.responder, false, 'Completed', true);

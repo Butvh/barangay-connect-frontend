@@ -59,7 +59,8 @@ if (in_array($mode, ['inspect', 'deliver'], true)) {
     echo json_encode(['status' => $alert->status, 'description' => $alert->description, 'victim_count' => $alert->victim_count,
         'revision' => $alert->assignment_revision, 'responses' => $db->table('alert_responses')->where('alert_id', $id)->count(),
         'rescues' => $db->table('rescues')->where('alert_id', $id)->count(), 'assignments' => $db->table('alert_assignments')->where('alert_id', $id)->count(),
-        'resident_alerts' => $db->table('emergency_alerts')->where('resident_id', $alert->resident_id)->count()], JSON_THROW_ON_ERROR);
+        'resident_alerts' => $db->table('emergency_alerts')->where('resident_id', $alert->resident_id)->count(),
+        'active_responder' => $db->table('alert_assignments')->where('alert_id', $id)->where('role', 'responder')->where('status', 'active')->value('user_id')], JSON_THROW_ON_ERROR);
     exit;
 }
 $scope = Barangay::forceCreate(['name' => 'Barangay Sampaguita'])->id;
