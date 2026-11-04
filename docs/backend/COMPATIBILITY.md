@@ -1,6 +1,6 @@
 # Current integration compatibility — November 4, 2026
 
-[Current P2 review and evidence](P2-BINDINGS-REVIEW.md) supersedes the old availability/lock-blocker statements. Pins: P1 review aec4e78, DBA9d6c699, P2acc9f56; full values are in integration-lock.json. Required CI41764879472 independently cleared the historical lock defect at the preceding DBA pin; the newer DBA addition contributes an actual lower-ID transfer test and contract decisions. Final current-pin/original-browser P1/synthetic-merge SHAs and measured results are in draft PR49.
+[Current P2 review and evidence](P2-BINDINGS-REVIEW.md) supersedes the old availability/lock-blocker statements. Pins: P1 review 526ef0b, DBA9d6c699, P2 5f38285; full values are in integration-lock.json. Required CI41764879472 independently cleared the historical lock defect at the preceding DBA pin; the newer DBA addition contributes an actual lower-ID transfer test and contract decisions. Final current-pin/original-browser P1/synthetic-merge SHAs and measured results are in draft PR49.
 
 | Boundary | Current implementation / status |
 | --- | --- |
@@ -11,7 +11,7 @@
 | P2 persistence/writers/handler | The five real implementations are published and selected only by the isolated test profile. Their source is reviewed in P2-BINDINGS-REVIEW.md. Default active adapter keys stay null; configured production-adapter acceptance now executes instead of reporting absent classes. |
 | Tests | Every owner suite is retained. Required corrected composition passes183/798 with zero skips; the subsequent P1 minimal-source slice passes185/824. Final original-browser evidence is separate in PR49. No portable/test-double pass substitutes for configured production-adapter or real DOM acceptance. |
 | Browser registration | Existing shared envelope/factory/auth seam retained. A clean confirmed disposable operational build registers P1 helper before original P2 pages, operational factories and scoped readers. Normal artifacts retain empty registries and missing modules return401/503. Unrelated mutation factories remain unavailable. |
-| Private photos / P1 families | [Photo contract](PRIVATE-INCIDENT-PHOTOS.md) is a typed port, not uploaded bytes. Byte implementation/metadata/policy and P1 security/verification/personnel/facility producer+handler review remain pending. Photo routes fail closed. |
+| Private photos / P1 families | [Photo handoff](PHOTO-SMS-HANDOFF.md) adopts P2's exact unbound source policy and requires the frozen revision as the fourth attach argument. Active DBA metadata/model and actual P1 bytes remain pending; P1 security/verification/personnel/facility producer+handler review is separate. Photo routes fail closed. |
 | Deployment | Explicit frontend artifact and backend/public root retained. No private bytes/vendor/config/logs/tests/dumps/seed in the backend artifact. No production integration, shared migration, worker activation, main/teammate merge or external message. |
 
 The DBA's auth_version/cast, corrected scope fixture, canonical v2 envelope and per-recipient receipt pipeline remain reviewed. P2's corrected NotificationController formatting and newly published implementations must be measured by the combined run; historical missing-class/format findings are not automatically retained as current blockers.

@@ -17,7 +17,7 @@ The P1 routes are GET-only and use current.identity plus the captured EffectiveI
 
 ## Registration gate
 
-Default `domains.js` remains empty for normal demo/backend artifacts. `stageBackendFrontend({operationalTest:true})` requires the confirmed disposable combined database and a clean manifest pinned to reviewed P2 acc9f56. Only its generated private frontend sets Runtime.operationalTest. The test-only loopback router separately validates that disposable schema and loads real production adapters via P1's configuration. Production/local ordinary serving cannot enable P2 through this profile.
+Default `domains.js` remains empty for normal demo/backend artifacts. `stageBackendFrontend({operationalTest:true})` requires the confirmed disposable combined database and a clean manifest pinned to reviewed P2 5f38285. Only its generated private frontend sets Runtime.operationalTest. The test-only loopback router separately validates that disposable schema and loads real production adapters via P1's configuration. Production/local ordinary serving cannot enable P2 through this profile.
 
 Before original pages initialize, operationalComposition registers P1 createSubmissionIntent through P2 configureOperationalSubmissions. It uses existing createP2DomainFactories, Http/envelope/auth and cancellation-aware readers. Alerts/dashboard/map/notifications plus minimal P1 reads are registered. Unrelated administrative/civic/report form factories stay unavailable. Shell subscriptions may read their authorized P2 revisions without enabling those form mutations.
 
@@ -25,7 +25,7 @@ Before original pages initialize, operationalComposition registers P1 createSubm
 
 `tests/browser/operations.mjs` uses original pages and native dialogs in Chromium, actual Laravel cookies/CSRF and persisted MySQL. Each independent account has its own browser context; a separate deliberate account-switch check shares cookies to verify stale-tab protection. No DOM or reference read is stubbed. A network interceptor drops a successful real reply for retry testing; the server still executes and commits. CLI fixtures are guarded fictional data setup, inspection and revocation, not production administrative endpoints.
 
-SQL/HTTP/controller fixtures, unit transport tests and real browser evidence are reported separately in PR49. Unchanged P2 deterministic race tests and DBA manual order gate remain required. A browser workflow does not certify all cross-owner mutation races or a production host. Real photos remain unavailable until the DBA additive schema and exact P2 policy are published and reviewed.
+SQL/HTTP/controller fixtures, unit transport tests and real browser evidence are reported separately in PR49. Unchanged P2 deterministic race tests and DBA manual order gate remain required. A browser workflow does not certify all cross-owner mutation races or a production host. P1 adopts P2's published exact photo policy; real bytes remain unavailable until the reviewed DBA active additive schema/model and P1 service/tests exist.
 
 Optional denied/unavailable revision readers do not advance their revision or starve later authorized readers. The named polling regression retains dirty/focus deferral, failed-view replay and account-switch cancellation. Source fingerprint artifacts publish every exact owner hash and each approved overlay's before/after hash.
 

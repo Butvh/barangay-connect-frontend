@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use App\Contracts\Photos\IncidentPhotos;
 use App\Contracts\Photos\StagedIncidentPhoto;
 use App\Services\Identity\EffectiveIdentity;
 use Illuminate\Auth\GenericUser;
@@ -9,6 +10,14 @@ use Tests\TestCase;
 
 final class IncidentPhotoContractTest extends TestCase
 {
+    public function test_attachment_requires_the_frozen_expected_revision_instead_of_an_implicit_current_read(): void
+    {
+        $method = new \ReflectionMethod(IncidentPhotos::class, 'attach');
+        $this->assertSame(4, $method->getNumberOfRequiredParameters());
+        $this->assertSame('expectedRevision', $method->getParameters()[3]->getName());
+        $this->assertSame('int', (string) $method->getParameters()[3]->getType());
+    }
+
     public function test_private_photo_receipt_cannot_be_a_filename_or_change_owners(): void
     {
         $owner = EffectiveIdentity::fromUser(new GenericUser(['id' => 1, 'barangay_id' => 1, 'is_captain' => true, 'auth_version' => 0, 'account_status' => 'Active']));

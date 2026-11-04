@@ -61,6 +61,17 @@ test('an arbitrary P2 original-page collision is rejected, even when its baselin
   await assert.rejects(composeSnapshot(f), /allowlist|reviewed/i);
 });
 
+test('reviewed photo/SMS contract documents compose without allowing unrelated P2 documents', async () => {
+  const f = await fixture(); f.git('checkout', '--detach', f.lock.p2);
+  for (const name of ['P2-PHOTO-AUTHORIZATION', 'P2-SMS-ELIGIBILITY', 'P2-PHOTO-SMS-ACCEPTANCE']) await f.put(`docs/${name}.md`, '# Reviewed contract\n');
+  await f.put('docs/superpowers/plans/2026-11-04-p2-photo-sms-contracts.md', '# Reviewed execution\n');
+  f.lock.p2 = f.commit(); f.git('checkout', '--detach', f.lock.p2_base);
+  const manifest = await composeSnapshot(f); assert.equal(Object.keys(manifest.ownerHashes.p2).length, 6);
+  assert.equal(await verifySources(f.destination, manifest), 8);
+  f.git('checkout', '--detach', f.lock.p2); await f.put('docs/P2-UNREVIEWED.md', '# Not approved\n'); f.lock.p2 = f.commit(); f.git('checkout', '--detach', f.lock.p2_base);
+  await assert.rejects(composeSnapshot({ ...f, destination: await mkdtemp(join(tmpdir(), 'bc-snapshot-reject-')) }), /allowlist/);
+});
+
 test('unapproved DBA collision never overwrites a P1 source', async () => {
   const f = await fixture();
   f.git('checkout', '--detach', f.lock.dba); await f.put('backend/phpunit.xml', 'replacement'); f.lock.dba = f.commit(); f.git('checkout', '--detach', f.lock.p2_base);

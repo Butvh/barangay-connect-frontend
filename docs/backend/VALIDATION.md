@@ -1,5 +1,7 @@
 # P1 validation — November 3, 2026
 
+November4 current refresh: P2 5f3828566f73c40c9473b6b2276206ae07f17b8c is now pinned with DBA9d6c699. P1 adopts its exact unbound photo policy; the former missing-policy request is obsolete. The new45 SQL cases and retained original browser acceptance must pass on this composition; older41-case results below remain historical. See PHOTO-SMS-HANDOFF.md for the four-required-argument attach revision and concrete consent/worker contracts. Active DBA metadata/model and agreed consent persistence remain external prerequisites.
+
 ## November4 corrected composition
 
 Original-browser follow-up: P1 96632bfe320997b3e239be6dbe9444f7ff18b151 / synthetic86bb7e9f9248bd0af1279570a75e18f4598d946b passes all required jobs in [CI41768154719](https://github.com/Butvh/barangay-connect-frontend/actions/runs/41768154719):185/824/zero errors/failures/skips,10 original operational browser scenarios with4 screenshots, preserved5 identity scenarios with4 screenshots,19 owner Node entries,48 portable cases,4 P1 polling scenarios, genuine SQL/HTTP/deterministic races, configured production adapters and DBA manual order acceptance.707 source fingerprints preserve198 exact owner blobs and5 common-base overlays. Source hashes and sanitized browser evidence are uploaded separately. This run used DBA b9f7a7e; final latest9d6c699 test addition/results are recorded in PR49 without substituting an older pin.

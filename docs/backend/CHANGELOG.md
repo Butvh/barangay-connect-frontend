@@ -1,5 +1,12 @@
 # Backend work log
 
+## November4 — current photo policy and consent contract refresh
+
+- Pin actual P2 5f3828566f73c40c9473b6b2276206ae07f17b8c with unchanged DBA9d6c699; narrowly add its three contract documents and exact execution plan to the snapshot allowlist. Preserve all owner blobs, common-base collision safeguards and required CI/browser suites.
+- Adopt the actual unbound exact-incident policy; require the original expectedRevision as the fourth P1 attach argument before photo locks/source revision increment. No byte service or owner schema is fabricated.
+- Publish concrete purpose/policy/template versions, self-consent metadata/API and recipient-before-source current eligibility/reservation contracts to PR48/50; interfaces remain unbound pending owner confirmation/persistence. Correct obsolete missing-photo-policy statements.
+- New regression checks first reproduced allowlist exclusion and missing revision, then pass after the changes. Local PHP46 pass/24 dependency skips; source preservation and NEW45 SQL/original browser results must be reported separately from historical41-case acceptance.
+
 ## November4 — corrected owner composition and original-browser slice
 
 - Required CI41768154719 passes the full original-browser slice (10 operational +5 identity scenarios) and root185/824. Final verification discovered newer DBA9d6c699; reviewed/pinned its added actual lower-ID transfer test and contract decisions before final current-head CI.
