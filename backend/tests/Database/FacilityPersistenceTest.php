@@ -228,8 +228,17 @@ class FacilityPersistenceTest extends MysqlDbaTestCase
         $inactive = $service->save($actor, 1, ['status' => 'Inactive', 'expected_revision' => 1]);
         $this->assertSame('Inactive', $inactive['status']);
         $this->assertSame($snapshots, DB::table('rescues')->where('facility_id', 1)->pluck('destination_snapshot', 'id')->all());
-        // P1 still owns adopting the NEW full-history writer/projection; no imitation is installed here.
-        $this->assertSame(0, DB::table('facility_history')->count());
+        $history = FacilityHistory::where('facility_id', 1)->orderBy('revision')->get();
+        $this->assertCount(2, $history);
+        $this->assertSame([1, 2], $history->pluck('revision')->all());
+        $this->assertSame(['Edited', 'Deactivated'], $history->pluck('action')->all());
+        $this->assertSame(str_repeat('n', 160), $history[0]->snapshot['name']);
+        $this->assertSame(str_repeat('a', 300), $history[0]->snapshot['address']);
+        $this->assertSame(str_repeat('1', 50), $history[0]->snapshot['contact']);
+        $this->assertSame('Active', $history[0]->snapshot['status']);
+        $this->assertSame('Inactive', $history[1]->snapshot['status']);
+        $this->assertSame([1, 1], $history->pluck('actor_id')->all());
+        $this->assertSame(['captain', 'captain'], $history->pluck('role_at_action')->all());
     }
 
     public function test_interrupted_table_creation_recovers_both_immutable_guards(): void
