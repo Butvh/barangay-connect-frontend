@@ -1,12 +1,10 @@
 # Database and delivery presentation — November 5, 2026
 
-Deadline5PM Asia/Manila. Keep the passing core fallback tonight8PM; accept stretch slices only after actual joint tests by8AM. Freeze source/data noon, full checks2PM, rehearse3PM and restart/restore4PM. No merge/deployment/shared-live migration/real message/Make activation is authorized.
+Current [single-combination evidence](JOINT-CURRENT-ACCEPTANCE-2026-11-05.md): P104cf76c / P29fbe5d3 / DBAb05cb64,383 tests/2104 assertions, zero errors/failures/warnings and one explicit Windows symlink skip. Actual P1 UTC/full-history/photo/consent and P2 producers are implemented. Current Linux/original-browser certification remains P1-owned. Real external delivery is untested.
 
 ## Implemented persistence
 
-Eleven ordered migrations/41 InnoDB tables. The eleventh retains private reservation/pre-send consent evidence, the tenth adds ratified self-only purpose SMS preferences, and the ninth retains private reporter-owned photo metadata. All ten preceding migrations remain unchanged. No consent grant is seeded from fictional phone/role data. [Consent fields/constraints](SMS-CONSENT-PROPOSAL.md) and [photo metadata](PHOTO-METADATA-AGREEMENT.md) are persistence, not proof of actual authority or bytes.
-
-The [complete implemented41-table ERD](DATABASE-ERD.md) is generated from actual MySQL key metadata. The compact view below highlights only the newly integrated relationships.
+Thirteen migrations/42 InnoDB tables/67 FK relationships, generated from actual MySQL metadata. All preceding eleven migrations are unchanged. New12/13 widen facilities to160/300/50 and retain immutable scoped full-history snapshots, with actual P1 atomic writing/projection. Photo metadata, self-only consent and private current SMS authority evidence remain separate entities. No grant is seeded from phone/role data and no legacy facility history is invented. [Full implemented ERD](DATABASE-ERD.md), [dictionary](data-dictionary.md), [facility contract](FACILITY-PERSISTENCE-CONTRACT.md).
 
 ~~~mermaid
 erDiagram
@@ -15,35 +13,31 @@ erDiagram
   users ||--o{ incident_photos : uploads
   emergency_alerts o|--o{ incident_photos : attaches
   users ||--o{ notification_preferences : self_records
-  barangays ||--o{ notification_preferences : scopes
   users ||--o{ sms_authorizations : scoped_recipient
-  sms_attempts ||--o{ sms_authorizations : accepted_current_gate
+  sms_attempts ||--o{ sms_authorizations : current_gate
+  facilities ||--o{ facility_history : retains
+  users o|--o{ facility_history : actor_snapshot
 ~~~
 
-Actual composite FKs include barangay on users/preferences/photos and reporter on the incident-photo association; the compact diagram omits repeated columns. Preference user and recorded_by reference the same scoped owner. Audit references are polymorphic application evidence, not an invented preference FK. Relations never grant permissions.
+The compact diagram omits composite scope columns; the full ERD shows each actual FK constraint. A relationship never grants authority. Facility history keeps the name/role/full display state at action; facility edits/deactivation do not rewrite rescue destination snapshots. Retained history and wide values refuse unsafe downgrade.
 
-## A short walkthrough explanation
+## Short transaction and delivery explanation
 
-A Laravel command checks the original authenticated identity, scope and revision, then commits source/history/audit/outbox together in MySQL. Rollback leaves none committed. A separate dispatcher consumes committed outbox work and records independent recipient/channel receipts, so SMS retries do not repeat completed in-app notifications.
+A Laravel command validates the original authenticated observation, scope and revision, then commits source/history/audit/outbox together. Failure rolls back the complete command. The existing dispatcher reads committed work and creates independent recipient/channel receipts, so SMS retries do not repeat completed in-app notifications.
 
-The database queue wakes the existing SMS worker. The ledger deduplicates logical intent/fences attempts; it does not guarantee exactly-once carrier effects. Uncertain POST timeouts stay uncertain for reconciliation, never blind resend. Urgent incident.created.v2 uses Laravel -> Semaphore directly. Approved nonurgent announcement.published.v2 uses Make -> authenticated scoped Laravel command -> the same ledger/worker. Publication approval is distinct from recipient consent.
+The queue wakes the existing SMS worker. Recipient/account/appointment -> consent precedes exact current source/ledger checks at reservation/retry and again before sending. Each gate records private revision/policy/template evidence and commits before external I/O. Revocation before the final gate blocks a send; an already-started provider request cannot be cancelled. Ledger/fences deduplicate intent, not carrier effects; an ambiguous timeout stays uncertain for GET-only reconciliation and never blind POST retry.
 
-P1 actual CurrentSmsConsent and the existing DBA worker now enforce recipient/account/appointment -> consent -> current source/ledger reservation and repeat the final pre-send gate, committing before provider I/O. P2 must still publish actual service-produced positive intent fixtures. P1 owns the shared UTC connector correction; a non-UTC worker connection fails closed. Revocation before that gate denies; an already-started request cannot be cancelled. Missing authority remains unavailable and production delivery stays off.
+Urgent incident.created.v2 uses Laravel -> Semaphore directly. Approved nonurgent announcement.published.v2 uses Make -> authenticated scoped Laravel command -> the SAME ledger/worker. Content approval differs from recipient consent. Positive/missing/revoked/wrong-purpose real producer fixtures generated2/0/0/1 accepted FAKE POSTs; completed-report replay adds0. Queued fake acceptance is not handset delivery. Normal optional/SMS/Make/dispatch/production worker settings stay off.
 
-## Reproducible fictional fixture/reset
+## Reproducible fictional profile and reset
 
-Use P1's reviewed [presentation profile](https://github.com/Butvh/barangay-connect-frontend/blob/bbb690eda11b6be419ead37fe36bc93edbf59920/docs/backend/PRESENTATION.md) and unchanged scripts/presentation-demo.mjs from a source-preserved private snapshot. P1 owns the Laravel/bootstrap/profile/browser walkthrough; do not create a competing scaffold or seed.
+Use P1's reviewed [presentation launcher/profile](https://github.com/Butvh/barangay-connect-frontend/blob/04cf76c53be175ae2f0a99ac9b5df8b4039425a6/docs/backend/PRESENTATION.md) from an exact source-preserved snapshot. P1 owns Laravel/shared selection and original-browser workflows; do not create another scaffold, writer or seeder.
 
-1. Record exact P1/P2/DBA pins/hashes. Review/repin the additive tenth/eleventh migrations/models/tests before composing; never forge hashes or relax path/collision checks.
-2. Supply private local credentials/APP_KEY for loopback MySQL8.4. Use a NEW unique bc_dba_p1_presentation_* schema, APP_ENV=testing, explicit disposable flags and matching DB_TEST_DATABASE. Keep SMS/Make/production dispatch off.
-3. Run node scripts/presentation-demo.mjs prepare, then serve from the reviewed private snapshot. Preparation refuses an existing schema and generates fictional operational accounts; credentials stay in storage/app/private, out of screenshots/public artifacts. No preapproved consent is fabricated.
-4. Restart serve against the same source/data. To reset, preserve the old dataset/evidence/private objects and prepare a new snapshot with a unique new schema suffix. No DROP/migrate:fresh/truncation of existing presentation data.
-5. Rehearse real cookie/CSRF login, manual SOS/response/rescue/resolution, history/in-app/report reads and denials according to P1/P2's truthful feature matrix. Label metadata SQL and fake-provider evidence; unimplemented controls stay unavailable.
+1. Record exact owner pins/hashes and use the reviewed current additive schema. Supply private local APP_KEY/credentials for loopback MySQL8.4 with the actual +00:00 connector. Use a NEW unique confirmed bc_dba_p1_presentation_* schema with matching disposable DB_TEST_DATABASE.
+2. Follow the unchanged node scripts/presentation-demo.mjs prepare/serve recipe. Preparation refuses an existing dataset, creates fictional accounts and keeps credentials/private bytes outside the public root. Never reuse another device's paths/schema/event IDs. No preapproved consent is fabricated; demonstrate real self-consent only in the accepted profile.
+3. Restart serve against the same source/data. Reset by preserving the old source/dataset/evidence/objects and preparing a new snapshot with a unique schema suffix. No DROP/migrate:fresh/truncation of existing presentation data. DBA test reset routines are for explicit disposable fixtures only.
+4. Rehearse original cookie/CSRF/session-observation login, manual SOS/response/rescue/explicit resolution, safe photo access, history/in-app/report/admin workflows and wrong-role/scope denials against P1/P2's truthful current feature matrix. Same-role reauthentication must not silently replay a stale form. Registered original-browser certification is a joint owner gate, not inferred from SQL/Node success.
 
-DBA tests separately use whitelisted fresh bc_dba_*/p2_test_* schemas and scoped test accounts, resetting only explicit disposable test fixtures. That is test infrastructure, not the presenter reset command. Backup/restore tests use fictional private bytes and encrypted local artifacts; real resident data is never imported.
+Real local evidence includes MySQL constraints/transactions/locks, actual owner services/private bytes/native PDF parsing, typed writers/in-app receipts, full facility history, current worker and exact real source events. Semaphore/Make HTTP is fake-only. No live host, external sender/credits/account/recipient/scenario or handset delivery acceptance is claimed. GitHub Pages cannot execute Laravel.
 
-## Real versus fake
-
-Real local evidence: MySQL constraints/transactions/row locks, actual owner identity/source services where published, typed audit/outbox adapters and in-app receipts. Fake-only: Semaphore/Make HTTP, budgets/replay/timeout/reconciliation. External provider/sender/credits/recipient prerequisites are unmeasured; carrier/Make delivery is untested. Actual P1 bytes and current worker revocation now have measured service tests; P2 positive producer and original-photo-form integration remain joint dependencies. GitHub Pages cannot execute Laravel.
-
-P12e70538 now adds measured actual photo services: all12 service/HTTP/concurrency cases pass; full newer composition251/1133 has one explicit Windows symlink skip, with matching P1 Linux combined/browser CI green. P2 public upload/caller integration remains gated. Current P12e8161e authority and DBA worker measurements are in [the worker record](CURRENT-SMS-WORKER.md). Consent agreement and worker implementation are complete; actual P2 positive producer acceptance remains unavailable. P1 newer mandatory administration work is outside these frozen worker measurements.
+Readiness8AM, source/data freeze noon, full checks2PM, rehearsal3PM, restart/restore4PM, presentation5PM Asia/Manila. Preserve the separately passing380/2063 fallback and identify any still-unaccepted original browser or rubric flow truthfully. No merge/deployment/shared-live migration/real message/Make activation is authorized.

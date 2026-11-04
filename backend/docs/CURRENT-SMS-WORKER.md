@@ -1,6 +1,10 @@
 # Current SMS worker — actual P1 authority integration
 
-**November5 current-owner update:** [Actual source-to-worker proof](ACTUAL-PRODUCER-DELIVERY-ACCEPTANCE.md) supersedes older absent-P1-UTC/P2-producer rulings below. Prior totals remain historical at their exact pins. Facility schema/model is published; P1 full-history writing/projection and final current-pin Linux/browser certification remain separate.
+**Final November5 evidence:** [One current history/photo/consent/producer/worker combination](JOINT-CURRENT-ACCEPTANCE-2026-11-05.md) passes383/2104 with1 explicit Windows skip, current48 SQL+2 HTTP and actual source fake acceptance. P1 UTC/full-history and P2 real producer dependencies are implemented; older absent-dependency statements/totals below are historical at their pins. Current Linux/original-browser/external-host certification remains separate.
+
+
+
+
 
 P1 current2e8161e/c087eb7 publishes CurrentSmsConsent. DBA now integrates the existing SmsDeliveryService with that ACTUAL SmsDeliveryEligibility boundary; no further consent approval, second dispatcher or provider client is introduced. P2 at5e61893 still produces in-app only, so actual positive P2 producer/probe acceptance remains unavailable.
 
