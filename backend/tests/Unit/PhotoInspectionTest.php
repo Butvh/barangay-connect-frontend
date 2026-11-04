@@ -27,6 +27,34 @@ final class PhotoInspectionTest extends TestCase
         (new PhotoInspector)->inspect('flood-photo.png');
     }
 
+    public function test_worker_keeps_the_trusted_loaded_ini_when_inherited_configuration_changes(): void
+    {
+        $this->assertNotFalse(php_ini_loaded_file());
+        ob_start();
+        imagepng(imagecreatetruecolor(4, 4));
+        $png = ob_get_clean();
+        $ini = tempnam(sys_get_temp_dir(), 'p1-photo-ini-');
+        file_put_contents($ini, "; No extensions: an accidentally inherited worker config must not replace its parent.\n");
+        $before = [getenv('PHPRC'), $_ENV['PHPRC'] ?? null, $_SERVER['PHPRC'] ?? null];
+        try {
+            putenv('PHPRC='.$ini);
+            $_ENV['PHPRC'] = $_SERVER['PHPRC'] = $ini;
+            $result = (new PhotoInspector)->inspect($png);
+            $this->assertSame('image/png', $result['mime']);
+            $this->assertGreaterThan(0, $result['bytes']);
+        } finally {
+            putenv($before[0] === false ? 'PHPRC' : 'PHPRC='.$before[0]);
+            foreach (['_ENV' => 1, '_SERVER' => 2] as $global => $position) {
+                if ($before[$position] === null) {
+                    unset($GLOBALS[$global]['PHPRC']);
+                } else {
+                    $GLOBALS[$global]['PHPRC'] = $before[$position];
+                }
+            }
+            unlink($ini);
+        }
+    }
+
     public function test_oversized_input_is_rejected_before_decoding(): void
     {
         $this->expectException(ApiProblem::class);

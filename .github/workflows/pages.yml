@@ -216,6 +216,54 @@ jobs:
           name: p1-administration-readiness
           path: ${{ env.SNAPSHOT_DIR }}/tests/browser/evidence/administration
           if-no-files-found: ignore
+      - name: Original positive account verification and consent workflows
+        if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
+        working-directory: ${{ env.SNAPSHOT_DIR }}
+        run: |
+          P1_BROWSER_MODULE="$RUNNER_TEMP/bc-browser-runtime/node_modules/playwright/index.mjs" node tests/browser/administration-workflows.mjs
+          P1_BROWSER_MODULE="$RUNNER_TEMP/bc-browser-runtime/node_modules/playwright/index.mjs" node tests/browser/expiry-recovery-workflows.mjs
+      - name: Prepare separate original personnel and facility browser schema
+        if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
+        working-directory: ${{ env.SNAPSHOT_DIR }}
+        run: |
+          php backend/tests/Support/prepare-browser-database.php bc_dba_p1_admin_browser
+          DB_DATABASE=bc_dba_p1_admin_browser DB_TEST_DATABASE=bc_dba_p1_admin_browser php backend/artisan migrate --force --no-interaction
+          DB_DATABASE=bc_dba_p1_admin_browser DB_TEST_DATABASE=bc_dba_p1_admin_browser P1_BROWSER_MODULE="$RUNNER_TEMP/bc-browser-runtime/node_modules/playwright/index.mjs" node tests/browser/personnel-facility-workflows.mjs
+      - name: Positive administration workflow evidence
+        if: ${{ always() && env.SNAPSHOT_DIR != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: p1-administration-workflows
+          path: ${{ env.SNAPSHOT_DIR }}/tests/browser/evidence/administration-workflows
+          if-no-files-found: ignore
+      - name: Positive personnel facility and report evidence
+        if: ${{ always() && env.SNAPSHOT_DIR != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: p1-personnel-facility-workflows
+          path: ${{ env.SNAPSHOT_DIR }}/tests/browser/evidence/personnel-facility-workflows
+          if-no-files-found: ignore
+      - name: Original recovery and verification expiry evidence
+        if: ${{ always() && env.SNAPSHOT_DIR != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: p1-expiry-recovery-workflows
+          path: ${{ env.SNAPSHOT_DIR }}/tests/browser/evidence/expiry-recovery-workflows
+          if-no-files-found: ignore
+      - name: Original optional private photo and session-generation acceptance
+        if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
+        working-directory: ${{ env.SNAPSHOT_DIR }}
+        run: |
+          php backend/tests/Support/prepare-browser-database.php bc_dba_p1_photo_browser
+          DB_DATABASE=bc_dba_p1_photo_browser DB_TEST_DATABASE=bc_dba_p1_photo_browser php backend/artisan migrate --force --no-interaction
+          DB_DATABASE=bc_dba_p1_photo_browser DB_TEST_DATABASE=bc_dba_p1_photo_browser P1_BROWSER_MODULE="$RUNNER_TEMP/bc-browser-runtime/node_modules/playwright/index.mjs" node tests/browser/photo-workflows.mjs
+      - name: Private photo workflow evidence
+        if: ${{ always() && env.SNAPSHOT_DIR != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: p1-photo-workflows
+          path: ${{ env.SNAPSHOT_DIR }}/tests/browser/evidence/photo-workflows
+          if-no-files-found: ignore
       - name: Verify owner source preservation
         if: ${{ always() && env.SNAPSHOT_DIR != '' }}
         working-directory: ${{ env.SNAPSHOT_DIR }}

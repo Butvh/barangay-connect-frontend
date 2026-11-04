@@ -19,7 +19,10 @@ final class PhotoInspector
         if (! extension_loaded('gd')) {
             throw new ApiProblem('NOT_AVAILABLE', 503, 'Photo inspection is unavailable.');
         }
-        $process = new Process([PHP_BINARY, '-d', 'memory_limit=256M', '-d', 'max_execution_time=10', __DIR__.'/normalize.php']);
+        // Carry the trusted configuration already loaded by this PHP runtime.
+        // A child otherwise can load a different default ini under web SAPIs.
+        $ini = php_ini_loaded_file();
+        $process = new Process([PHP_BINARY, ...($ini ? ['-c', $ini] : []), '-d', 'memory_limit=256M', '-d', 'max_execution_time=10', __DIR__.'/normalize.php']);
         $process->setInput($input)->setTimeout(15);
         try {
             $process->run(function ($type, $buffer) use ($process): void {

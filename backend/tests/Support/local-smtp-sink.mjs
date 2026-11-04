@@ -34,5 +34,7 @@ const server = createServer(socket => {
   socket.on('error', () => {});
 });
 server.listen(0, '127.0.0.1', () => console.log(JSON.stringify({ port: server.address().port })));
-const timer = setTimeout(() => server.close(), 25000); timer.unref();
+const lifetime = Number(process.env.P1_SMTP_FIXTURE_MS || 25000);
+if (!Number.isInteger(lifetime) || lifetime < 25000 || lifetime > 120000) throw new Error('Use a bounded private SMTP fixture lifetime.');
+const timer = setTimeout(() => server.close(), lifetime); timer.unref();
 for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => server.close(() => process.exit(0)));
