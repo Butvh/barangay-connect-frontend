@@ -1,14 +1,6 @@
 # MySQL data dictionary
 
-**Current November4 additive update:** [incident_photos](PHOTO-METADATA-AGREEMENT.md) is the39th table/ninth migration; ratified [notification_preferences](SMS-CONSENT-PROPOSAL.md) adds the40th table/tenth migration. All nine preceding migrations remain unchanged. Earlier absent/unratified statements below preserve historical pins. Persistence does not certify actual P1 byte/current-authority services or external delivery.
-
-Generated from the migrated MySQL Community 8.4.13 schema. Types/nullability/indexes below are actual DDL metadata, not inferred frontend fields. All tables use InnoDB. See DBA-HANDOFF.md for DTO mapping, scope/lock rules, service responsibilities and migration order. No resident rows, secrets or dump data are included.
-
-November 3 follow-up changes no DDL or migration. The original six migrations and two additive migrations are retained. New v2 event IDs are canonical lowercase UUIDv4, occurrence timestamps retain UTC microseconds, and audience is derived by the authorized producer then required in v2 recipient rows. SQL audience nullability remains for legacy v1 compatibility. These application boundaries are detailed in [INTEGRATION-CONTRACT-V2.md](INTEGRATION-CONTRACT-V2.md).
-
-Incident-photo metadata is a separate [unratified proposal](INCIDENT-PHOTO-METADATA-PROPOSAL.md) under database/proposals/, not part of the migrated38-table schema below. Its tests execute only on disposable databases; no active migration/model or private-byte implementation is added.
-
-November4 acceptance changes no DDL: all eight active migrations remain byte-equivalent Git inputs. The P2 lock correction is independently accepted; [explicit photo/SMS decisions](PHOTO-SMS-CONTRACT-DECISIONS.md) still precede any new migration/model or actual SMS-intent adoption.
+Generated from the migrated MySQL Community 8.4.13 schema. Types/nullability/indexes below are actual DDL metadata, not inferred frontend fields. All tables use InnoDB. Facility widths and immutable full history use the two November5 additive migrations; see FACILITY-PERSISTENCE-CONTRACT.md. See DBA-HANDOFF.md for DTO mapping, scope/lock rules, service responsibilities and migration order. No resident rows, secrets or dump data are included.
 
 ## activity_logs
 
@@ -374,6 +366,7 @@ Indexes:
 
 - `PRIMARY` UNIQUE (id)
 - `emergency_alerts_id_barangay_id_unique` UNIQUE (id, barangay_id)
+- `photo_incident_owner_scope` UNIQUE (id, resident_id, barangay_id)
 - `alert_active_resident_unique` UNIQUE (active_resident_key)
 - `emergency_alerts_acknowledged_by_foreign` (acknowledged_by)
 - `emergency_alerts_resolved_by_foreign` (resolved_by)
@@ -390,8 +383,8 @@ Foreign keys:
 
 Checks:
 
-- `alert_victims_check`: ((`victim_count` is null) or (`victim_count` <= 9999))
 - `alert_pin_check`: (((`map_x` is null) and (`map_y` is null)) or ((`map_x` is not null) and (`map_y` is not null) and (`map_x` between 0 and 100) and (`map_y` between 0 and 100)))
+- `alert_victims_check`: ((`victim_count` is null) or (`victim_count` <= 9999))
 
 ## facilities
 
@@ -400,11 +393,11 @@ Checks:
 | id | bigint unsigned | NO | NULL/none | auto_increment |
 | managed_by_barangay_id | bigint unsigned | NO | NULL/none |  |
 | visibility | enum('local','shared') | NO | local |  |
-| name | varchar(100) | NO | NULL/none |  |
+| name | varchar(160) | NO | NULL/none |  |
 | type | enum('Evacuation Center','Hospital') | NO | NULL/none |  |
-| address | varchar(200) | NO | NULL/none |  |
+| address | varchar(300) | NO | NULL/none |  |
 | capacity | int unsigned | YES | NULL/none |  |
-| contact | varchar(30) | YES | NULL/none |  |
+| contact | varchar(50) | YES | NULL/none |  |
 | notes | text | YES | NULL/none |  |
 | active | tinyint(1) | NO | 1 |  |
 | map_x | decimal(7,4) | YES | NULL/none |  |
@@ -419,6 +412,7 @@ Checks:
 Indexes:
 
 - `PRIMARY` UNIQUE (id)
+- `facility_history_scope_parent` UNIQUE (id, managed_by_barangay_id)
 - `facilities_created_by_foreign` (created_by)
 - `facilities_updated_by_foreign` (updated_by)
 - `facilities_managed_by_barangay_id_type_active_index` (managed_by_barangay_id, type, active)
@@ -433,6 +427,41 @@ Foreign keys:
 Checks:
 
 - `facility_pin_check`: (((`map_x` is null) and (`map_y` is null)) or ((`map_x` is not null) and (`map_y` is not null) and (`map_x` between 0 and 100) and (`map_y` between 0 and 100) and (`map_scope` is not null)))
+
+## facility_history
+
+| Column | Type | Nullable | Default | Extra / generated expression |
+| --- | --- | --- | --- | --- |
+| id | bigint unsigned | NO | NULL/none | auto_increment |
+| facility_id | bigint unsigned | NO | NULL/none |  |
+| barangay_id | bigint unsigned | NO | NULL/none |  |
+| actor_id | bigint unsigned | YES | NULL/none |  |
+| actor_name | varchar(100) | YES | NULL/none |  |
+| role_at_action | varchar(20) | YES | NULL/none |  |
+| action | varchar(30) | NO | NULL/none |  |
+| revision | int unsigned | NO | NULL/none |  |
+| snapshot | json | NO | NULL/none |  |
+| occurred_at | timestamp(6) | NO | NULL/none |  |
+
+Indexes:
+
+- `PRIMARY` UNIQUE (id)
+- `facility_history_revision` UNIQUE (facility_id, revision)
+- `facility_history_scope_time` (barangay_id, occurred_at, id)
+- `facility_history_actor_scope` (actor_id, barangay_id)
+- `facility_history_facility_scope` (facility_id, barangay_id)
+
+Foreign keys:
+
+- `facility_history_actor_fk`: (actor_id,barangay_id) -> users(id,barangay_id); DELETE RESTRICT; UPDATE RESTRICT
+- `facility_history_source_fk`: (facility_id,barangay_id) -> facilities(id,managed_by_barangay_id); DELETE RESTRICT; UPDATE RESTRICT
+
+Checks:
+
+- `facility_history_action_check`: (((`action` = _utf8mb4\'Created\') and (`revision` = 0)) or ((`action` in (_utf8mb4\'Edited\',_utf8mb4\'Deactivated\',_utf8mb4\'Reactivated\')) and (`revision` >= 1)))
+- `facility_history_reference_check`: ((cast(json_unquote(json_extract(`snapshot`,_utf8mb4\'$.id\')) as unsigned) = `facility_id`) and (cast(json_unquote(json_extract(`snapshot`,_utf8mb4\'$.managed_by_barangay_id\')) as unsigned) = `barangay_id`))
+- `facility_history_snapshot_check`: (json_schema_valid(_utf8mb4\'{"type":"object","required":["id","managed_by_barangay_id","name","type","address","capacity","contact","notes","status","map_x","map_y"],"properties":{"id":{"type":"integer","minimum":1,"maximum":9007199254740991},"managed_by_barangay_id":{"type":"integer","minimum":1,"maximum":9007199254740991},"name":{"type":"string","minLength":1,"maxLength":160},"type":{"enum":["Hospital","EvacuationCenter"]},"address":{"type":"string","minLength":1,"maxLength":300},"capacity":{"anyOf":[{"type":"integer","minimum":1,"maximum":999999},{"type":"null"}]},"contact":{"anyOf":[{"type":"string","maxLength":50},{"type":"null"}]},"notes":{"anyOf":[{"type":"string","maxLength":300},{"type":"null"}]},"status":{"enum":["Active","Inactive"]},"map_x":{"anyOf":[{"type":"number","minimum":0,"maximum":100},{"type":"null"}]},"map_y":{"anyOf":[{"type":"number","minimum":0,"maximum":100},{"type":"null"}]},"barangay_id":{"anyOf":[{"type":"integer","minimum":1,"maximum":9007199254740991},{"type":"null"}]},"visibility":{"enum":["local","shared"]},"map_scope":{"anyOf":[{"type":"string","maxLength":100},{"type":"null"}]}},"additionalProperties":false,"allOf":[{"anyOf":[{"properties":{"map_x":{"type":"null"},"map_y":{"type":"null"}}},{"properties":{"map_x":{"type":"number","minimum":0,"maximum":100},"map_y":{"type":"number","minimum":0,"maximum":100}}}]},{"anyOf":[{"properties":{"type":{"enum":["Hospital"]}}},{"properties":{"type":{"enum":["EvacuationCenter"]},"capacity":{"type":"integer","minimum":1}}}]}]}\',`snapshot`) and (length(cast(`snapshot` as char charset utf8mb4)) <= 8192))
+- `facility_history_state_check`: (((`action` <> _utf8mb4\'Deactivated\') or (json_unquote(json_extract(`snapshot`,_utf8mb4\'$.status\')) = _utf8mb4\'Inactive\')) and ((`action` <> _utf8mb4\'Reactivated\') or (json_unquote(json_extract(`snapshot`,_utf8mb4\'$.status\')) = _utf8mb4\'Active\')))
 
 ## failed_jobs
 
@@ -502,6 +531,69 @@ Indexes:
 Foreign keys:
 
 - `idempotency_requests_actor_id_foreign`: (actor_id) -> users(id); DELETE RESTRICT; UPDATE NO ACTION
+
+## incident_photos
+
+| Column | Type | Nullable | Default | Extra / generated expression |
+| --- | --- | --- | --- | --- |
+| id | bigint unsigned | NO | NULL/none | auto_increment |
+| upload_id | char(36) | NO | NULL/none |  |
+| barangay_id | bigint unsigned | NO | NULL/none |  |
+| uploader_id | bigint unsigned | NO | NULL/none |  |
+| uploader_auth_version | int unsigned | NO | NULL/none |  |
+| intent_digest | char(64) | NO | NULL/none |  |
+| input_sha256 | char(64) | NO | NULL/none |  |
+| incident_id | bigint unsigned | YES | NULL/none |  |
+| disk | varchar(40) | NO | NULL/none |  |
+| object_key | varchar(190) | NO | NULL/none |  |
+| mime | varchar(20) | YES | NULL/none |  |
+| bytes | int unsigned | YES | NULL/none |  |
+| sha256 | char(64) | YES | NULL/none |  |
+| state | enum('processing','ready','attached','failed','removing','removed') | NO | NULL/none |  |
+| cleanup_token | char(36) | YES | NULL/none |  |
+| cleanup_lease_until | timestamp(6) | YES | NULL/none |  |
+| cleanup_attempts | smallint unsigned | NO | 0 |  |
+| failure_code | enum('invalid_image','storage_failed','integrity_failed','cleanup_failed') | YES | NULL/none |  |
+| created_at | timestamp(6) | NO | NULL/none |  |
+| updated_at | timestamp(6) | NO | NULL/none |  |
+| uploaded_at | timestamp(6) | YES | NULL/none |  |
+| expires_at | timestamp(6) | NO | NULL/none |  |
+| attached_at | timestamp(6) | YES | NULL/none |  |
+| failed_at | timestamp(6) | YES | NULL/none |  |
+| removed_at | timestamp(6) | YES | NULL/none |  |
+
+Indexes:
+
+- `PRIMARY` UNIQUE (id)
+- `photo_upload_token` UNIQUE (upload_id)
+- `photo_private_object` UNIQUE (disk, object_key)
+- `photo_submit_intent` UNIQUE (uploader_id, barangay_id, uploader_auth_version, intent_digest)
+- `photo_uploader_expiry` (barangay_id, uploader_id, state, expires_at, id)
+- `photo_expiry_scan` (state, expires_at, id)
+- `photo_cleanup_recovery` (state, cleanup_lease_until, id)
+- `photo_incident_scope` (barangay_id, incident_id, id)
+- `photo_incident_owner_fk` (incident_id, uploader_id, barangay_id)
+
+Foreign keys:
+
+- `photo_incident_owner_fk`: (incident_id,uploader_id,barangay_id) -> emergency_alerts(id,resident_id,barangay_id); DELETE RESTRICT; UPDATE RESTRICT
+- `photo_uploader_scope_fk`: (uploader_id,barangay_id) -> users(id,barangay_id); DELETE RESTRICT; UPDATE RESTRICT
+
+Checks:
+
+- `photo_attachment_check`: (((`state` = _utf8mb4\'attached\') and (`incident_id` is not null) and (`attached_at` is not null) and (`uploaded_at` is not null) and (`attached_at` between `uploaded_at` and `expires_at`)) or ((`state` <> _utf8mb4\'attached\') and (`incident_id` is null) and (`attached_at` is null)))
+- `photo_attempts_check`: (`cleanup_attempts` <= 20)
+- `photo_cleanup_claim_check`: (((`state` = _utf8mb4\'removing\') and (`cleanup_token` is not null) and (`cleanup_lease_until` is not null) and (`cleanup_attempts` between 1 and 20) and (`cleanup_lease_until` = (`updated_at` + interval 5 minute)) and (`expires_at` <= `updated_at`) and regexp_like(`cleanup_token`,_utf8mb4\'^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$\',_utf8mb4\'c\')) or ((`state` <> _utf8mb4\'removing\') and (`cleanup_token` is null) and (`cleanup_lease_until` is null)))
+- `photo_failure_check`: ((`state` <> _utf8mb4\'failed\') or ((`failed_at` is not null) and (`failure_code` is not null)))
+- `photo_generation_check`: (`uploader_auth_version` >= 0)
+- `photo_input_check`: regexp_like(`input_sha256`,_utf8mb4\'^[a-f0-9]{64}$\',_utf8mb4\'c\')
+- `photo_inspection_check`: (((`mime` is null) and (`bytes` is null) and (`sha256` is null) and (`uploaded_at` is null)) or ((`mime` is not null) and (`bytes` is not null) and (`sha256` is not null) and (`uploaded_at` is not null) and (`mime` in (_utf8mb4\'image/jpeg\',_utf8mb4\'image/png\')) and (`bytes` between 1 and 10485760) and regexp_like(`sha256`,_utf8mb4\'^[a-f0-9]{64}$\',_utf8mb4\'c\')))
+- `photo_intent_check`: regexp_like(`intent_digest`,_utf8mb4\'^[a-f0-9]{64}$\',_utf8mb4\'c\')
+- `photo_lifetime_check`: ((`expires_at` > `created_at`) and (`expires_at` <= (`created_at` + interval 1 day)) and (`updated_at` >= `created_at`) and ((`uploaded_at` is null) or (`uploaded_at` between `created_at` and `expires_at`)))
+- `photo_private_key_check`: ((`disk` = _utf8mb4\'private_incident_photos\') and regexp_like(`object_key`,_utf8mb4\'^incident-photos/[a-f0-9]{2}/[a-f0-9]{64}$\',_utf8mb4\'c\'))
+- `photo_ready_check`: ((`state` not in (_utf8mb4\'ready\',_utf8mb4\'attached\')) or ((`mime` is not null) and (`uploaded_at` is not null)))
+- `photo_removed_check`: (((`state` = _utf8mb4\'removed\') and (`removed_at` is not null)) or ((`state` <> _utf8mb4\'removed\') and (`removed_at` is null)))
+- `photo_token_check`: regexp_like(`upload_id`,_utf8mb4\'^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$\',_utf8mb4\'c\')
 
 ## incident_status_history
 
@@ -632,6 +724,45 @@ Indexes:
 Indexes:
 
 - `PRIMARY` UNIQUE (endpoint)
+
+## notification_preferences
+
+| Column | Type | Nullable | Default | Extra / generated expression |
+| --- | --- | --- | --- | --- |
+| id | bigint unsigned | NO | NULL/none | auto_increment |
+| user_id | bigint unsigned | NO | NULL/none |  |
+| barangay_id | bigint unsigned | NO | NULL/none |  |
+| purpose | enum('incident_review','barangay_announcements') | NO | NULL/none |  |
+| channel | enum('sms') | NO | NULL/none |  |
+| state | enum('granted','revoked') | NO | NULL/none |  |
+| revision | bigint unsigned | NO | NULL/none |  |
+| policy_version | varchar(80) | NO | NULL/none |  |
+| template_version | varchar(80) | NO | NULL/none |  |
+| recorded_by | bigint unsigned | NO | NULL/none |  |
+| granted_at | timestamp(6) | YES | NULL/none |  |
+| revoked_at | timestamp(6) | YES | NULL/none |  |
+| created_at | timestamp(6) | NO | NULL/none |  |
+| updated_at | timestamp(6) | NO | NULL/none |  |
+
+Indexes:
+
+- `PRIMARY` UNIQUE (id)
+- `preference_user_purpose_channel` UNIQUE (user_id, barangay_id, purpose, channel)
+- `preference_scoped_audience` (barangay_id, purpose, channel, state, id)
+- `preference_recorder_scope` (recorded_by, barangay_id)
+
+Foreign keys:
+
+- `preference_recorder_scope_fk`: (recorded_by,barangay_id) -> users(id,barangay_id); DELETE RESTRICT; UPDATE RESTRICT
+- `preference_user_scope_fk`: (user_id,barangay_id) -> users(id,barangay_id); DELETE RESTRICT; UPDATE RESTRICT
+
+Checks:
+
+- `preference_revision_check`: (`revision` between 1 and 9007199254740991)
+- `preference_self_check`: (`recorded_by` = `user_id`)
+- `preference_state_check`: (((`state` = _utf8mb4\'granted\') and (`granted_at` is not null) and (`revoked_at` is null)) or ((`state` = _utf8mb4\'revoked\') and (`revoked_at` is not null)))
+- `preference_timestamps_check`: ((`updated_at` >= `created_at`) and ((`granted_at` is null) or (`granted_at` between `created_at` and `updated_at`)) and ((`revoked_at` is null) or (`revoked_at` between coalesce(`granted_at`,`created_at`) and `updated_at`)))
+- `preference_version_check`: ((`policy_version` = _utf8mb4\'sms-consent.v1\') and (((`purpose` = _utf8mb4\'incident_review\') and (`template_version` = _utf8mb4\'alert-review.v1\')) or ((`purpose` = _utf8mb4\'barangay_announcements\') and (`template_version` = _utf8mb4\'announcement-review.v1\'))))
 
 ## notifications
 
@@ -774,8 +905,8 @@ Foreign keys:
 Checks:
 
 - `recovery_attempt_check`: ((`max_attempts` = 5) and (`failed_attempts` <= `max_attempts`))
-- `recovery_window_check`: ((`expires_at` <= (`created_at` + interval 10 minute)) and (`resend_available_at` >= (`created_at` + interval 60 second)))
 - `recovery_authorization_pair_check`: (((`authorization_digest` is null) and (`authorization_expires_at` is null)) or ((`authorization_digest` is not null) and (`authorization_expires_at` is not null)))
+- `recovery_window_check`: ((`expires_at` <= (`created_at` + interval 10 minute)) and (`resend_available_at` >= (`created_at` + interval 60 second)))
 
 ## personnel_appointments
 
@@ -927,6 +1058,42 @@ Foreign keys:
 
 - `sms_attempts_sms_delivery_id_foreign`: (sms_delivery_id) -> sms_deliveries(id); DELETE RESTRICT; UPDATE NO ACTION
 
+## sms_authorizations
+
+| Column | Type | Nullable | Default | Extra / generated expression |
+| --- | --- | --- | --- | --- |
+| id | bigint unsigned | NO | NULL/none | auto_increment |
+| sms_delivery_id | bigint unsigned | NO | NULL/none |  |
+| attempt | smallint unsigned | NO | NULL/none |  |
+| recipient_id | bigint unsigned | NO | NULL/none |  |
+| barangay_id | bigint unsigned | NO | NULL/none |  |
+| claim_token | char(36) | NO | NULL/none |  |
+| gate | enum('reservation','pre_send') | NO | NULL/none |  |
+| purpose | enum('incident_review','barangay_announcements') | NO | NULL/none |  |
+| consent_revision | bigint unsigned | NO | NULL/none |  |
+| policy_version | varchar(80) | NO | NULL/none |  |
+| template_version | varchar(80) | NO | NULL/none |  |
+| checked_at | timestamp(6) | NO | NULL/none |  |
+
+Indexes:
+
+- `PRIMARY` UNIQUE (id)
+- `sms_auth_gate` UNIQUE (sms_delivery_id, claim_token, gate)
+- `sms_auth_attempt` (sms_delivery_id, attempt)
+- `sms_auth_recipient_scope` (recipient_id, barangay_id, checked_at)
+
+Foreign keys:
+
+- `sms_auth_attempt_fk`: (sms_delivery_id,attempt) -> sms_attempts(sms_delivery_id,attempt); DELETE RESTRICT; UPDATE RESTRICT
+- `sms_auth_recipient_fk`: (recipient_id,barangay_id) -> users(id,barangay_id); DELETE RESTRICT; UPDATE RESTRICT
+
+Checks:
+
+- `sms_auth_attempt_check`: (`attempt` >= 1)
+- `sms_auth_revision_check`: (`consent_revision` between 1 and 9007199254740991)
+- `sms_auth_token_check`: regexp_like(`claim_token`,_utf8mb4\'^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$\',_utf8mb4\'c\')
+- `sms_auth_version_check`: ((`policy_version` = _utf8mb4\'sms-consent.v1\') and (((`purpose` = _utf8mb4\'incident_review\') and (`template_version` = _utf8mb4\'alert-review.v1\')) or ((`purpose` = _utf8mb4\'barangay_announcements\') and (`template_version` = _utf8mb4\'announcement-review.v1\'))))
+
 ## sms_deliveries
 
 | Column | Type | Nullable | Default | Extra / generated expression |
@@ -1019,8 +1186,8 @@ Foreign keys:
 
 Checks:
 
-- `users_email_normalized_check`: (cast(`email` as char charset binary) = cast(lower(trim(`email`)) as char charset binary))
 - `users_auth_version_nonnegative`: (`auth_version` >= 0)
+- `users_email_normalized_check`: (cast(`email` as char charset binary) = cast(lower(trim(`email`)) as char charset binary))
 
 ## verification_submissions
 
@@ -1080,49 +1247,3 @@ Foreign keys:
 - `verification_current_submission_fk`: (current_submission_id,id) -> verification_submissions(id,verification_id); DELETE RESTRICT; UPDATE NO ACTION
 - `verification_resident_scope_fk`: (resident_id,barangay_id) -> users(id,barangay_id); DELETE RESTRICT; UPDATE NO ACTION
 - `verifications_reviewer_id_foreign`: (reviewer_id) -> users(id); DELETE RESTRICT; UPDATE NO ACTION
-
-
-## notification_preferences (additive November4)
-
-Generated from the tested MySQL8.4.13 table, not proposed API fields. Purpose/channel/versions, state/time pairs, scoped self-recorder FKs, revision updates and retained-data rules are specified in [the ratified handoff](SMS-CONSENT-PROPOSAL.md).
-
-| Column | Actual type | Nullable | Default |
-| --- | --- | --- | --- |
-| id | bigint unsigned | NO | none |
-| user_id | bigint unsigned | NO | none |
-| barangay_id | bigint unsigned | NO | none |
-| purpose | enum('incident_review','barangay_announcements') | NO | none |
-| channel | enum('sms') | NO | none |
-| state | enum('granted','revoked') | NO | none |
-| revision | bigint unsigned | NO | none |
-| policy_version | varchar(80) | NO | none |
-| template_version | varchar(80) | NO | none |
-| recorded_by | bigint unsigned | NO | none |
-| granted_at | timestamp(6) | YES | NULL |
-| revoked_at | timestamp(6) | YES | NULL |
-| created_at | timestamp(6) | NO | none |
-| updated_at | timestamp(6) | NO | none |
-
-Unique: preference_user_purpose_channel(user_id,barangay_id,purpose,channel). Indexes: preference_scoped_audience(barangay_id,purpose,channel,state,id), preference_recorder_scope(recorded_by,barangay_id). Scoped RESTRICT FKs to users(id,barangay_id) for both user and recorder; recorded_by=user_id. CHECKs: self, safe revision1..9007199254740991, exact purpose/version pair, grant/revoke state and UTC timestamp chronology. BEFORE UPDATE trigger freezes identity/creation, enforces exact next revision and retained prior-grant evidence. No rows are seeded; model output is private.
-
-
-## sms_authorizations (additive November4 worker evidence)
-
-Actual tested MySQL8.4.13 metadata. Private accepted reservation/pre_send observations; these records neither grant consent nor prove provider delivery. [Current worker contract and acceptance](CURRENT-SMS-WORKER.md).
-
-| Column | Actual type | Nullable | Default |
-| --- | --- | --- | --- |
-| id | bigint unsigned | NO | none |
-| sms_delivery_id | bigint unsigned | NO | none |
-| attempt | smallint unsigned | NO | none |
-| recipient_id | bigint unsigned | NO | none |
-| barangay_id | bigint unsigned | NO | none |
-| claim_token | char(36) | NO | none |
-| gate | enum('reservation','pre_send') | NO | none |
-| purpose | enum('incident_review','barangay_announcements') | NO | none |
-| consent_revision | bigint unsigned | NO | none |
-| policy_version | varchar(80) | NO | none |
-| template_version | varchar(80) | NO | none |
-| checked_at | timestamp(6) | NO | none |
-
-Unique: sms_auth_gate(sms_delivery_id,claim_token,gate). Indexes: sms_auth_attempt(sms_delivery_id,attempt), sms_auth_recipient_scope(recipient_id,barangay_id,checked_at). Composite RESTRICT FKs: delivery/attempt -> sms_attempts(sms_delivery_id,attempt), recipient/barangay -> users(id,barangay_id). CHECKs: attempt>=1, consent revision1..9007199254740991, lowercase UUIDv4 claim token, exact purpose/policy/template pair. BEFORE UPDATE always refuses sms_authorizations_immutable; private model refuses update/delete and serializes no attributes. Retained rows refuse migration downgrade. checked_at is server UTC microsecond time; no caller grant or phone/message field exists. All preceding ten migrations remain unchanged.

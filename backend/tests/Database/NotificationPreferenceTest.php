@@ -53,7 +53,7 @@ class NotificationPreferenceTest extends MysqlDbaTestCase
         $this->migration->up();
         $this->assertSame(3, DB::table('users')->count());
         $this->assertSame(0, DB::table('notification_preferences')->count());
-        $this->assertCount(11, glob(__DIR__.'/../../database/migrations/*.php'));
+        $this->assertCount(13, glob(__DIR__.'/../../database/migrations/*.php'));
         $this->assertSame('InnoDB', DB::selectOne("SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='notification_preferences'")->ENGINE);
     }
 

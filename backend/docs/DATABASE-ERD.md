@@ -1,6 +1,6 @@
-# Implemented MySQL ERD — November4 current-worker update
+# Implemented MySQL ERD — November5 facility update
 
-Generated from the actual tested MySQL8.4.13 schema:41 InnoDB tables,11 migrations,65 FK relationships. Only PK/FK attributes are shown for compactness; photo/preference/authorization tables additionally show persisted evidence fields. Composite relationships are one edge per actual constraint, not separate invented references. Nullability determines optional parent references. Unique constraints/indexes and complete types are in [the data dictionary](data-dictionary.md); authority is application policy, never an ERD relationship.
+Generated from the actual tested MySQL8.4.13 schema:42 InnoDB tables,13 migrations. Only PK/FK attributes are shown for compactness; the photo/preference tables additionally show their persisted evidence fields. Composite relationships are one edge per actual constraint, not separate invented references. Nullability determines optional parent references. Unique constraints/indexes and complete types are in [the data dictionary](data-dictionary.md); authority is application policy, never an ERD relationship.
 
 ~~~mermaid
 erDiagram
@@ -75,8 +75,34 @@ erDiagram
   facilities {
     bigint id PK
     bigint managed_by_barangay_id FK
+    enum visibility
+    varchar name
+    enum type
+    varchar address
+    int capacity
+    varchar contact
+    text notes
+    tinyint active
+    decimal map_x
+    decimal map_y
+    varchar map_scope
     bigint created_by FK
     bigint updated_by FK
+    int revision
+    timestamp created_at
+    timestamp updated_at
+  }
+  facility_history {
+    bigint id PK
+    bigint facility_id FK
+    bigint barangay_id FK
+    bigint actor_id FK
+    varchar actor_name
+    varchar role_at_action
+    varchar action
+    int revision
+    json snapshot
+    timestamp occurred_at
   }
   failed_jobs {
     bigint id PK
@@ -271,6 +297,8 @@ erDiagram
   users o|--o{ facilities : facilities_created_by_foreign
   barangays ||--o{ facilities : facilities_managed_by_barangay_id_foreign
   users o|--o{ facilities : facilities_updated_by_foreign
+  users o|--o{ facility_history : facility_history_actor_fk
+  facilities ||--o{ facility_history : facility_history_source_fk
   barangays ||--o{ households : households_barangay_id_foreign
   users ||--o{ idempotency_requests : idempotency_requests_actor_id_foreign
   emergency_alerts o|--o{ incident_photos : photo_incident_owner_fk
@@ -309,4 +337,4 @@ erDiagram
   users o|--o{ verifications : verifications_reviewer_id_foreign
 ~~~
 
-No user/consent rows, credentials, private bytes or proposed tables are exported. The preceding ten migrations are unchanged; current authority/byte/worker/producer acceptance remains separate from this implemented schema.
+No user/consent rows, credentials, private bytes or proposed tables are exported. The preceding eleven migrations are unchanged; current authority/byte/worker/producer acceptance remains separate from this implemented schema.

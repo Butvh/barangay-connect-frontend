@@ -29,4 +29,9 @@ class Facility extends Model
     {
         return $this->hasMany(Rescue::class, 'facility_id');
     }
+
+    public function history(): HasMany
+    {
+        return $this->hasMany(FacilityHistory::class, 'facility_id')->orderBy('revision');
+    }
 }
