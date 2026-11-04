@@ -40,3 +40,15 @@ try {
   assert.equal(events, 0, 'An old scoped result must not refresh the new account.');
 } finally { switched.polling.destroy(); }
 console.log('PASS account switches abort old scoped reads and discard late results');
+
+let independentTick, independentRevision = 1, independentEvents = 0;
+const independent = createPolling({
+  auth: { current: () => ({ id: 1, barangay_id: 1, role: 'responder' }), refresh: async () => {}, onChange: () => () => {} },
+  sources: { feedback: async () => { throw Error('This role cannot read feedback.'); }, alerts: async () => independentRevision },
+  eventTarget: null, document: { hidden: false }, setIntervalImpl: fn => { independentTick = fn; return 1; }, clearIntervalImpl() {},
+});
+independent.subscribe('feedback', () => { throw Error('A denied source must not publish a fabricated revision.'); });
+independent.subscribe('alerts', () => { independentEvents++; });
+try { await independentTick(); independentRevision = 2; await independentTick(); assert.equal(independentEvents, 1, 'A denied optional source must not starve authorized later readers.'); }
+finally { independent.destroy(); }
+console.log('PASS a denied optional source cannot starve authorized operational refreshes');

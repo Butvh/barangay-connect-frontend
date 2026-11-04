@@ -46,14 +46,14 @@ if (in_array($mode, ['inspect', 'deliver'], true)) {
     if ($mode === 'deliver') {
         config(['identity.enabled' => true, 'integration.test_bindings' => true]);
         (new IntegrationServiceProvider($app))->register();
-        $events = OutboxEvent::where('resource_type', 'alert')->where('resource_id', $id)->where('barangay_id', $alert->barangay_id)->with('recipients')->get();
+        $events = OutboxEvent::where('resource_type', 'incident')->where('version', 2)->where('resource_id', $id)->where('barangay_id', $alert->barangay_id)->with('recipients')->get();
         foreach ($events as $event) {
             if ($event->recipients->contains('sms', true)) {
                 throw new LogicException('Browser fixture cannot request external delivery.');
             }
             $app->make(OutboxDispatcher::class)->dispatchOne($event->event_id);
         }
-        echo json_encode(['events' => $events->count(), 'provider_calls' => 0], JSON_THROW_ON_ERROR);
+        echo json_encode(['events' => $events->count(), 'external_delivery_requested' => false], JSON_THROW_ON_ERROR);
         exit;
     }
     echo json_encode(['status' => $alert->status, 'description' => $alert->description, 'victim_count' => $alert->victim_count,

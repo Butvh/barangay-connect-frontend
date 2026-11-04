@@ -203,6 +203,13 @@ jobs:
         if: ${{ always() && env.SNAPSHOT_DIR != '' }}
         working-directory: ${{ env.SNAPSHOT_DIR }}
         run: node scripts/verify-integration.mjs
+      - name: Reviewed source fingerprint evidence
+        if: ${{ always() && env.SNAPSHOT_DIR != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-source-fingerprints
+          path: ${{ env.SNAPSHOT_DIR }}/integration-manifest.json
+          if-no-files-found: error
   deploy:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     needs: [check, backend, combined]

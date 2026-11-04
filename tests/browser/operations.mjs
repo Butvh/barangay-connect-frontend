@@ -147,8 +147,8 @@ try {
     const dirty = people.responder.page.getByRole('dialog', { name: 'Log response', exact: true });
     await dirty.locator('[name=notes]').fill('Keep this unsaved note');
     await dirty.locator('[name=rescue_required]').selectOption('Yes');
-    await people.responder.page.clock.fastForward(16000);
-    await people.responder.page.waitForTimeout(300);
+    const baseline = people.responder.page.waitForResponse(reply => reply.url().includes('/api/v1/references/revisions/facilities'));
+    await people.responder.page.clock.fastForward(16000); await baseline;
     await openAlert(people.captain, rescue); await pick(people.captain, rescue, { mode: 'reassign', role: 'responder', target: 'replacement' });
     const changed = people.responder.page.waitForResponse(reply => reply.url().endsWith('/api/v1/alerts/' + rescue));
     await people.responder.page.clock.fastForward(16000); await changed;

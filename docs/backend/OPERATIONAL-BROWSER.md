@@ -27,6 +27,8 @@ Before original pages initialize, operationalComposition registers P1 createSubm
 
 SQL/HTTP/controller fixtures, unit transport tests and real browser evidence are reported separately in PR49. Unchanged P2 deterministic race tests and DBA manual order gate remain required. A browser workflow does not certify all cross-owner mutation races or a production host. Real photos remain unavailable until the DBA additive schema and exact P2 policy are published and reviewed.
 
+Optional denied/unavailable revision readers do not advance their revision or starve later authorized readers. The named polling regression retains dirty/focus deferral, failed-view replay and account-switch cancellation. Source fingerprint artifacts publish every exact owner hash and each approved overlay's before/after hash.
+
 Reproduction: use the clean pinned private snapshot, confirmed disposable MySQL8.4 and locked private browser runtime. Run existing combined suites, then `P1_BROWSER_MODULE=<absolute locked playwright/index.mjs> node tests/browser/operations.mjs`. The script stages its own private test frontend and starts/stops its owned loopback server. It never migrates shared data or starts a queue worker.
 
 ## Eventual reviewed integration sequence

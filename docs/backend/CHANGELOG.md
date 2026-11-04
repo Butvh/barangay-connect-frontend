@@ -6,6 +6,7 @@
 - Required corrected composition passes183/798 and DBA's actual-service manual order review; the historical lock blocker is cleared only for the tested revision. Every owner suite remains required.
 - Prepared P1 minimal own-user/household/verification, scoped barangay and visible-facility readers plus disposable-only operational registration before original pages initialize. Added real Chromium original-page acceptance; final committed results stay explicit in PR49.
 - Published photo lifetime/storage/dimensions/cleanup and SMS authority decisions/change requests. Actual bytes, additive schema, exact incident policy and consent authority remain dependencies.
+- Original-browser execution exposed optional feedback-reader denial starving later authorized polls; P1 reproduced it with a failing regression and isolated per-source failures without advancing revisions or removing cancellation/dirty guards. Notification fixture selection now uses canonical v2 incident resource types.
 
 ## November 3, 2026 — P2 production candidate refresh
 

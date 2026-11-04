@@ -16,7 +16,12 @@ export function createPolling({ auth, sources = {}, interval = 15000, eventTarge
       if (!auth.current() || stopped || auth.error?.() || active.signal.aborted || identityKey() !== identity) return;
       for (const [entity, handlers] of subscribers) {
         if (!handlers.size || !sources[entity]) continue;
-        const revision = await sources[entity]({ signal: active.signal });
+        let revision;
+        try { revision = await sources[entity]({ signal: active.signal }); }
+        catch {
+          if (stopped || active.signal.aborted || identityKey() !== identity) return;
+          continue; // Keep this source's revision pending; independent authorized readers still run.
+        }
         if (stopped || active.signal.aborted || identityKey() !== identity) return;
         if (!['string', 'number'].includes(typeof revision) || (typeof revision === 'number' && !Number.isFinite(revision))) continue;
         let applied = true;
