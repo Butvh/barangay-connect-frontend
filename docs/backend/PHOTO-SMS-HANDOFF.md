@@ -2,6 +2,8 @@
 
 Reviewed DBA b9f7a7e106fe7fe699abad1afd900c6141c38756 and P2 acc9f56f37d34c96021c415ab81612bef92dac63. This publishes P1 decisions/change requests; it implements no byte service, migration/model, SMS producer or delivery transport.
 
+DBA9d6c699250078a54551944fe4e109bde0cb4fb7c was published during final verification and is now pinned. Its new decision record is compatible with the purpose-specific policy/consent requests below; it still adds no active photo migration/model. P1's explicit dimension/lifetime/lease/normalization/input-digest decisions are published for owner review, not inferred joint ratification.
+
 ## P1 photo decisions for owner ratification
 
 - Accept separate incident_photos metadata and reporter-owned scope FKs; only an approved resident stages/attaches to their own incident. Officials do not upload on another resident's behalf in this slice. Preserve original observed generation and exact locked incident revision. Household authorization is not sufficient photo authorization.

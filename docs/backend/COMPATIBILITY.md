@@ -1,6 +1,6 @@
 # Current integration compatibility — November 4, 2026
 
-[Current P2 review and evidence](P2-BINDINGS-REVIEW.md) supersedes the old availability/lock-blocker statements. Pins: P1 review aec4e78, DBA b9f7a7e, P2 acc9f56; full values are in integration-lock.json. Required CI41764879472 independently clears the historical lock defect. Final original-browser P1/synthetic-merge SHAs and measured results are in draft PR49.
+[Current P2 review and evidence](P2-BINDINGS-REVIEW.md) supersedes the old availability/lock-blocker statements. Pins: P1 review aec4e78, DBA9d6c699, P2acc9f56; full values are in integration-lock.json. Required CI41764879472 independently cleared the historical lock defect at the preceding DBA pin; the newer DBA addition contributes an actual lower-ID transfer test and contract decisions. Final current-pin/original-browser P1/synthetic-merge SHAs and measured results are in draft PR49.
 
 | Boundary | Current implementation / status |
 | --- | --- |
@@ -16,6 +16,6 @@
 
 The DBA's auth_version/cast, corrected scope fixture, canonical v2 envelope and per-recipient receipt pipeline remain reviewed. P2's corrected NotificationController formatting and newly published implementations must be measured by the combined run; historical missing-class/format findings are not automatically retained as current blockers.
 
-The specific November3 lock regression is cleared by current required CI. Production release still requires completed original-browser acceptance and the broader photo/consent/cross-owner/host gates. P1 edits only its own foundation/config/composition/tests/docs; exact owner source hashes and approved common-base overlays are verified after every combined run.
+The specific November3 lock regression and the named original operational-browser handoff pass required CI41768154719 at P1 96632bf and the preceding DBA pin. Final results with the latest DBA transfer test are in PR49. Production release remains gated by photo/consent, future actual cross-owner mutations, broader domain and host/worker acceptance. P1 edits only its own foundation/config/composition/tests/docs; exact owner source hashes and approved common-base overlays are verified after every combined run.
 
 Setup: [Foundation](FOUNDATION.md), current commands/profile: [P2 binding review](P2-BINDINGS-REVIEW.md), facade routes: [API matrix](API-MATRIX.md), measured evidence: [Validation](VALIDATION.md). Preserve private .env/APP_KEY; SQL acceptance uses only confirmed disposable MySQL8.4 schemas.

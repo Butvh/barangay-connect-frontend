@@ -2,6 +2,8 @@
 
 ## November4 — corrected owner composition and original-browser slice
 
+- Required CI41768154719 passes the full original-browser slice (10 operational +5 identity scenarios) and root185/824. Final verification discovered newer DBA9d6c699; reviewed/pinned its added actual lower-ID transfer test and contract decisions before final current-head CI.
+
 - Reviewed current P2 lock/intent changes and DBA review/proposal additions. Common-base overlay tests now reject concurrent P1 modifications, unapproved collisions, private paths and symlinks; exact before/after/remaining-owner fingerprints are recorded.
 - Required corrected composition passes183/798 and DBA's actual-service manual order review; the historical lock blocker is cleared only for the tested revision. Every owner suite remains required.
 - Prepared P1 minimal own-user/household/verification, scoped barangay and visible-facility readers plus disposable-only operational registration before original pages initialize. Added real Chromium original-page acceptance; final committed results stay explicit in PR49.
