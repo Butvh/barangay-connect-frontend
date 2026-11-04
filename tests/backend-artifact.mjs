@@ -14,6 +14,7 @@ try {
   await writeFile(resolve(fixture, 'assets/js/data/seed.js'), 'throw new Error("Seed must never load");');
   await writeFile(resolve(fixture, 'backend/.env'), 'APP_KEY=excluded-test-value');
   const result = await stageBackendFrontend({ root: fixture });
+  await assert.rejects(stageBackendFrontend({ root: fixture, operationalTest: true }));
   assert.match(await readFile(resolve(result.directory, 'assets/js/core/runtime-config.js'), 'utf8'), /mode: 'backend'/);
   await assert.rejects(access(resolve(result.directory, 'assets/js/data/seed.js')));
   await assert.rejects(access(resolve(result.directory, 'backend/.env')));

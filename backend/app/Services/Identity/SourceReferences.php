@@ -90,6 +90,18 @@ final class SourceReferences
         return $latest?->review_status === 'Approved';
     }
 
+    public function ownVerification(EffectiveIdentity $actor): ?array
+    {
+        $this->actor($actor);
+        if ($actor->role !== 'resident') {
+            return null;
+        }
+        $row = $this->table('verifications')->where('resident_id', $actor->id)->where('barangay_id', $actor->barangayId)
+            ->orderByDesc('id')->first(['id', 'review_status', 'revision']);
+
+        return $row ? ['id' => (int) $row->id, 'user_id' => $actor->id, 'review_status' => $row->review_status, 'revision' => (int) $row->revision] : null;
+    }
+
     public function facilities(EffectiveIdentity $actor, bool $locked = false): array
     {
         if ($locked) {

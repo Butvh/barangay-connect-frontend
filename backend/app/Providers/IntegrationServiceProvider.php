@@ -63,7 +63,10 @@ final class IntegrationServiceProvider extends ServiceProvider
     private function assertIsolatedBuild(): void
     {
         $name = config('database.connections.mysql.database');
-        $httpHarness = $this->app->environment('local') && getenv('P2_TEST_HTTP') === '1';
+        $httpHarness = $this->app->environment('local') && (
+            (getenv('P2_TEST_HTTP') === '1' && str_starts_with((string) $name, 'p2_test_')) ||
+            (getenv('P1_OPERATIONAL_BROWSER') === '1' && str_starts_with((string) $name, 'bc_dba_p1_'))
+        );
         if ((! $this->app->environment('testing') && ! $httpHarness) || getenv('DB_TEST_DISPOSABLE') !== '1' ||
             ! is_string($name) || ! preg_match('/^(?:bc_dba_p[12]_|p2_test_)[A-Za-z0-9_]+$/D', $name) ||
             $name !== getenv('DB_TEST_DATABASE') || config('integration.dispatch_enabled') ||

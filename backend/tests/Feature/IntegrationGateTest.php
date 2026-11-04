@@ -21,6 +21,7 @@ final class IntegrationGateTest extends TestCase
     public function test_unavailable_module_still_requires_a_real_session(): void
     {
         $this->getJson('/api/v1/alerts')->assertUnauthorized()->assertJsonPath('code', 'AUTH');
+        $this->getJson('/api/v1/references/users/1')->assertUnauthorized();
     }
 
     public function test_authenticated_incomplete_module_is_explicitly_unavailable(): void
