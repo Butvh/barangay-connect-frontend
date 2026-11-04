@@ -13,7 +13,7 @@ Use numeric IDs and current DTO/status/null semantics. List envelopes must provi
 | Auth login/logout/current/requireRole | POST auth/login, POST auth/logout, GET me | Session routes execute against the pinned actual DBA model/migrations; production enablement remains reviewed separately. Current/guard reads hydrated memory, never storage IDs. |
 | CSRF transport | GET auth/csrf | Implemented; new token fetched after login/logout, no automatic replay of writes. |
 | barangays.list | GET barangays | Public minimal id/name/map-availability list; not residents or full tenant metadata. |
-| users.register | POST auth/register | Resident + household atomically; strict protected-field rejection, password policy; documents are a separately authorized submission. Existing registration flow signs in before upload. |
+| users.register | POST auth/register | Guest only; original Idempotency-Key required. Resident + household + source event + frozen safe outcome are atomic; changed input with the same key conflicts. No automatic authentication. Documents are a separately authorized submission; the original form signs in before upload. |
 | users.get(self), householdUser, verificationFor | GET profile | Own user + household + latest verification projection with genuine nulls. GET household may be used by a dedicated editor. |
 | users.get(other) in official feedback/map | No unrestricted user directory | P2 must replace the fixed Tanod ID lookup with its authorized assignee projection, and supply authorized complaint-household joins. Review any additional P1 read contract; no operational-role access to arbitrary resident profiles. These callers are explicitly pending, not omitted. |
 | users.update(self,patch) | PATCH profile | Current facade returns updated user/household. Whitelist role-dependent fields; a combined resident name/contact/address update stays atomic. PATCH household is for dedicated paired pin/address updates, not a split partial-save workaround. |
@@ -34,7 +34,7 @@ Use numeric IDs and current DTO/status/null semantics. List envelopes must provi
 | personnel.appoint | POST tanods/{id}/appointments | Fixed existing Tanod pool, preserve resident membership; expected revision. GET tanods is Captain's directory projection. |
 | personnel.reassign/remove | POST personnel/{id}/reassignments or /removals | Retain account/history; shared busy-role lock with dispatch; Tanod back to pool, external to Unassigned. |
 | facilities.list/get | GET facilities, GET facilities/{id} | Actual map visibility, canonical Hospital/EvacuationCenter with input alias; active-only where required; history authorization. |
-| facilities.create/update | POST facilities, PATCH facilities/{id} | Managing-barangay authority distinct from shared referral visibility; expected_revision on edit. |
+| facilities.create/update | POST facilities, PATCH facilities/{id} | Managing-barangay authority distinct from shared referral visibility; original Idempotency-Key on create, expected_revision on edit. Ambiguous create retries retain the same form-owned key and input. |
 | facilities.setStatus | PATCH facilities/{id}/status | Active/Inactive; revision/locks; keep rescue snapshots. |
 | Existing facility pin editor | PATCH facilities/{id}/location (adapter may retain facilities.update) | Paired null or 0–100 percentages including0,0. Current full-record validation and coverage rules stay authoritative. |
 

@@ -1,5 +1,14 @@
 # Backend work log
 
+## November4 — mandatory administration sources and current-owner evidence
+
+- Implement P1 account/profile/password/household/registration, private verification, Captain personnel/fixed Tanod staffing and facility services behind a separately opted-in disposable administration selection. Original forms/readers use the existing single Http/session boundary and real File/FormData; no owner source or competing persistence adapter is introduced. Positive source acceptance remains blocked by P2's unsupported event families.
+- Preserve original registration/facility-create command keys and atomic safe receipts, retain exact passwords, allow corrected input after confirmed422 only, and suppress duplicate identical personal profile events. Bound private-document cleanup traversal; verify real historical private downloads and an actual encrypted job through a fictional loopback SMTP sink.
+- Publish ba06fbb/tree73b4888 (local equivalent d01dd64), reviewing/pinning DBA8cd2740/P2b477a7c and narrowly allowing only the new reviewed P2 presentation document. Preserve237 exact owner blobs,5 common-base overlays, all existing suites and the prior2e8161e passing fallback.
+- CI41851494952:314 tests/1580 assertions/6 actual P2 unsupported-family errors,0 assertion failures/skips. Fix P1's shared fixture leak without altering the original directory assertion. All independent source/artifact/dependency/format, P2 SQL/HTTP/order/probe and browser gates pass. No failing test is excluded or replaced with a production-adapter double.
+- Original browsers:5 identity +10 operations +5 administration read/form-readiness scenarios pass, with15 new responsive screenshots. Pause the suspended stale tab's heartbeat to preserve its original identity; retain strict419/409 and unchanged persisted-source assertions. Read/form readiness does not certify positive saves.
+- Publish exact owner handoffs in PR50 comment6633821092 and PR48 comment6633918572. Full administration remains mandatory and incomplete: P2 actual writer/handler/notification access plus DBA facility widths/immutable full history are outstanding. Production identity/modules/administration, workers, SMS and Make stay disabled; no merge, deploy or shared migration.
+
 ## November4 — current self-consent authority
 
 - The shared HTTP regression reproduced rejection of ratified underscore purpose paths; narrowly allow underscores in later path segments. Retain external/traversal rejection, real multipart boundaries/shared CSRF and explicit safe photo-processing codes;18 transport checks pass. No UI/owner service is redesigned.
