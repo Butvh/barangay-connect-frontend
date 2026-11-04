@@ -79,6 +79,20 @@ test('unapproved DBA collision never overwrites a P1 source', async () => {
   await assert.rejects(composeSnapshot(f), /collision/i);
 });
 
+test('only the named P2 actual-owner acceptance additions are admitted', async () => {
+  const f = await fixture(); f.git('checkout', '--detach', f.lock.p2);
+  for (const path of ['backend/tests/Feature/P2AdministrativeNotificationsTest.php', 'backend/tests/Feature/P2ConsentProducerTest.php',
+    'backend/tests/Feature/P2IncidentPhotoCommandTest.php', 'tests/p2-photo-upload.mjs', 'tests/p2-photo-form.mjs',
+    'docs/P2-ACTUAL-OWNER-INTEGRATION.md', 'docs/superpowers/plans/2026-11-04-p2-actual-owner-integration.md']) await f.put(path, 'Reviewed owner source\n');
+  f.lock.p2 = f.commit(); f.git('checkout', '--detach', f.lock.p2_base);
+  const manifest = await composeSnapshot(f);
+  assert.equal(Object.keys(manifest.ownerHashes.p2).length, 9);
+  assert.equal(await verifySources(f.destination, manifest), 11);
+  f.git('checkout', '--detach', f.lock.p2); await f.put('backend/tests/Feature/P2UnreviewedTest.php', 'Not approved');
+  f.lock.p2 = f.commit(); f.git('checkout', '--detach', f.lock.p2_base);
+  await assert.rejects(composeSnapshot({ ...f, destination: await mkdtemp(join(tmpdir(), 'bc-snapshot-reject-')) }), /allowlist/);
+});
+
 test('path validation rejects traversal, Windows roots, private bytes and dependencies', () => {
   for (const path of ['../escape', 'a/../b', '/root', 'C:/escape', 'a\\b', '.git/config', 'backend/.env', 'backend/.env.local', 'backend/vendor/a.php', 'backend/public/frontend/a.js', 'backend/storage/private/a.pdf', 'node_modules/a.js']) assert.throws(() => assertSourcePath(path), /Unsafe/);
   for (const path of [page, 'backend/.env.example', 'backend/storage/app/private/.gitignore']) assert.doesNotThrow(() => assertSourcePath(path));
