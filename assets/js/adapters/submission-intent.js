@@ -1,10 +1,13 @@
 import { ApiError, copy } from '../core/config.js';
 
 /** Form-owned memory only. Create once per dialog; complete only after confirmed server success. */
-export function createSubmissionIntent({ auth, keyFactory = () => globalThis.crypto.randomUUID() } = {}) {
+export function createSubmissionIntent({ auth, allowAnonymous = false, keyFactory = () => globalThis.crypto.randomUUID() } = {}) {
   let pending = null;
   const actorKey = () => {
     const actor = auth?.current();
+    // Resident registration has no actor yet. This is only a browser concurrency
+    // observation; the public endpoint independently enforces guest-only creation.
+    if (!actor && allowAnonymous) return 'signed-out-registration';
     if (!actor || !Number.isSafeInteger(actor.id) || !Number.isSafeInteger(actor.barangay_id) || !actor.role) throw new ApiError('AUTH', 'Sign in before submitting.');
     return `${actor.id}:${actor.barangay_id}:${actor.role}`;
   };

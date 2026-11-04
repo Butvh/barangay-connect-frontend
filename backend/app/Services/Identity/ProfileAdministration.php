@@ -51,8 +51,14 @@ final class ProfileAdministration
                         throw new ApiProblem('VALIDATION', 422, 'Enter a full name.');
                     }
                 }
-                $db->table('users')->where('id', $actor->id)->update($personal + ['updated_at' => now('UTC')]);
-                $this->context->record($actor, 'user', $actor->id, 'profile.updated.v2', [], 'Profile updated', ['status' => 'Updated'], [$actor->id]);
+                if (($personal['contact_number'] ?? null) === '') {
+                    $personal['contact_number'] = null;
+                }
+                $personal = array_filter($personal, fn ($value, $name) => $value !== $person->$name, ARRAY_FILTER_USE_BOTH);
+                if ($personal) {
+                    $db->table('users')->where('id', $actor->id)->update($personal + ['updated_at' => now('UTC')]);
+                    $this->context->record($actor, 'user', $actor->id, 'profile.updated.v2', [], 'Profile updated', ['status' => 'Updated'], [$actor->id]);
+                }
             }
             $household = array_intersect_key($fields, array_flip(['address', 'map_x', 'map_y']));
             if ($household) {

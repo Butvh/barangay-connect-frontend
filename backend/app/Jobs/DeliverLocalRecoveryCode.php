@@ -39,8 +39,8 @@ final class DeliverLocalRecoveryCode implements ShouldBeEncrypted, ShouldQueue
             return; // No real recipient authorization is implied by this local implementation.
         }
         try {
-            Mail::mailer('p1-local-recovery')->raw('Your Barangay Connect verification code is '.$this->code.'. It expires in 10 minutes. If you did not request it, ignore this message.',
-                fn ($message) => $message->to($user->email)->subject('Barangay Connect account recovery'));
+            Mail::mailer('p1-local-recovery')->raw('Your Barangay Connect verification code is '.$this->code.'. It expires 10 minutes after the request. If you did not request it, ignore this message.',
+                fn ($message) => $message->from('noreply@barangay-connect.example.invalid', 'Barangay Connect')->to($user->email)->subject('Barangay Connect account recovery'));
         } catch (\Throwable) {
             // Never persist SMTP details, addresses, message contents or codes in
             // failed-job exception strings. The encrypted payload stays private.

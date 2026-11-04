@@ -19,7 +19,9 @@ export async function submitPrivateDocuments({ http, auth, path, fields, files, 
   const body = new FormData();
   for (const [field, value] of Object.entries(fields)) if (value !== undefined && value !== null) body.append(field, String(value));
   for (const [field, file] of files) body.append(field, file, file.name);
-  const result = await http.request(path, { method: 'POST', body, headers: { 'Idempotency-Key': command.idempotencyKey } });
+  let result;
+  try { result = await http.request(path, { method: 'POST', body, headers: { 'Idempotency-Key': command.idempotencyKey } }); }
+  catch (error) { if (error.status === 422) intent.discard(); throw error; }
   if (identity() !== original) throw new ApiError('AUTH', 'Your account changed. Check the original submission after signing in.');
   intent.complete();
   return result;

@@ -19,3 +19,11 @@ assert.notEqual(second.idempotencyKey, original.idempotencyKey);
 assert.equal(second.body.expected_revision, 0);
 intent.complete(); assert.throws(() => intent.retry(), error => error.code === 'INVALID_STATE');
 console.log('PASS submit intent retains one key, immutable body and observed revision on retry; changed accounts and stale replacements fail closed');
+
+let guest = null;
+const registration = createSubmissionIntent({ auth: { current: () => guest }, allowAnonymous: true, keyFactory: () => 'guest-registration-key' });
+assert.equal(registration.prepare({ email: 'fictional@example.invalid' }).idempotencyKey, 'guest-registration-key');
+guest = { id: 9, barangay_id: 1, role: 'resident' };
+assert.throws(() => registration.retry(), error => error.code === 'AUTH');
+assert.throws(() => createSubmissionIntent({ auth: { current: () => null } }).prepare({}), error => error.code === 'AUTH');
+console.log('PASS explicit guest registration retains its own observation without enabling anonymous operational intents');

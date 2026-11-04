@@ -22,3 +22,4 @@
 .verification-history small{display:block;margin-top:4px;color:var(--text-secondary)}
 .verification-history li p{margin:4px 0;font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
 .verification-correction{white-space:pre-wrap;overflow-wrap:anywhere}
+.private-document-link{display:inline-flex;align-items:center;min-height:calc(var(--s12) - var(--s1));max-width:100%;overflow-wrap:anywhere}

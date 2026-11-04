@@ -40,6 +40,18 @@ final class CombinedPasswordRecoveryTest extends TestCase
         $this->fail('Encrypted fictional recovery job was not queued.');
     }
 
+    private function job(string $id): DeliverLocalRecoveryCode
+    {
+        foreach (DB::table('jobs')->where('queue', 'p1-recovery')->orderByDesc('id')->get() as $row) {
+            $payload = json_decode($row->payload, true, flags: JSON_THROW_ON_ERROR);
+            $job = unserialize(app(Encrypter::class)->decrypt($payload['data']['command']), ['allowed_classes' => [DeliverLocalRecoveryCode::class]]);
+            if ((new \ReflectionProperty($job, 'challenge'))->getValue($job) === $id) {
+                return $job;
+            }
+        }
+        $this->fail('Encrypted fictional recovery job was not queued.');
+    }
+
     public function test_known_unknown_and_wrong_portal_requests_are_neutral_and_queue_only_encrypted_jobs(): void
     {
         $user = $this->sourceUser();
@@ -172,6 +184,31 @@ final class CombinedPasswordRecoveryTest extends TestCase
                     $worker->stop();
                 }
             }
+        }
+    }
+
+    public function test_actual_encrypted_job_delivers_to_a_private_loopback_smtp_sink_without_real_mail(): void
+    {
+        $user = $this->sourceUser();
+        $service = app(PasswordRecovery::class);
+        $request = $service->request(['email' => $user->email, 'portal' => 'resident']);
+        $inbox = storage_path('app/private/recovery-mail-test-'.bin2hex(random_bytes(8)).'.eml');
+        $sink = new Process(['node', base_path('tests/Support/local-smtp-sink.mjs'), $inbox], base_path());
+        $sink->setTimeout(20)->start();
+        try {
+            $this->assertTrue($sink->waitUntil(fn () => str_contains($sink->getOutput(), '"port"')));
+            $port = json_decode(trim($sink->getOutput()), true, flags: JSON_THROW_ON_ERROR)['port'];
+            config(['mail.mailers.p1-local-recovery.port' => $port]);
+            $this->job($request['challenge_id'])->handle($service);
+            $this->assertFileExists($inbox);
+            $message = quoted_printable_decode(file_get_contents($inbox));
+            // Do not print the fictional inbox, code or address even on failure.
+            $this->assertTrue(str_contains($message, $this->code($request['challenge_id'])));
+            $this->assertTrue(str_contains($message, $user->email));
+            $this->assertTrue(str_contains($message, 'Barangay Connect account recovery'));
+            $this->assertTrue(str_contains($message, '10 minutes after the request'));
+        } finally {
+            $sink->stop();
         }
     }
 }

@@ -58,3 +58,22 @@ await recovery.verifyCode({ challenge_id: 'opaque-challenge', code: '012345' });
 assert.match(calls.at(-1).url, /password-recovery\/verifications$/);
 assert.equal(JSON.parse(calls.at(-1).init.body).code, '012345');
 console.log('PASS existing facility signature, exact password values and recovery routes use the shared transport');
+
+const createIntent = createSubmissionIntent({ auth, keyFactory: () => 'facility-create-original' });
+fail = true;
+await assert.rejects(facilities.create({ name: 'Fictional facility' }, { intent: createIntent }), error => error.code === 'NETWORK');
+fail = false;
+await facilities.create({ name: 'Fictional facility' }, { intent: createIntent });
+const creates = calls.filter(c => c.url.endsWith('/facilities') && c.init.method === 'POST');
+assert.equal(creates.length, 2);
+assert.ok(creates.every(c => c.init.headers.get('Idempotency-Key') === 'facility-create-original'));
+console.log('PASS facility creates retry the same original JSON command after an ambiguous network failure');
+
+let rejected = true, sequence = 0;
+const validated = createSubmissionIntent({ auth, keyFactory: () => 'validation-document-' + ++sequence });
+const validateHttp = { async request() { if (rejected) throw Object.assign(new Error('Validation'), { status: 422 }); return { id: 8 }; } };
+await assert.rejects(submitPrivateDocuments({ http: validateHttp, auth, path: 'me/verifications', fields: {}, files: [['valid_id', file, 1000]], intent: validated }));
+rejected = false;
+assert.equal((await submitPrivateDocuments({ http: validateHttp, auth, path: 'me/verifications', fields: {}, files: [['valid_id', changed, 1000]], intent: validated })).id, 8);
+assert.equal(sequence, 2);
+console.log('PASS confirmed atomic validation failures allow corrected file bytes through a new intent');

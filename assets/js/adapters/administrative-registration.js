@@ -1,5 +1,6 @@
 import { ApiError } from '../core/config.js';
 import { submitPrivateDocuments } from './private-document-submission.js';
+import { submitAdministrative } from './administrative-submission.js';
 
 const id = value => { if (!Number.isSafeInteger(Number(value)) || Number(value) < 1) throw new ApiError('VALIDATION', 'Use a valid record.'); return Number(value); };
 const self = (auth, value) => { const actor = auth.current(); if (!actor || actor.id !== id(value)) throw new ApiError('FORBIDDEN', 'Use your own account.'); return actor; };
@@ -7,7 +8,7 @@ export function createAdministrativeFactories() {
   return Object.freeze({
     barangays: ({ http }) => ({ list: () => http.request('barangays') }),
     users: ({ http, auth }) => ({
-      register: input => http.request('auth/register', { method: 'POST', body: input }),
+      register: (input, { intent } = {}) => submitAdministrative({ http, path: 'auth/register', input, intent }),
       get: value => { self(auth, value); return http.request('profile'); },
       async update(value, input) { self(auth, value); const result = await http.request('profile', { method: 'PATCH', body: input }); await auth.refresh(); return result; },
     }),
@@ -16,7 +17,7 @@ export function createAdministrativeFactories() {
       .map(([method, route]) => [method, input => http.request('password-recovery/' + route, { method: 'POST', body: input })])),
     facilities: ({ http }) => ({
       list: (query = {}) => http.request('facilities', { query }), get: value => http.request('facilities/' + id(value)),
-      create: body => http.request('facilities', { method: 'POST', body }),
+      create: (input, { intent } = {}) => submitAdministrative({ http, path: 'facilities', input, intent }),
       update: (value, body) => http.request('facilities/' + id(value), { method: 'PATCH', body }),
       setStatus: (value, body) => http.request('facilities/' + id(value) + '/status', { method: 'PATCH', body }),
     }),

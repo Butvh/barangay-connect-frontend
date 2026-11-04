@@ -42,7 +42,12 @@ final class AdministrationController extends Controller
 
     public function register(Request $request)
     {
-        return $this->response($this->service(ResidentRegistration::class)->register($request->all()), 201);
+        $service = $this->service(ResidentRegistration::class);
+        if (Auth::guard('web')->check()) {
+            throw new ApiProblem('CONFLICT', 409, 'Sign out before creating a separate resident account.');
+        }
+
+        return $this->response($service->register($request->all(), $request->header('Idempotency-Key', '')), 201);
     }
 
     public function profile(Request $request)
@@ -115,6 +120,6 @@ final class AdministrationController extends Controller
             throw new ApiProblem('VALIDATION', 422, 'Use only the fields allowed by this facility action.');
         }
 
-        return $this->response($this->service(FacilityAdministration::class)->save($this->identity->current($request), $id, $request->all()), $id === null ? 201 : 200);
+        return $this->response($this->service(FacilityAdministration::class)->save($this->identity->current($request), $id, $request->all(), $request->header('Idempotency-Key')), $id === null ? 201 : 200);
     }
 }

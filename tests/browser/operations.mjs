@@ -114,7 +114,7 @@ try {
   let ready = false;
   for (let i = 0; i < 100; i++) { try { if ((await fetch(origin + '/up')).ok) { ready = true; break; } } catch {} await new Promise(resolve => setTimeout(resolve, 200)); }
   assert.equal(ready, true, 'Operational loopback server did not start.');
-  browser = await chromium.launch({ headless: true });
+  browser = await chromium.launch({ headless: true, ...(process.env.P1_BROWSER_CHANNEL === 'chrome' ? { channel: 'chrome' } : {}) });
   for (const role of ['resident', 'residentRescue', 'captain', 'secretary', 'responder', 'rescuer', 'otherResident', 'replacement', 'foreignResident']) await login(role);
   let noRescue, rescue;
   await check('Resident original SOS/details, lost-reply retry keeps one key/body and one incident', async () => { noRescue = await sos(people.resident, true); await screenshot(people.resident.page, 'resident-pending'); });
@@ -185,15 +185,20 @@ try {
     for (const alert of result.nearby) for (const key of ['resident_id', 'household_id', 'resident', 'contact_number', 'photo_name', 'photo_upload_id']) assert.equal(Object.hasOwn(alert, key), false);
   });
   await check('Same-origin account switch rejects stale old-tab writes without changing the persisted incident', async () => {
+    // A suspended old tab retains its original observation. Pause its heartbeat
+    // and settle prior requests before switching the shared browser cookies.
+    await people.resident.page.clock.pauseAt(await people.resident.page.evaluate(() => Date.now()) + 1000);
+    await people.resident.page.waitForLoadState('networkidle');
     const page = await people.resident.context.newPage(), account = records.people.residentRescue;
     await page.goto(origin + '/frontend/resident-login.html'); await page.locator('#email').fill(account.email); await page.locator('#password').fill(account.password); await page.locator('#sign-in').click();
     await page.waitForURL('**/resident-dashboard.html');
+    await page.waitForLoadState('networkidle');
     const statuses = await people.resident.page.evaluate(async id => {
       const { Http } = await import('/frontend/assets/js/core/auth.js'); const statuses = [];
       for (let n = 0; n < 2; n++) { try { await Http.request('alerts/' + id, { method: 'PATCH', body: { expected_revision: 0 }, headers: { 'Idempotency-Key': crypto.randomUUID() } }); statuses.push(200); } catch (error) { statuses.push(error.status); } }
       return statuses;
     }, noRescue);
-    assert.ok(statuses.every(status => [419, 409].includes(status))); assert.ok(statuses.includes(409));
+    assert.ok(statuses.every(status => [419, 409].includes(status)), 'Stale-tab response statuses: ' + JSON.stringify(statuses)); assert.ok(statuses.includes(409));
     assert.equal(JSON.parse(cli('inspect', String(noRescue))).description, 'Fictional flood at the household');
     await page.close();
   });

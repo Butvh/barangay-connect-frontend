@@ -205,6 +205,17 @@ jobs:
           name: p1-operational-browser
           path: ${{ env.SNAPSHOT_DIR }}/tests/browser/evidence/operations
           if-no-files-found: ignore
+      - name: Original administration read and form readiness on actual sessions
+        if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
+        working-directory: ${{ env.SNAPSHOT_DIR }}
+        run: P1_BROWSER_MODULE="$RUNNER_TEMP/bc-browser-runtime/node_modules/playwright/index.mjs" node tests/browser/administration.mjs
+      - name: Administration readiness evidence
+        if: ${{ always() && env.SNAPSHOT_DIR != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: p1-administration-readiness
+          path: ${{ env.SNAPSHOT_DIR }}/tests/browser/evidence/administration
+          if-no-files-found: ignore
       - name: Verify owner source preservation
         if: ${{ always() && env.SNAPSHOT_DIR != '' }}
         working-directory: ${{ env.SNAPSHOT_DIR }}

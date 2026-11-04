@@ -154,12 +154,16 @@ final class PrivateDocumentUploads
         $this->outside();
         $limit = max(1, min(100, $limit));
         $root = storage_path('app/private/document-objects/documents');
-        $result = ['examined' => 0, 'removed' => 0, 'retained' => 0];
+        $result = ['scanned' => 0, 'examined' => 0, 'removed' => 0, 'retained' => 0];
         if (! is_dir($root) || is_link($root)) {
             return $result;
         }
         $files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($root, \FilesystemIterator::SKIP_DOTS));
         foreach ($files as $file) {
+            if ($result['scanned'] >= $limit * 20) {
+                break;
+            }
+            $result['scanned']++;
             if ($file->isLink() || ! $file->isFile() || $file->getMTime() > time() - 86400) {
                 continue;
             }

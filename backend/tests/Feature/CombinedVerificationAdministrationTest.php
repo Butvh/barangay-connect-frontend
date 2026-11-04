@@ -131,4 +131,35 @@ final class CombinedVerificationAdministrationTest extends TestCase
         $this->expectException(ApiProblem::class);
         $service->document(EffectiveIdentity::fromUser($outsider), $first['documents'][0]['id']);
     }
+
+    public function test_actual_private_download_requires_the_persisted_owner_or_same_scope_reviewer(): void
+    {
+        $owner = $this->sourceUser();
+        $reviewer = $this->sourceUser('secretary', $owner->barangay_id);
+        $other = $this->sourceUser('resident', $owner->barangay_id);
+        $documents = app(PrivateDocumentUploads::class);
+        $stage = $documents->stage(UploadedFile::fake()->image('private-proof.png'), 10485760, 'proof_of_residence');
+        try {
+            $id = DB::transaction(function () use ($owner, $stage, $documents) {
+                // A retained historical fixture tests actual download policy; it
+                // does not pretend that a new submission workflow was accepted.
+                $application = DB::table('verifications')->insertGetId(['resident_id' => $owner->id, 'barangay_id' => $owner->barangay_id,
+                    'review_status' => 'Rejected', 'revision' => 1, 'created_at' => now('UTC'), 'updated_at' => now('UTC')]);
+                $submission = DB::table('verification_submissions')->insertGetId(['verification_id' => $application, 'barangay_id' => $owner->barangay_id, 'revision' => 1, 'submitted_at' => now('UTC')]);
+
+                return $documents->attach($stage, $owner->barangay_id, $owner->id, submission: $submission);
+            });
+        } finally {
+            $documents->release($stage);
+        }
+        foreach ([$owner, $reviewer] as $person) {
+            $this->actingAs($person)->withSession(EffectiveIdentity::fromUser($person)->sessionSnapshot());
+            $reply = $this->get('/api/v1/private-documents/'.$id)->assertOk();
+            $reply->assertHeader('X-Content-Type-Options', 'nosniff');
+            $this->assertTrue(str_contains($reply->headers->get('Cache-Control'), 'no-store'));
+            $this->assertTrue(str_contains($reply->headers->get('Content-Disposition'), 'attachment'));
+        }
+        $this->actingAs($other)->withSession(EffectiveIdentity::fromUser($other)->sessionSnapshot());
+        $this->getJson('/api/v1/private-documents/'.$id)->assertNotFound()->assertJsonMissingPath('object_key');
+    }
 }

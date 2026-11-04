@@ -3,6 +3,7 @@
 namespace App\Services\Facilities;
 
 use App\Services\Administration\AdministrativeContext;
+use App\Services\Administration\CommandReceipt;
 use App\Services\Identity\EffectiveIdentity;
 use App\Support\ApiProblem;
 use Carbon\CarbonImmutable;
@@ -11,7 +12,7 @@ final class FacilityAdministration
 {
     private const ROLES = ['captain', 'secretary', 'responder', 'rescuer', 'resident'];
 
-    public function __construct(private AdministrativeContext $context) {}
+    public function __construct(private AdministrativeContext $context, private CommandReceipt $receipts) {}
 
     private function visible(EffectiveIdentity $actor)
     {
@@ -102,8 +103,11 @@ final class FacilityAdministration
             'map_scope' => ($fields['map_x'] ?? null) === null ? null : $scope];
     }
 
-    public function save(EffectiveIdentity $actor, ?int $id, array $input): array
+    public function save(EffectiveIdentity $actor, ?int $id, array $input, ?string $key = null): array
     {
+        if ($id === null && ! preg_match('/^[A-Za-z0-9_-]{8,128}$/D', $key ?? '')) {
+            throw new ApiProblem('VALIDATION', 422, 'Use a valid original facility command key.');
+        }
         if ($id !== null && $id < 1) {
             throw new ApiProblem('NOT_FOUND', 404, 'Facility not found.');
         }
@@ -118,7 +122,7 @@ final class FacilityAdministration
             $keys[] = 'facility:'.$id;
         }
 
-        return $this->context->transaction($actor, ['captain', 'secretary'], $keys, function () use ($actor, $id, $input, $incidents): array {
+        $work = function () use ($actor, $id, $input, $incidents): array {
             $db = $this->context->db();
             $old = $id ? $db->table('facilities')->where('id', $id)->lockForUpdate()->first() : null;
             if ($id && ! $old) {
@@ -160,6 +164,20 @@ final class FacilityAdministration
             $row = $db->table('facilities')->where('id', $id)->first();
             $this->context->record($actor, 'facility', $id, 'facility.updated.v2', ['status' => $row->active ? 'Active' : 'Inactive'],
                 $action, ['status' => $row->active ? 'Active' : 'Inactive', 'revision' => $row->revision], $this->context->administrators($actor->barangayId));
+
+            return $this->project($row, $actor);
+        };
+
+        return $this->context->transaction($actor, ['captain', 'secretary'], $keys, function () use ($actor, $id, $input, $key, $work) {
+            if ($id !== null) {
+                return $work();
+            }
+            ksort($input);
+            $outcome = $this->receipts->once($actor->id, 'p1:facility.create', $key, $input, fn () => ['id' => $work()['id']]);
+            $row = $this->context->db()->table('facilities')->where('id', $outcome['id'])->where('managed_by_barangay_id', $actor->barangayId)->first();
+            if (! $row) {
+                throw new ApiProblem('NOT_FOUND', 404, 'The original facility is unavailable.');
+            }
 
             return $this->project($row, $actor);
         });
