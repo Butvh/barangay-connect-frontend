@@ -9,6 +9,7 @@ const methods = {
   personnel: ['list', 'get', 'addExternal', 'appoint', 'reassign', 'remove'],
   facilities: ['list', 'get', 'create', 'update', 'setStatus'],
   verification: ['submit', 'list', 'get', 'review', 'expireOverdue'],
+  notificationPreferences: ['get', 'set'],
   alerts: ['list', 'get', 'create', 'addDetails', 'assignmentOptions', 'acknowledge', 'assign', 'reassign', 'cancelAssignment', 'logResponse', 'logRescue', 'resolve'],
   announcements: ['list', 'get', 'create', 'update', 'archive', 'retract', 'expireOverdue'],
   feedback: ['list', 'get', 'create', 'assignTanod', 'resolve'],

@@ -19,7 +19,7 @@ const messages = {
 export function createHttp({ fetchImpl = globalThis.fetch, origin = globalThis.location?.origin, timeout = 15000, onServerTime = () => {} } = {}) {
   const base = new URL('/api/v1/', origin);
   const unauthorized = new Set();
-  let csrfToken = null, csrfPending = null, identityContext = null;
+  let csrfToken = null, csrfPending = null, identityContext = null, observationContext = null;
   function problem(code, status = 0, payload = {}, response = null) {
     const fields = {};
     for (const key of Object.keys(payload?.fields || {})) if (/^[a-z][a-z0-9_.]{0,99}$/i.test(key)) fields[key] = 'Check this field.';
@@ -32,6 +32,7 @@ export function createHttp({ fetchImpl = globalThis.fetch, origin = globalThis.l
   }
   async function send(path, { method = 'GET', body, query = {}, signal, headers: suppliedHeaders = {} } = {}) {
     const observedIdentity = identityContext;
+    const observedSession = observationContext;
     if (typeof path !== 'string' || !/^[a-z][a-z0-9-]*(?:\/[a-z0-9_-]+)*$/i.test(path)) throw problem('VALIDATION');
     method = method.toUpperCase();
     if (!['GET', 'POST', 'PATCH', 'PUT', 'DELETE'].includes(method)) throw problem('VALIDATION');
@@ -48,6 +49,7 @@ export function createHttp({ fetchImpl = globalThis.fetch, origin = globalThis.l
     if (write && !csrfToken) await ensureCsrf();
     if (write) headers.set('X-CSRF-TOKEN', csrfToken);
     if (write && observedIdentity) headers.set('X-BC-Identity', observedIdentity);
+    if (write && observedSession) headers.set('X-BC-Observation', observedSession);
     let content = body;
     if (body !== undefined && !(body instanceof FormData)) { headers.set('Content-Type', 'application/json'); content = JSON.stringify(body); }
     const controller = new AbortController();
@@ -63,7 +65,7 @@ export function createHttp({ fetchImpl = globalThis.fetch, origin = globalThis.l
       throw problem('NETWORK');
     } finally { clearTimeout(timer); signal?.removeEventListener('abort', abort); }
     if (!response.ok) {
-      if (response.status === 401) { csrfToken = null; identityContext = null; for (const callback of unauthorized) { try { callback(); } catch { /* One view cannot block revocation of the others. */ } } }
+      if (response.status === 401) { csrfToken = null; identityContext = null; observationContext = null; for (const callback of unauthorized) { try { callback(); } catch { /* One view cannot block revocation of the others. */ } } }
       if (response.status === 419) csrfToken = null;
       let code = statuses[response.status] || 'SERVER';
       const domainCodes = ['CAPACITY', 'BUSY', 'INVALID_STATE', 'INVALID_CODE', 'CODE_EXPIRED', 'AUTHORIZATION_EXPIRED', 'COOLDOWN'];
@@ -88,9 +90,11 @@ export function createHttp({ fetchImpl = globalThis.fetch, origin = globalThis.l
     request: async (path, options) => (await send(path, options)).data,
     envelope: send,
     setIdentity(identity) {
-      if (identity === null) { identityContext = null; return; }
+      if (identity === null) { identityContext = null; observationContext = null; return; }
       if (!Number.isSafeInteger(identity.id) || identity.id < 1 || !Number.isSafeInteger(identity.barangay_id) || identity.barangay_id < 1 || !['resident', 'captain', 'secretary', 'responder', 'rescuer'].includes(identity.role)) throw problem('VALIDATION');
+      if (identity.observation !== undefined && !/^[a-f0-9]{64}$/.test(identity.observation)) throw problem('VALIDATION');
       identityContext = `${identity.id}:${identity.barangay_id}:${identity.role}`;
+      observationContext = identity.observation || null;
     },
     onUnauthorized(callback) { unauthorized.add(callback); return () => unauthorized.delete(callback); },
   });

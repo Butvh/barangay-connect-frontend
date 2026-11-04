@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Identity;
 use App\Contracts\Photos\IncidentPhotos;
 use App\Http\Controllers\Controller;
 use App\Services\Identity\IdentityReferences;
+use App\Services\Photos\IncidentPhotoReferences;
 use App\Support\ApiProblem;
 use Illuminate\Http\Request;
 
@@ -33,5 +34,13 @@ final class IncidentPhotoController extends Controller
     public function download(Request $request, int $id, IdentityReferences $identity)
     {
         return $this->service()->download($identity->current($request), $id);
+    }
+
+    public function references(Request $request, int $id, IdentityReferences $identity)
+    {
+        $this->service();
+
+        return response()->json(['data' => app(IncidentPhotoReferences::class)->forIncident($identity->current($request), $id)])
+            ->header('Cache-Control', 'private, no-store');
     }
 }

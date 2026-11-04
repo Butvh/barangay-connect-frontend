@@ -4,6 +4,16 @@ import { submitAdministrative } from './administrative-submission.js';
 
 const id = value => { if (!Number.isSafeInteger(Number(value)) || Number(value) < 1) throw new ApiError('VALIDATION', 'Use a valid record.'); return Number(value); };
 const self = (auth, value) => { const actor = auth.current(); if (!actor || actor.id !== id(value)) throw new ApiError('FORBIDDEN', 'Use your own account.'); return actor; };
+export function createConsentFactories() {
+  const path = purpose => {
+    if (!['incident_review', 'barangay_announcements'].includes(purpose)) throw new ApiError('VALIDATION', 'Choose a supported notification purpose.');
+    return 'me/notification-preferences/' + purpose;
+  };
+  return Object.freeze({ notificationPreferences: ({ http }) => ({
+    get: purpose => http.request(path(purpose)),
+    set: (purpose, input) => http.request(path(purpose), { method: 'PUT', body: input }),
+  }) });
+}
 export function createAdministrativeFactories() {
   return Object.freeze({
     barangays: ({ http }) => ({ list: () => http.request('barangays') }),

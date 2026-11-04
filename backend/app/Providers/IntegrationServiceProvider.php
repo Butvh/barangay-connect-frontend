@@ -4,10 +4,19 @@ namespace App\Providers;
 
 use App\Contracts\Events\AuditRecorder;
 use App\Contracts\Events\OutboxWriter;
+use App\Contracts\P2\IncidentPhotoAuthorization;
+use App\Contracts\P2\ReferenceData;
+use App\Contracts\P2\Store;
+use App\Contracts\Photos\IncidentPhotos;
 use App\Jobs\Messaging\DispatchOutbox;
+use App\Services\Civic\CivicService;
 use App\Services\Identity\CurrentSmsConsent;
 use App\Services\Identity\SmsDeliveryEligibility;
 use App\Services\Identity\SmsEligibilityReferences;
+use App\Services\Incidents\IncidentService;
+use App\Services\P2\Persistence\IncidentPhotoPolicy;
+use App\Services\P2\Persistence\TypedOutboxWriter;
+use App\Services\Photos\PrivateIncidentPhotos;
 use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\ServiceProvider;
 use LogicException;
@@ -18,7 +27,8 @@ final class IntegrationServiceProvider extends ServiceProvider
     public function register(): void
     {
         $testBindings = (bool) config('integration.test_bindings');
-        if ((config('integration.consent_test_bindings') || config('integration.admin_test_bindings')) && ! $testBindings) {
+        if ((config('integration.consent_test_bindings') || config('integration.admin_test_bindings') ||
+            config('integration.photo_test_bindings') || config('integration.sms_intent_test_bindings')) && ! $testBindings) {
             throw new LogicException('Additional integration bindings require the reviewed disposable profile.');
         }
         if ($testBindings || config('integration.p2_enabled')) {
@@ -58,6 +68,25 @@ final class IntegrationServiceProvider extends ServiceProvider
             $this->app->scoped(CurrentSmsConsent::class);
             $this->app->alias(CurrentSmsConsent::class, SmsEligibilityReferences::class);
             $this->app->alias(CurrentSmsConsent::class, SmsDeliveryEligibility::class);
+        }
+        if (config('integration.photo_test_bindings')) {
+            $this->app->scoped(IncidentPhotoAuthorization::class, IncidentPhotoPolicy::class);
+            $this->app->scoped(IncidentPhotos::class, PrivateIncidentPhotos::class);
+        }
+        if (config('integration.sms_intent_test_bindings')) {
+            if (! config('integration.consent_test_bindings') || config('integration.outbox_adapter') !== TypedOutboxWriter::class) {
+                throw new LogicException('Optional SMS intent requires the actual reviewed consent authority and typed writer.');
+            }
+            $this->app->scoped(OutboxWriter::class, fn () => new TypedOutboxWriter(allowSmsIntent: true));
+        }
+        if (config('integration.photo_test_bindings') || config('integration.sms_intent_test_bindings')) {
+            $clock = static fn () => gmdate('Y-m-d\TH:i:s\Z');
+            $dependencies = fn ($app) => [$app->make(Store::class), $app->make(ReferenceData::class),
+                $app->make(\App\Services\Audit\AuditRecorder::class), $app->make(\App\Services\Messaging\OutboxWriter::class), $clock];
+            $sms = fn ($app) => config('integration.sms_intent_test_bindings') ? $app->make(SmsEligibilityReferences::class) : null;
+            $this->app->scoped(IncidentService::class, fn ($app) => new IncidentService(
+                ...[...$dependencies($app), config('integration.photo_test_bindings') ? $app->make(IncidentPhotos::class) : null, $sms($app)]));
+            $this->app->scoped(CivicService::class, fn ($app) => new CivicService(...[...$dependencies($app), $sms($app)]));
         }
         if ($testBindings) {
             $this->bindReviewed('App\\Services\\Messaging\\InAppNotificationHandler', 'notification_adapter');

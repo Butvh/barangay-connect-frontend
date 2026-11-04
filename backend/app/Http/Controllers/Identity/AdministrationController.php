@@ -9,6 +9,7 @@ use App\Services\Identity\EffectiveIdentity;
 use App\Services\Identity\IdentityReferences;
 use App\Services\Identity\ProfileAdministration;
 use App\Services\Identity\ResidentRegistration;
+use App\Services\Identity\SessionObservation;
 use App\Support\ApiProblem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -95,6 +96,7 @@ final class AdministrationController extends Controller
         Auth::guard('web')->setUser($user);
         $request->session()->regenerate();
         $request->session()->put(EffectiveIdentity::fromUser($user)->sessionSnapshot());
+        SessionObservation::rotate($request);
 
         return $this->response($result);
     }

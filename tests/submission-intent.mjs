@@ -27,3 +27,10 @@ guest = { id: 9, barangay_id: 1, role: 'resident' };
 assert.throws(() => registration.retry(), error => error.code === 'AUTH');
 assert.throws(() => createSubmissionIntent({ auth: { current: () => null } }).prepare({}), error => error.code === 'AUTH');
 console.log('PASS explicit guest registration retains its own observation without enabling anonymous operational intents');
+
+let sameUser = { id: 1, barangay_id: 1, role: 'resident', session_observation: 'a'.repeat(64) };
+const generation = createSubmissionIntent({ auth: { current: () => sameUser }, keyFactory: () => 'generation-original-key' });
+generation.prepare({ description: 'Original details' }, 0);
+sameUser = { ...sameUser, session_observation: 'b'.repeat(64) };
+assert.throws(() => generation.retry(), error => error.code === 'AUTH');
+console.log('PASS same-user same-role sign-in observation changes invalidate the original pending command');

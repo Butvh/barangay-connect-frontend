@@ -4,9 +4,9 @@ import { fileURLToPath } from 'node:url';
 import { buildFrontendArtifact } from './stage-frontend.mjs';
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-export async function stageBackendFrontend({ root = projectRoot, operationalTest = false, administrationTest = false } = {}) {
+export async function stageBackendFrontend({ root = projectRoot, operationalTest = false, administrationTest = false, photoTest = false, consentTest = false } = {}) {
   root = await realpath(root);
-  if (administrationTest && !operationalTest) throw new Error('Administration staging requires the isolated operational test composition.');
+  if ((administrationTest || photoTest || consentTest) && !operationalTest) throw new Error('Optional staging requires the isolated operational test composition.');
   if (operationalTest) {
     if (process.env.DB_TEST_DISPOSABLE !== '1' || process.env.P1_COMBINED_TESTS !== '1' || !/^bc_dba_p1_[a-z0-9_]+$/i.test(process.env.DB_DATABASE || '') || process.env.DB_DATABASE !== process.env.DB_TEST_DATABASE) throw new Error('Operational staging requires the confirmed disposable combined build.');
     const manifest = JSON.parse(await readFile(resolve(root, 'integration-manifest.json'), 'utf8'));
@@ -33,7 +33,7 @@ export async function stageBackendFrontend({ root = projectRoot, operationalTest
     await mkdir(dirname(destination), { recursive: true });
     await copyFile(resolve(artifact.directory, name), destination);
   }
-  await writeFile(resolve(target, 'assets/js/core/runtime-config.js'), "export const Runtime = Object.freeze({ mode: 'backend', operationalTest: " + Boolean(operationalTest) + ", administrationTest: " + Boolean(administrationTest) + " });\n");
+  await writeFile(resolve(target, 'assets/js/core/runtime-config.js'), "export const Runtime = Object.freeze({ mode: 'backend', operationalTest: " + Boolean(operationalTest) + ", administrationTest: " + Boolean(administrationTest) + ", photoTest: " + Boolean(photoTest) + ", consentTest: " + Boolean(consentTest) + " });\n");
   return { directory: target, files };
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

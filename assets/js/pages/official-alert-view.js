@@ -5,6 +5,7 @@ import { roleOf } from '../core/permissions.js';
 import { canTransition } from '../core/alertMachine.js';
 import { facilityActive } from '../core/facilities.js';
 import { responseProgress } from './resident-report-model.js';
+import { incidentPhotoGallery, privatePhotosEnabled } from '../core/incident-photos.js';
 
 const e = UI.escape;
 const administrative = role => ['secretary', 'captain'].includes(role);
@@ -66,7 +67,7 @@ export function alertDetail(a, user) {
     <section class="card alert-summary" aria-label="Alert summary">${summary.map(([icon, label, value]) => `<div class="alert-summary-item">${Icons.svg(icon)}<div><small>${label}</small><div>${value}</div></div></div>`).join('')}</section>
     <section class="card alert-detail-card alert-reporter">${title('user', 'Reporter information')}<div class="alert-reporter-columns"><dl><div><dt>Name</dt><dd>${e(a.resident?.full_name || 'Not provided')}</dd></div><div><dt>Contact number</dt><dd>${e(a.resident?.contact_number || 'Not provided')}</dd></div></dl><dl><div class="alert-reporter-icon">${Icons.svg('calendar', { size: 20 })}<div><dt>Reported</dt><dd>${time(a.created_at)}</dd></div></div><div class="alert-reporter-icon">${Icons.svg('phone', { size: 20 })}<div><dt>Reporting channel</dt><dd>${e(a.reporting_channel || 'Not recorded')}</dd></div></div></dl></div></section>
     <section class="card alert-detail-card alert-description">${title('message-square', 'Description')}<p>${e(a.description || 'No description provided.')}</p></section>
-    <section class="card alert-detail-card alert-photo">${title('camera', 'Uploaded photo')}<div class="alert-photo-area"><span class="alert-camera-art" aria-hidden="true">${Icons.svg('camera', { size: 32 })}</span><h3>${a.photo_name ? 'Uploaded photo' : 'No photo provided.'}</h3><p>${a.photo_name ? e(a.photo_name) : 'No images were uploaded for this incident.'}</p><small>Photos are represented by file names in this demo.</small></div></section>
+    <section class="card alert-detail-card alert-photo">${title('camera', 'Uploaded photo')}<div class="alert-photo-area">${privatePhotosEnabled && a.photos?.length ? incidentPhotoGallery(a.photos) : `<span class="alert-camera-art" aria-hidden="true">${Icons.svg('camera', { size: 32 })}</span><h3>${a.photo_access === false ? 'Photos unavailable' : a.photo_name ? 'Uploaded photo' : 'No photo provided.'}</h3><p>${a.photo_access === false ? 'Photos are unavailable for your current access.' : a.photo_name ? e(a.photo_name) : 'No images were uploaded for this incident.'}</p>${privatePhotosEnabled ? '' : '<small>Photos are represented by file names in this demo.</small>'}`}</div></section>
     <div class="alert-detail-logs">${logs(a)}${logs(a, true)}</div>
   </div><aside class="alert-detail-rail" aria-label="Alert progress and assignments">
     ${timeline(a)}

@@ -9,7 +9,7 @@ export function createSubmissionIntent({ auth, allowAnonymous = false, keyFactor
     // observation; the public endpoint independently enforces guest-only creation.
     if (!actor && allowAnonymous) return 'signed-out-registration';
     if (!actor || !Number.isSafeInteger(actor.id) || !Number.isSafeInteger(actor.barangay_id) || !actor.role) throw new ApiError('AUTH', 'Sign in before submitting.');
-    return `${actor.id}:${actor.barangay_id}:${actor.role}`;
+    return `${actor.id}:${actor.barangay_id}:${actor.role}:${actor.session_observation || ''}`;
   };
   function canonical(value) {
     if (value === null || ['string', 'boolean'].includes(typeof value) || (typeof value === 'number' && Number.isFinite(value))) return value;

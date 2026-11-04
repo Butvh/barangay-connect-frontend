@@ -41,6 +41,7 @@ async function run() {
     const context=vm.createContext({document:{querySelector:()=>null,querySelectorAll:()=>[],addEventListener(){}},window:{addEventListener(){},removeEventListener(){}},location:{assign(){}}});
     const mod=new vm.SourceTextModule(await readFile(new URL('../assets/js/pages/official-profile.js',import.meta.url),'utf8'),{context});
     await mod.link(async spec=>{
+      if(spec.endsWith('notification-preferences.js')){const values=await import('../assets/js/core/notification-preferences.js');return new vm.SyntheticModule(Object.keys(values),function(){for(const[k,v]of Object.entries(values))this.setExport(k,v);},{context});}
       if(spec.endsWith('sign-out.js')){
         const helper=new vm.SourceTextModule(await readFile(new URL('../assets/js/core/sign-out.js',import.meta.url),'utf8'),{context});
         await helper.link(name=>{const values=name.endsWith('auth.js')?{Auth:auth}:{UI:shared.UI};return new vm.SyntheticModule(Object.keys(values),function(){for(const[k,v]of Object.entries(values))this.setExport(k,v);},{context});});

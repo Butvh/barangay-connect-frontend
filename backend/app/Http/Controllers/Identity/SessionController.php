@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Identity\LoginRequest;
 use App\Http\Resources\Identity\UserResource;
 use App\Services\Identity\EffectiveIdentity;
+use App\Services\Identity\SessionObservation;
 use App\Support\ApiProblem;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -38,13 +39,15 @@ final class SessionController extends Controller
         }
         $request->session()->regenerate();
         $request->session()->put($identity->sessionSnapshot());
+        SessionObservation::rotate($request);
 
         return $this->show($request);
     }
 
     public function show(Request $request): JsonResponse
     {
-        return response()->json(['data' => (new UserResource(Auth::guard('web')->user()))->resolve($request), 'meta' => $this->meta()]);
+        return response()->json(['data' => (new UserResource(Auth::guard('web')->user()))->resolve($request),
+            'meta' => $this->meta() + ['session_observation' => SessionObservation::current($request)]])->header('Cache-Control', 'private, no-store');
     }
 
     public function logout(Request $request): JsonResponse

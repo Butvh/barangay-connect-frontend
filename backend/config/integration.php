@@ -10,6 +10,8 @@ return [
     'test_bindings' => (bool) env('P2_TEST_BINDINGS', false),
     'consent_test_bindings' => (bool) env('P1_CONSENT_TEST_BINDINGS', false),
     'admin_test_bindings' => (bool) env('P1_ADMIN_TEST_BINDINGS', false),
+    'photo_test_bindings' => (bool) env('P1_PHOTO_TEST_BINDINGS', false),
+    'sms_intent_test_bindings' => (bool) env('P1_SMS_INTENT_TEST_BINDINGS', false),
     // Selection only, never default enablement. Provider requires an isolated disposable test context.
     'reviewed_test_adapters' => [
         'store_adapter' => 'App\\Services\\P2\\Persistence\\RelationalStore',

@@ -7,13 +7,14 @@ import { openChangePassword } from '../core/change-password.js';
 import { signOutTo } from '../core/sign-out.js';
 import { BCMap } from '../core/map.js';
 import { Shell } from '../core/shell-resident.js';
+import { mountConsentPreferences } from '../core/notification-preferences.js';
 
 let user;
 try { Auth.requireRole(['resident']); user = Auth.current(); }
 catch (error) { if (!['AUTH', 'FORBIDDEN'].includes(error.code)) document.querySelector('#app').innerHTML = UI.empty({ icon: 'triangle-alert', title: 'Unable to load your profile', text: error.message, action: { href: 'resident-login.html', label: 'Back to sign in' } }); }
 if (user) {
   const main = Shell.resident({ active: 'Profile' }), e = UI.escape; main.classList.add('p1-profile'); main.setAttribute('aria-busy', 'true'); main.innerHTML = '<p class="sr-only" role="status">Loading profile…</p>' + UI.skeleton(2);
-  let dirty = false, busy = false, leaving = false, current, mapView, loadVersion = 0;
+  let dirty = false, busy = false, leaving = false, current, mapView, loadVersion = 0, disposePreferences = () => {};
   const unload = event => { if (dirty) { event.preventDefault(); event.returnValue = ''; } };
   window.addEventListener('beforeunload', unload);
   async function mayLeave() {
@@ -38,6 +39,7 @@ if (user) {
       const barangay = barangays.find(b => b.id === resident.barangay_id)?.name || 'Your barangay', household = resident.household, status = resident.verification?.review_status || 'Pending';
       mapView?.destroy();
       main.innerHTML = `<header class="official-heading"><h1>Profile and household</h1><p>Keep your contact information and household address up to date.</p></header><div class="banner banner-success" role="status" id="profile-saved"${saved ? '' : ' hidden'}>${Icons.svg('circle-check')}<p>Changes saved.</p></div><div id="profile-update-notice" class="banner" role="status" hidden><p>Your saved profile changed in another tab. Your edits are still here.</p><button type="button" class="btn btn-small" id="reload-profile">Reload saved profile</button></div><form id="profile-form" class="p1-profile-grid" novalidate><section class="card card-plain p1-profile-card"><div class="p1-profile-identity"><span class="p1-profile-avatar" aria-hidden="true">${e(Fmt.initials(resident.full_name))}</span><div><h2>${e(resident.full_name)}</h2><p>${e(barangay)}</p></div></div>${field('full_name', 'Full name', resident.full_name, { max: 100, autocomplete: 'name' })}${field('email', 'Email address', resident.email, { readonly: true, type: 'email', max: 254, autocomplete: 'username' })}${field('contact_number', 'Contact number', resident.contact_number || '', { max: 30, type: 'tel', autocomplete: 'tel' })}<div id="profile-error" class="banner banner-error" role="alert" hidden></div><button class="btn btn-primary p1-profile-save-desktop" type="submit" data-save-profile>Save changes</button><button class="btn p1-profile-save-desktop" type="button" data-change-password>Change password</button><div class="p1-profile-signout"><div class="row">${Icons.svg('log-out')}<div><p>Sign out of Barangay Connect</p><small>Sign out in this tab.</small></div></div><button class="btn" type="button" id="profile-signout">Sign out</button></div></section><section class="card card-plain p1-profile-card"><div class="p1-profile-household-heading"><span class="icon-tile round">${Icons.svg('house', { size: 28 })}</span><div class="grow"><h2>Your household</h2><p>Your household address helps us provide location-based services and keep your information accurate.</p></div>${UI.badge(status)}</div><div class="p1-profile-summary"><div class="row">${Icons.svg('shield-check')}<div><strong>${status === 'Approved' ? 'Household verified' : 'Verification ' + e(status.toLowerCase())}</strong><p>${status === 'Approved' ? 'Your household information is verified.' : 'View your verification page for the current review status.'}</p></div></div><div class="row">${Icons.svg('map-pin')}<div><strong>Saved household pin</strong><p>Your address is set on the map.</p></div></div></div><div class="field"><label for="profile-barangay">Barangay</label><input class="input" id="profile-barangay" readonly value="${e(barangay)}"></div>${field('address', 'Household address', household?.address || '', { autocomplete: 'street-address' })}<div class="p1-profile-map"><div id="profile-map"></div><a class="btn btn-small" href="resident-map.html">${Icons.svg('map', { size: 20 })}View on map</a></div></section><button type="submit" class="btn btn-primary p1-profile-save-mobile" data-save-profile>Save changes</button><button class="btn p1-profile-save-mobile" type="button" data-change-password>Change password</button></form>`;
+      disposePreferences();disposePreferences = mountConsentPreferences(main);
       const form = main.querySelector('#profile-form'), error = main.querySelector('#profile-error');
       const clearError = name => { form.elements[name].removeAttribute('aria-invalid'); form.querySelector(`#profile-${name}-error`).textContent = ''; };
       form.addEventListener('input', event => { if (event.target.readOnly) return; dirty = true; main.querySelector('#profile-saved').hidden = true; error.hidden = true; if (['full_name', 'contact_number', 'address'].includes(event.target.name)) clearError(event.target.name); });
@@ -65,6 +67,6 @@ if (user) {
     try { const next = await Api.users.get(user.id); if (JSON.stringify(next) === JSON.stringify(current)) return; if (dirty) main.querySelector('#profile-update-notice').hidden = false; else await load(); } catch (err) { UI.toast(err.message, 'error'); } finally { refreshing = false; }
   }
   const offs = ['users', 'verification'].map(entity => Api.subscribe(entity, refresh));
-  window.addEventListener('pagehide', event => { if (event.persisted) return; offs.forEach(off => off()); mapView?.destroy(); window.removeEventListener('beforeunload', unload); }, { once: true });
+  window.addEventListener('pagehide', event => { if (event.persisted) return; offs.forEach(off => off()); disposePreferences();mapView?.destroy(); window.removeEventListener('beforeunload', unload); }, { once: true });
   load();
 }

@@ -2,9 +2,11 @@
 // provided { http, auth } only. A missing domain always fails closed.
 import { Runtime } from '../core/runtime-config.js';
 import { operationalComposition } from './operational-registration.js';
-import { createAdministrativeFactories, administrativeReaders } from './administrative-registration.js';
+import { createAdministrativeFactories, administrativeReaders, createConsentFactories } from './administrative-registration.js';
 
-const selected = await operationalComposition(Runtime.mode === 'backend' && Runtime.operationalTest === true);
+const selected = await operationalComposition(Runtime.mode === 'backend' && Runtime.operationalTest === true,
+  { privatePhotos: Runtime.photoTest === true });
 const administration = Runtime.mode === 'backend' && Runtime.operationalTest === true && Runtime.administrationTest === true;
-export const domainFactories = Object.freeze({ ...selected.factories, ...(administration ? createAdministrativeFactories() : {}) });
+const consent = Runtime.mode === 'backend' && Runtime.operationalTest === true && Runtime.consentTest === true;
+export const domainFactories = Object.freeze({ ...selected.factories, ...(administration ? createAdministrativeFactories() : {}), ...(consent ? createConsentFactories() : {}) });
 export const refreshSources = Object.freeze({ ...selected.sources, ...(administration ? administrativeReaders : {}) });

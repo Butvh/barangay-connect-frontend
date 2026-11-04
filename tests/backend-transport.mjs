@@ -8,6 +8,23 @@ async function test(name, run) { await run(); count++; console.log(`PASS ${name}
 const json = (body, status = 200, headers = {}) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', ...headers } });
 const csrf = () => json({ data: { csrf_token: 'csrf-test' }, meta: { server_time: '2026-11-02T00:00:00Z' } });
 
+await test('actual envelope nonce survives hydration and fences an unsafe request across same-role reauthentication', async () => {
+  let nonce = 'a'.repeat(64); const calls = [];
+  const http = createHttp({ origin: 'http://localhost', fetchImpl: async (url, init) => {
+    calls.push({ url, init });
+    if (url.endsWith('/auth/csrf')) return csrf();
+    return json({ data: { id: 1, barangay_id: 1, role: 'resident', is_resident: true, account_status: 'Active' }, meta: { session_observation: nonce } });
+  } });
+  const auth = createBackendAuth({ http }); await auth.hydrateSession();
+  assert.equal(auth.current().session_observation, nonce);
+  await http.request('me/verifications', { method: 'POST', body: {} });
+  assert.equal(calls.at(-1).init.headers.get('X-BC-Observation'), nonce);
+  nonce = 'b'.repeat(64); await auth.refresh();
+  assert.equal(auth.current().session_observation, nonce);
+  await http.request('me/verifications', { method: 'POST', body: {} });
+  assert.equal(calls.at(-1).init.headers.get('X-BC-Observation'), nonce);
+});
+
 await test('self-consent purpose segments and real multipart uploads keep the shared session boundary', async () => {
   const calls = [];
   const http = createHttp({ origin: 'http://localhost:8000', fetchImpl: async (url, init) => {

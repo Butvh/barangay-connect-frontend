@@ -16,8 +16,8 @@ console.log('PASS disabled operational registration, minimal source paths and ca
 try { await access(new URL('../assets/js/adapters/p2-form-intent.js', import.meta.url)); }
 catch { console.log('SKIP actual operational registration: requires reviewed composed owner sources.'); process.exit(0); }
 const selected = await operationalComposition(true);
-for (const group of ['alerts', 'dashboard', 'map', 'notifications', 'users', 'facilities', 'barangays']) assert.equal(typeof selected.factories[group], 'function');
-for (const group of ['announcements', 'feedback', 'reports', 'personnel', 'verification']) assert.equal(selected.factories[group], undefined);
+for (const group of ['alerts', 'dashboard', 'map', 'notifications', 'users', 'facilities', 'barangays', 'reports']) assert.equal(typeof selected.factories[group], 'function');
+for (const group of ['announcements', 'feedback', 'personnel', 'verification']) assert.equal(selected.factories[group], undefined);
 for (const entity of ['alerts', 'notifications', 'announcements', 'feedback', 'verification', 'users', 'facilities']) assert.equal(typeof selected.sources[entity]({ http }), 'function');
 const { createFormSubmission } = await import('../assets/js/adapters/p2-form-intent.js');
 const form = createFormSubmission({ auth: { current: () => ({ id: 7, barangay_id: 2, role: 'resident' }) }, demo: false, revision: 3 });

@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Services\Identity\EffectiveIdentity;
+use App\Services\Identity\SessionObservation;
 use App\Support\ApiProblem;
 use Closure;
 use Illuminate\Http\Request;
@@ -35,6 +36,10 @@ final class CurrentIdentity
         $expected = $identity->id.':'.$identity->barangayId.':'.$identity->role;
         if (! $request->isMethodSafe() && $observed !== null && ! hash_equals($expected, $observed)) {
             throw new ApiProblem('CONFLICT', 409, 'Your account changed. Reload before continuing.');
+        }
+        $observation = $request->header('X-BC-Observation');
+        if (! $request->isMethodSafe() && $observation !== null && ! hash_equals(SessionObservation::current($request), $observation)) {
+            throw new ApiProblem('CONFLICT', 409, 'Your sign-in session changed. Reopen the original form.');
         }
         $request->attributes->set('effective_identity', $identity);
 

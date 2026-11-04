@@ -26,5 +26,6 @@ Route::middleware('current.identity')->group(function () {
     Route::put('me/notification-preferences/{purpose}', [NotificationPreferenceController::class, 'update'])->middleware('throttle:consent-write');
     // Real service exists; positive integration stays unavailable unless explicitly reviewed/bound.
     Route::post('incident-photos', [IncidentPhotoController::class, 'stage'])->middleware('throttle:photo-upload');
+    Route::get('incident-photos/references/{id}', [IncidentPhotoController::class, 'references'])->whereNumber('id');
     Route::get('incident-photos/{id}/download', [IncidentPhotoController::class, 'download'])->whereNumber('id');
 });

@@ -3,7 +3,7 @@ import { ApiError } from '../core/config.js';
 // Reuses the shared form-owned intent. Actual bytes stay in File objects and
 // FormData; only input fingerprints enter the transient canonical intent.
 export async function submitPrivateDocuments({ http, auth, path, fields, files, intent, cryptoImpl = globalThis.crypto }) {
-  const identity = () => { const u = auth.current(); return u ? `${u.id}:${u.barangay_id}:${u.role}` : null; };
+  const identity = () => { const u = auth.current(); return u ? `${u.id}:${u.barangay_id}:${u.role}:${u.session_observation || ''}` : null; };
   const original = identity();
   if (!original) throw new ApiError('AUTH', 'Sign in before uploading.');
   if (!intent?.prepare || !intent?.complete || !cryptoImpl?.subtle) throw new ApiError('NOT_AVAILABLE', 'Reopen the form to prepare a secure upload.');
