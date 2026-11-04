@@ -1,8 +1,10 @@
-# P2 lock correction and operational forms — November 4, 2026
+# P2 lock correction, operational forms and photo/SMS contracts — November 4, 2026
 
 P2 draft PR #50 remains stacked on planning PR #47. This slice corrects the incident-to-person lock inversion and connects P2's original operational controllers to P1's submission-intent interface. It does not enable production integration or merge any branch.
 
-## Frozen composition
+The follow-up adds an **unbound** exact-incident attach/download policy and genuine MySQL access tests, plus an SMS eligibility proposal and actual producer/writer default-denial tests. See [photo authorization](P2-PHOTO-AUTHORIZATION.md), [SMS authority](P2-SMS-ELIGIBILITY.md) and the [current acceptance record](P2-PHOTO-SMS-ACCEPTANCE.md). That record supersedes the historical composition/results below for this follow-up. The current manifest preserves P1 `96632bf`, DBA `9d6c699` and this P2 source tree; the table below documents the earlier acc9f56 lock/form acceptance.
+
+## Historical acc9f56 composition
 
 | Source | Exact revision |
 | --- | --- |
@@ -12,7 +14,7 @@ P2 draft PR #50 remains stacked on planning PR #47. This slice corrects the inci
 | P2 planning base | `ef9a57a2ea0feeb99829e7928595cc925c25bcc7` |
 | Unchanged main | `3014ad60ca41a9a5aa4d5a0152faed09d0dfdaf0` |
 
-The published PR head identifies this patch. [The manifest](P2-INTEGRATION-MANIFEST.json) records exact owner Git-blob hashes and canonical-LF P2 source hashes, including modified original page controllers. Tests run in a private composition, never by overlaying teammate code into the P2 branch or a live checkout. No owner source, migration, model, transport, Composer lock, bootstrap or CI file is changed.
+The acc9f56 commit identifies the original lock/form patch; its version of the manifest records that historical composition. The current [manifest](P2-INTEGRATION-MANIFEST.json) records the current follow-up owner Git-blob hashes and canonical-LF P2 source hashes, including modified original page controllers. Tests run in a private composition, never by overlaying teammate code into the P2 branch or a live checkout. No owner source, migration, model, transport, Composer lock, bootstrap or CI file is changed.
 
 ## Lock correction
 

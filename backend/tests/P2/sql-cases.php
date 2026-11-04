@@ -264,4 +264,6 @@ require __DIR__.'/sql-lock-order.php';
 require __DIR__.'/sql-review.php';
 require __DIR__.'/sql-form-revisions.php';
 require __DIR__.'/sql-final-review.php';
+require __DIR__.'/sql-photo-policy.php';
+require __DIR__.'/sql-sms-denial.php';
 echo 'MySQL '.$version.'; original controllers exercised over HTTP; full registered-browser acceptance and remaining cross-owner races are separate gates.'.PHP_EOL;

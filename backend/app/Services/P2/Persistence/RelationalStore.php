@@ -26,6 +26,15 @@ final class RelationalStore implements GuardedStore
 {
     private array $peopleHeld = [];
 
+    private array $incidentsHeld = [];
+
+    public function assertIncidentLocked(int $id): void
+    {
+        if (! $this->inTransaction() || ! in_array($id, $this->incidentsHeld, true)) {
+            throw new \LogicException('Declare the exact incident in the caller lock plan.');
+        }
+    }
+
     public function assertPersonLocked(int $id): void
     {
         if (! $this->inTransaction() || ! in_array($id, $this->peopleHeld, true)) {
@@ -89,6 +98,7 @@ final class RelationalStore implements GuardedStore
             DB::table('personnel_appointments')->whereIn('user_id', $people)->orderBy('id')->lockForUpdate()->get();
             DB::table('tanod_memberships')->whereIn('user_id', $people)->orderBy('id')->lockForUpdate()->get();
             $previousPeople = $this->peopleHeld;
+            $previousIncidents = $this->incidentsHeld;
             $this->peopleHeld = array_values(array_unique([...$previousPeople, ...$people]));
             try {
                 foreach ($keys as $key) {
@@ -106,6 +116,7 @@ final class RelationalStore implements GuardedStore
                         DB::table($table)->where('id', (int) $id)->lockForUpdate()->first();
                         if ($type === 'incident') {
                             DB::table('alert_assignments')->where('alert_id', (int) $id)->orderBy('id')->lockForUpdate()->get();
+                            $this->incidentsHeld[] = (int) $id;
                         }
                     }
                 }
@@ -113,6 +124,7 @@ final class RelationalStore implements GuardedStore
                 return $work();
             } finally {
                 $this->peopleHeld = $previousPeople;
+                $this->incidentsHeld = $previousIncidents;
             }
         }, $attempts);
     }
