@@ -78,6 +78,37 @@ class FacilityPersistenceTest extends MysqlDbaTestCase
         $this->assertSame($boundary, (array) DB::table('facilities')->where('id', 1)->first(['name', 'address', 'contact']));
     }
 
+    public function test_actual_p1_default_collation_and_column_override_survive_fresh_upgrade_and_downgrade(): void
+    {
+        $this->migrateDown();
+        config(['database.connections.mysql.collation' => 'utf8mb4_unicode_ci']);
+        DB::purge('mysql');
+        try {
+            $files = glob(__DIR__.'/../../database/migrations/*.php');
+            foreach (array_slice($files, 0, 11) as $file) {
+                (require $file)->up();
+            }
+            DB::statement('ALTER TABLE facilities MODIFY name VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL');
+            foreach (array_slice($files, 11) as $file) {
+                (require $file)->up();
+            }
+            $collations = fn () => DB::table('information_schema.COLUMNS')->where('TABLE_SCHEMA', DB::connection()->getDatabaseName())
+                ->where('TABLE_NAME', 'facilities')->whereIn('COLUMN_NAME', ['name', 'address', 'contact'])->orderBy('COLUMN_NAME')->pluck('COLLATION_NAME', 'COLUMN_NAME')->all();
+            $expected = ['address' => 'utf8mb4_unicode_ci', 'contact' => 'utf8mb4_unicode_ci', 'name' => 'utf8mb4_bin'];
+            $this->assertSame($expected, $collations());
+            $this->assertSame(['address' => 300, 'contact' => 50, 'name' => 160], $this->widths());
+            $widths = require __DIR__.'/../../database/migrations/2026_11_05_000100_widen_facility_display_fields.php';
+            $widths->down();
+            $this->assertSame($expected, $collations());
+            $this->assertSame(['address' => 200, 'contact' => 30, 'name' => 100], $this->widths());
+            $widths->up();
+            $this->assertSame($expected, $collations());
+        } finally {
+            config(['database.connections.mysql.collation' => 'utf8mb4_0900_ai_ci']);
+            DB::purge('mysql');
+        }
+    }
+
     #[DataProvider('invalidHistory')]
     public function test_history_scope_revisions_and_snapshot_constraints(array $patch): void
     {

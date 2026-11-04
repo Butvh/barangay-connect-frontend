@@ -15,7 +15,7 @@ return new class extends Migration
         foreach (['name' => [100, 160], 'address' => [200, 300], 'contact' => [30, 50]] as $field => $allowed) {
             $row = $rows[$field] ?? null;
             if (! $row || $row->DATA_TYPE !== 'varchar' || ! in_array((int) $row->CHARACTER_MAXIMUM_LENGTH, $allowed, true)
-                || $row->IS_NULLABLE !== ($field === 'contact' ? 'YES' : 'NO') || $row->COLLATION_NAME !== 'utf8mb4_0900_ai_ci') {
+                || $row->IS_NULLABLE !== ($field === 'contact' ? 'YES' : 'NO') || ! preg_match('/^utf8mb4_[a-zA-Z0-9_]+$/D', $row->COLLATION_NAME ?? '')) {
                 throw new LogicException('facility_widths_incompatible');
             }
         }
@@ -25,7 +25,17 @@ return new class extends Migration
 
     private function alter(int $name, int $address, int $contact): void
     {
-        DB::statement("ALTER TABLE facilities MODIFY name VARCHAR($name) NOT NULL, MODIFY address VARCHAR($address) NOT NULL, MODIFY contact VARCHAR($contact) NULL DEFAULT NULL");
+        $collations = DB::table('information_schema.COLUMNS')->where('TABLE_SCHEMA', DB::connection()->getDatabaseName())
+            ->where('TABLE_NAME', 'facilities')->whereIn('COLUMN_NAME', ['name', 'address', 'contact'])->pluck('COLLATION_NAME', 'COLUMN_NAME');
+        $clauses = [];
+        foreach (['name' => $name, 'address' => $address, 'contact' => $contact] as $field => $width) {
+            $collation = $collations[$field] ?? '';
+            if (! preg_match('/^utf8mb4_[a-zA-Z0-9_]+$/D', $collation)) {
+                throw new LogicException('facility_widths_incompatible');
+            }
+            $clauses[] = "MODIFY $field VARCHAR($width) CHARACTER SET utf8mb4 COLLATE $collation ".($field === 'contact' ? 'NULL DEFAULT NULL' : 'NOT NULL');
+        }
+        DB::statement('ALTER TABLE facilities '.implode(', ', $clauses));
     }
 
     public function up(): void
