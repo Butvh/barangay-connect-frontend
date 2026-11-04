@@ -61,7 +61,7 @@ final class P2AdministrativeNotificationsTest extends TestCase
         $resident = $this->sourceUser('resident', $captain->barangay_id);
         $foreign = $this->sourceUser('captain');
         $facility = app(FacilityAdministration::class)->save(EffectiveIdentity::fromUser($captain), null,
-            ['name' => 'Fictional notification facility', 'type' => 'EvacuationCenter', 'address' => 'School Street', 'capacity' => 250]);
+            ['name' => 'Fictional notification facility', 'type' => 'EvacuationCenter', 'address' => 'School Street', 'capacity' => 250], 'p2-facility-notification-create');
         $event = OutboxEvent::where('type', 'facility.updated.v2')->where('resource_id', $facility['id'])->sole();
         $this->assertEqualsCanonicalizing([$captain->id, $secretary->id], $event->recipients->pluck('recipient_id')->all());
         $this->assertNotContains($resident->id, $event->recipients->pluck('recipient_id')->all());

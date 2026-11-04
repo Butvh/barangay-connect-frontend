@@ -1,5 +1,13 @@
 # P2 actual owner integration — November 4, 2026
 
+## Current-P1 compatibility checkpoint
+
+P1 `90208dbba11dbf7908b38e0f5bd100093c5be31d`, DBA `8cd2740d19e311c186b261c14a5c1ac69290ae98`, P2 over `272f8d6`: actual P2 administrative regression failed because current P1 facility creation requires its original command key (5 tests/33 assertions/1 error, private schema `bc_dba_p1_p2final_1793807653160`). The correction supplies a fixed original creation key in that P2 fixture only; no production validation, service or locking behavior changed.
+
+Current actual P1 administration/verification/personnel/recovery/reference and P2 notification gate: **38 tests/280 assertions, 0 failures/errors/skips**, private schema `bc_dba_p1_p2final_1793807856784`, using the actual native Poppler PDF parser. P1's shared-facility cleanup is consumed unchanged and the earlier six unsupported-family errors do not recur in this gate. Current composed original frontend/page tests, P2 Node24 entries, shared transport18/factory8 and changed-file Pint also pass. Broader current-pin source/SQL/full-suite acceptance follows separately; the older evidence below remains explicitly tied to its original pins.
+
+P1 must still repin current P2 and narrowly admit the three named P2 Feature tests, photo Node tests, actual-owner acceptance document and new execution plans; shared registration/readers/browser selection remains P1-owned. DBA is available; facility persistence and independent worker acceptance remain DBA-owned. No merge/retarget or external delivery is authorized by this checkpoint.
+
 This candidate extends the retained b477a7c presentation checkpoint. It is not whole-backend or production acceptance. The earlier original-UI two-branch rehearsal remains pinned to P1bbb690e/DBA1dceb0e/P25e61893; see [presentation evidence](P2-PRESENTATION-READINESS.md). Do not use those screenshots to certify the newer photo/consent slice.
 
 ## Exact composition and ownership
