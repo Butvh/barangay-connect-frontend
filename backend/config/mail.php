@@ -36,6 +36,14 @@ return [
     */
 
     'mailers' => [
+        'p1-local-recovery' => [
+            'transport' => 'smtp',
+            'host' => '127.0.0.1',
+            'port' => (int) env('P1_LOCAL_MAIL_PORT', 2525),
+            'url' => null,
+            'timeout' => 10,
+            'local_domain' => 'barangay-connect.local',
+        ],
 
         'smtp' => [
             'transport' => 'smtp',

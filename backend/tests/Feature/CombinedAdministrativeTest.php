@@ -38,6 +38,12 @@ final class CombinedAdministrativeTest extends TestCase
         $this->assertSame($user->full_name, $user->fresh()->full_name);
     }
 
+    public function test_named_mysql_connection_uses_utc_for_actual_consent_and_administrative_deadlines(): void
+    {
+        $this->assertSame('+00:00', config('database.connections.mysql.timezone'));
+        $this->assertSame(0, (int) DB::selectOne('SELECT TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), CURRENT_TIMESTAMP()) AS offset_seconds')->offset_seconds);
+    }
+
     public function test_facility_visibility_and_shared_read_never_grant_write_permission(): void
     {
         $captain = $this->sourceUser('captain');

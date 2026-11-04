@@ -20,7 +20,7 @@ final class CommandReceipt
             throw new \LogicException('Command receipt requires the caller source transaction.');
         }
         $digest = hash_hmac('sha256', $key, config('app.key'));
-        $hash = hash('sha256', json_encode($body, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES));
+        $hash = hash_hmac('sha256', json_encode($body, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES), config('app.key'));
         $query = $db->table('idempotency_requests')->where(['actor_id' => $actor, 'route' => $route, 'key_digest' => $digest]);
         $existing = (clone $query)->lockForUpdate()->first();
         if ($existing) {

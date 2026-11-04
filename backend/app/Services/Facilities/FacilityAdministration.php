@@ -134,6 +134,13 @@ final class FacilityAdministration
                 }
             }
             $data = $this->data($input, $old, $actor);
+            $widths = $db->table('information_schema.COLUMNS')->where('TABLE_SCHEMA', $db->getDatabaseName())->where('TABLE_NAME', 'facilities')
+                ->whereIn('COLUMN_NAME', ['name', 'address', 'contact'])->pluck('CHARACTER_MAXIMUM_LENGTH', 'COLUMN_NAME');
+            foreach (['name', 'address', 'contact'] as $field) {
+                if ($data[$field] !== null && mb_strlen($data[$field]) > (int) ($widths[$field] ?? 0)) {
+                    throw new ApiProblem('NOT_AVAILABLE', 503, 'This facility field awaits the reviewed database extension.');
+                }
+            }
             if ($old) {
                 $legacy = $db->table('rescues')->where('facility_id', $id)->whereNull('destination_snapshot')->lockForUpdate()->get();
                 if ($legacy->contains(fn ($row) => ! in_array($row->alert_id, $incidents, true))) {

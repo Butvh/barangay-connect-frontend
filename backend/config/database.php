@@ -46,6 +46,8 @@ return [
 
         'mysql' => [
             'driver' => 'mysql',
+            // All persisted instants, consent windows and recovery deadlines are UTC.
+            'timezone' => '+00:00',
             'url' => env('DB_URL'),
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '3306'),

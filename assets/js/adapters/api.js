@@ -19,8 +19,8 @@ export function createBackendApi({ http, auth, factories = domainFactories, sour
   const polling = pollingFactory({ auth, sources: Object.fromEntries(Object.entries(sources).map(([key, factory]) => [key, factory({ http, auth })])) });
   const api = {
     // Enabled only by the reviewed account/recovery slices, never a demo fallback.
-    account: createAccountSecurity({ currentUser: auth.current, transport: null }),
-    recovery: createPasswordRecovery({ transport: null }),
+    account: createAccountSecurity({ currentUser: auth.current, transport: factories.account?.({ http, auth }) || null }),
+    recovery: createPasswordRecovery({ transport: factories.recovery?.({ http, auth }) || null }),
     subscribe: polling.subscribe, destroy: polling.destroy,
   };
   for (const [group, names] of Object.entries(methods)) {

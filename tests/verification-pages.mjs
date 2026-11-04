@@ -30,6 +30,9 @@ async function run() {
       if (specifier.endsWith('shared.js')) values = shared;
       else if (specifier.endsWith('shell-official.js')) values = { Shell: { official: () => f.main } };
       else if (specifier.endsWith('verification-history.js')) values = await import('../assets/js/pages/verification-history.js');
+      else if (specifier.endsWith('form-validation.js')) values = await import('../assets/js/core/form-validation.js');
+      else if (specifier.endsWith('private-documents.js')) values = await import('../assets/js/core/private-documents.js');
+      else if (specifier.endsWith('submission-intent.js')) values = await import('../assets/js/adapters/submission-intent.js');
       else values = model;
       return new vm.SyntheticModule(Object.keys(values), function () { for (const [key, value] of Object.entries(values)) this.setExport(key, value); }, { context });
     });

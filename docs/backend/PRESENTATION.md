@@ -1,8 +1,10 @@
-# Local presentation baseline — November 4/5, 2026
+# Local presentation baseline â€” November 4/5, 2026
 
 Target: November5 5PM Asia/Manila. Preserve the passing current-pin core by November4 8PM. Photos/SMS enter the November5 8AM candidate only after actual joint tests. Freeze source/data noon, checks by2PM, rehearsal3PM, restart/restore4PM. No new features after freeze. The current review-and-schedule supersedes the older Friday target.
 
 This is the **reviewed isolated disposable profile**, not a public production release. GitHub Pages cannot execute Laravel. Use original frontend, real Laravel session/CSRF, same-origin API and genuine MySQL8.4. No localStorage data/DOM/readers are substituted. Production/worker/SMS/Make remain disabled. Use a private snapshot only, never an ordinary/public checkout or shared database.
+
+Full administration is mandatory per the presenter. The passing core below is a preserved fallback, not completion of the rubric. Administration integration and owner blockers are tracked in FEATURE-MATRIX.md and ADMINISTRATION-ACCEPTANCE.md; no failing write is presented as success.
 
 ## Prepare on the presentation machine
 

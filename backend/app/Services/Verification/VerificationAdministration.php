@@ -101,6 +101,9 @@ final class VerificationAdministration
 
     public function submit(EffectiveIdentity $actor, ?int $id, array $input, UploadedFile $validId, UploadedFile $proof, string $key): array
     {
+        if (! preg_match('/^[A-Za-z0-9_-]{8,128}$/D', $key)) {
+            throw new ApiProblem('VALIDATION', 422, 'Use a valid original command key.');
+        }
         if ($actor->role !== 'resident') {
             throw new ApiProblem('FORBIDDEN', 403, 'Only a resident can submit their own documents.');
         }

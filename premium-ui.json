@@ -1,0 +1,32 @@
+{
+  "profile": "product-admin",
+  "sourceRoots": [
+    "assets"
+  ],
+  "locale": "en-PH",
+  "canonicalMap": "UX-CONTRACT.md",
+  "requiredCapabilities": [
+    "Form",
+    "Select/Listbox",
+    "Date",
+    "Toast",
+    "CRUD",
+    "Scrollbar"
+  ],
+  "ownership": {
+    "Select/Listbox": "authored",
+    "Date": "native"
+  },
+  "requiredCommands": [
+    "unit",
+    "artifact"
+  ],
+  "commands": {
+    "unit": "node scripts/run-tests.mjs",
+    "artifact": "node tests/frontend-artifact.mjs"
+  },
+  "evidence": {
+    "crudFullFlow": "backend/tests/Feature/CombinedAdministrativeTest.php",
+    "failurePaths": "backend/tests/Feature/CombinedVerificationAdministrationTest.php"
+  }
+}

@@ -1,7 +1,7 @@
 import { Auth, Api, Store, UI, Icons, Fmt, e, facts, live } from './official-shared.js';
 import { Shell } from '../core/shell-official.js';
 import { VERIFICATION_STATUSES, reviewable } from './official-verification-model.js';
-import { verificationHistory } from './verification-history.js';
+import { verificationHistory, verificationDocuments } from './verification-history.js';
 
 let user;
 try { Auth.requireRole(['secretary', 'captain']); user = Auth.current(); }
@@ -27,7 +27,7 @@ if (user) {
     const files = String(row.file_name || '').split('; ').filter(Boolean);
     if (row.review_status === 'Resubmission requested') summary.innerHTML += `<div class="banner"><div><strong>Reason for resubmission</strong><p class="official-long-copy">${e(row.resubmission_reason)}</p><small>Waiting for corrected documents from the resident.</small></div></div>`;
     summary.innerHTML += verificationHistory(row);
-    preview.innerHTML = `<header class="spread"><div class="official-section"><h2>${e(row.document_type)}</h2><small>Submitted document preview</small></div><span class="official-document-label">Demo preview</span></header><div class="official-document-preview"><p>Document preview<br>${e(row.resident?.full_name)} · ${e(row.document_type)}</p>${files.map(file => `<p>${Icons.svg('file-text', { size: 20 })} ${e(file)}</p>`).join('')}</div><hr class="divider"><p class="row caption">${Icons.svg('info', { size: 20 })}<span>Fictional document placeholder. Only file names are stored in this demo.</span></p>`;
+    preview.innerHTML = verificationDocuments(row) ?? `<header class="spread"><div class="official-section"><h2>${e(row.document_type)}</h2><small>Submitted document preview</small></div><span class="official-document-label">Demo preview</span></header><div class="official-document-preview"><p>Document preview<br>${e(row.resident?.full_name)} · ${e(row.document_type)}</p>${files.map(file => `<p>${Icons.svg('file-text', { size: 20 })} ${e(file)}</p>`).join('')}</div><hr class="divider"><p class="row caption">${Icons.svg('info', { size: 20 })}<span>Fictional document placeholder. Only file names are stored in this demo.</span></p>`;
     summary.removeAttribute('aria-busy'); preview.removeAttribute('aria-busy'); controls();
   }
   reason.addEventListener('input', () => { dirty = reason.value !== original; reason.removeAttribute('aria-invalid'); form.querySelector('#reason-error').textContent = ''; saveError.hidden = true; });

@@ -1,15 +1,15 @@
-# Backend presentation feature matrix — November 4, 2026
+# Backend presentation feature matrix â€” November 4, 2026
 
 Scope: actual P1/current owner source union in the isolated disposable profile. Frontend demo availability is not backend completion. The current integration-lock.json and PR49 CI evidence define tested pins. No public production path is enabled.
 
 | Feature | Status and presentation boundary |
 | --- | --- |
 | Login, current identity, logout | Implemented in isolated profile: actual cookie session/CSRF/current role/scope/generation, revoked/removed access and no browser identity trust. Production identity remains disabled. |
-| Profile/password/account registration/household | Partial: current self/household reads exist. Full profile/password/registration/household mutation endpoints and adapters are unavailable; frontend forms do not prove durable saves. |
-| Recovery mail | Unavailable: frontend recovery workflow is not current real recovery API/mail acceptance. No real mail test or delivery claim. |
-| Verification | Partial: current own latest verification/Approved eligibility reader. Queue/document upload/correction/resubmit/review administration is not implemented by civic-admin.php. |
-| Captain personnel | Partial: current appointment/eligibility/capacity projections support dispatch. Staffing/Tanod management mutations are unavailable. Manual incident assignment is P2 operational work, not personnel administration. |
-| Facilities | Partial: current visible local/shared directory and active rescue destination checks exist. Facility create/edit/deactivate administration is unavailable. |
+| Profile/password/account registration/household | Mandatory, in progress: actual P1 profile/password/registration/household services and original-form adapters now exist behind the disposable administration selection. Positive writes are blocked by the actual P2 writer's unsupported P1 event families; no durable-save completion claim. |
+| Recovery mail | Mandatory, in progress: actual neutral challenges, keyed digests, encrypted queue jobs, five committed attempts, cooldown and one-use authorization are implemented. Independent-worker and final reset acceptance remain in progress; reset source events require P2. Only explicit loopback SMTP / fictional mailboxes are supported; no real-mail delivery claim. |
+| Verification | Mandatory, in progress: real private JPEG/PNG/PDF documents, queue/detail, correction/resubmission/reapplication, review/expiry, frozen retries and association-authorized downloads now have P1 services/routes/adapters. Positive lifecycle acceptance remains blocked by P2 event support. Missing legacy evidence is not invented. |
+| Captain personnel | Mandatory, in progress: Captain-only directory, external staffing, fixed Tanod appointment/reassignment/removal, inactive capacity counting, busy checks, private requirements, history and generation revocation have P1 services/adapters. Actual positive mutation acceptance is blocked by P2. No Tanod CRUD is added. |
+| Facilities | Mandatory, in progress: scoped create/edit/deactivate/reactivate and revision handling have P1 services/adapters. Positive source events need P2. DBA additive160/300/50 field widening and full history persistence remain outstanding; longer unsupported fields fail closed instead of truncating. |
 | SOS/manual response/rescue/resolution | Implemented isolated core: real MySQL, original UI, frozen intents/revisions, manual assignment, both branches, explicit resolution/history/capacity/privacy; current-pin original browser gate required. |
 | Announcements/feedback/reports | P2 services/SQL and adapters exist. Core browser suite is not exhaustive publication/feedback/report UI acceptance. Captain reports must use persisted fixtures; do not show invented historical aggregates. |
 | In-app notifications | Actual typed outbox/writer/handler/recipient API with independent receipts, rollback/replay/revocation. Automated fixture dispatches in-app-only records; no autonomous production worker. |
@@ -18,4 +18,4 @@ Scope: actual P1/current owner source union in the isolated disposable profile. 
 | SMS/Make/carrier delivery | Unavailable positive flow: P2 producers stay in-app-only. Unsupported-intent exit2 is denial evidence. Needs persistence -> current P1 authority -> current DBA worker/P2 producer -> joint fake transport acceptance; real send/Make requires separate explicit authorization. |
 | Public hosting/release | Unavailable. Static Pages is not Laravel; loopback profile is not production enablement or deployment. |
 
-Escalate required rubric gaps before rehearsal: private uploads, full verification/account/staffing/facility administration and real SMS are not established by the core demo. Preserve the passing baseline; do not silently fill these with frontend storage or claim completion. Photos/SMS stay disabled if not jointly ready by Nov5 8AM; freeze noon.
+The user confirmed full administration is mandatory. Do not call the system complete while these required acceptance gates are blocked. Preserve the passing2e8161e core checkpoint; do not substitute frontend storage or adapter doubles. See ADMINISTRATION-ACCEPTANCE.md for exact handoffs and results. Real SMS/Make remains separately unauthorized and disabled.

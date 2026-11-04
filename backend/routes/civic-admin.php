@@ -2,10 +2,16 @@
 
 use App\Http\Controllers\Identity\AdministrationController;
 use App\Http\Controllers\Identity\OperationalReferencesController;
+use App\Http\Controllers\Identity\PersonnelController;
 use App\Http\Controllers\Identity\VerificationController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('current.identity')->group(function (): void {
+    Route::get('personnel', [PersonnelController::class, 'index']);
+    Route::post('personnel', [PersonnelController::class, 'create'])->middleware('throttle:private-documents');
+    Route::get('personnel/documents/{id}', [PersonnelController::class, 'download'])->whereNumber('id');
+    Route::get('personnel/{id}', [PersonnelController::class, 'show'])->whereNumber('id');
+    Route::post('personnel/{id}/{action}', [PersonnelController::class, 'change'])->whereNumber('id')->where('action', 'appoint|reassign|remove');
     Route::get('verifications', [VerificationController::class, 'index']);
     Route::post('verifications/expire-overdue', [VerificationController::class, 'expire']);
     Route::get('verifications/{id}', [VerificationController::class, 'show'])->whereNumber('id');

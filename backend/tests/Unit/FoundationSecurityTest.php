@@ -31,4 +31,13 @@ final class FoundationSecurityTest extends TestCase
         $this->assertArrayNotHasKey('public', config('filesystems.disks'));
         $this->assertTrue(config('queue.connections.database.after_commit'));
     }
+
+    public function test_administration_and_local_mail_are_not_implicitly_enabled_and_mysql_instants_are_utc(): void
+    {
+        $this->assertFalse(config('integration.admin_test_bindings'));
+        $this->assertFalse(config('identity.local_recovery_mail'));
+        $this->assertSame('+00:00', config('database.connections.mysql.timezone'));
+        $this->assertSame('mysql', config('queue.connections.p1-recovery.connection'));
+        $this->assertFalse(config('queue.connections.p1-recovery.after_commit'));
+    }
 }

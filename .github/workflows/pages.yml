@@ -95,6 +95,7 @@ jobs:
       MYSQL_TEST_BIN: /usr/bin
       MYSQL_INTEGRATION: '1'
       P1_COMBINED_TESTS: '1'
+      PDFINFO_BINARY: /usr/bin/pdfinfo
       SMS_ENABLED: 'false'
       MAKE_ENABLED: 'false'
       P2_MODULES_ENABLED: 'false'
@@ -117,6 +118,11 @@ jobs:
           command -v mysql
           command -v mysqldump
           mysql --version
+      - name: Install bounded private PDF inspector
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y poppler-utils
+          test -x "$PDFINFO_BINARY"
       - run: node scripts/prepare-integration.mjs
       - name: Install shared locked test runtime in private snapshot
         working-directory: ${{ env.SNAPSHOT_DIR }}/backend

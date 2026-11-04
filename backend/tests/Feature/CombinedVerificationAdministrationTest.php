@@ -49,6 +49,37 @@ final class CombinedVerificationAdministrationTest extends TestCase
         app(PrivateDocumentUploads::class)->stage(UploadedFile::fake()->createWithContent('id.png', 'not an image'), 10485760, 'valid_id');
     }
 
+    public function test_actual_structural_pdf_parser_accepts_a_real_pdf_and_rejects_a_disguised_file(): void
+    {
+        if (! is_executable((string) config('identity.pdfinfo_binary'))) {
+            $this->markTestSkipped('Requires the explicitly configured native PDF parser; no fake acceptance.');
+        }
+        $pdf = "%PDF-1.4\n";
+        $objects = ['<< /Type /Catalog /Pages 2 0 R >>', '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+            '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 100] >>'];
+        $offsets = [0];
+        foreach ($objects as $i => $object) {
+            $offsets[] = strlen($pdf);
+            $pdf .= ($i + 1)." 0 obj\n".$object."\nendobj\n";
+        }
+        $xref = strlen($pdf);
+        $pdf .= "xref\n0 4\n0000000000 65535 f \n";
+        foreach (array_slice($offsets, 1) as $offset) {
+            $pdf .= sprintf("%010d 00000 n \n", $offset);
+        }
+        $pdf .= "trailer\n<< /Size 4 /Root 1 0 R >>\nstartxref\n".$xref."\n%%EOF\n";
+        $documents = app(PrivateDocumentUploads::class);
+        $stage = $documents->stage(UploadedFile::fake()->createWithContent('fictional-proof.pdf', $pdf), 10485760, 'proof_of_residence');
+        try {
+            $this->assertSame('application/pdf', $stage['mime']);
+            $this->assertSame($pdf, file_get_contents($documents->verified((object) $stage)));
+        } finally {
+            $documents->release($stage);
+        }
+        $this->expectException(ApiProblem::class);
+        $documents->stage(UploadedFile::fake()->createWithContent('malformed.pdf', "%PDF-1.4\nnot a real PDF\n%%EOF"), 10485760, 'proof_of_residence');
+    }
+
     public function test_source_failure_rolls_back_uploaded_document_associations_audit_and_receipts(): void
     {
         $user = $this->sourceUser();

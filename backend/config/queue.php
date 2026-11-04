@@ -30,6 +30,14 @@ return [
     */
 
     'connections' => [
+        'p1-recovery' => [
+            'driver' => 'database',
+            'connection' => 'mysql',
+            'table' => 'jobs',
+            'queue' => 'p1-recovery',
+            'retry_after' => 60,
+            'after_commit' => false,
+        ],
 
         'sync' => [
             'driver' => 'sync',
