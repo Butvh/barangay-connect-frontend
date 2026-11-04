@@ -1,5 +1,7 @@
 # Independent DBA acceptance — November 4, 2026, Asia/Manila
 
+**November5 current-owner update:** [Actual source-to-worker proof](ACTUAL-PRODUCER-DELIVERY-ACCEPTANCE.md) supersedes older absent-P1-UTC/P2-producer rulings below. Prior totals remain historical at their exact pins. Facility schema/model is published; P1 full-history writing/projection and final current-pin Linux/browser certification remain separate.
+
 **Current November4 worker update:** [Actual P1 consent + current worker evidence](CURRENT-SMS-WORKER.md) supersedes older missing-authority/worker statements below. Consent persistence and current worker integration are implemented; actual positive P2 producer acceptance and P1 shared UTC configuration remain dependencies. Older totals are retained only at their stated pins.
 
 **Current ratified consent acceptance:** [231 tests/1024 assertions and exact evidence](CONSENT-PERSISTENCE-ACCEPTANCE.md), P1bbb690e/P25e61893/DBA3e632f3,0 failures/errors/warnings/skips. Original nine migrations unchanged; tenth consent migration/model published immediately for P1.48 P2 SQL cases+2 HTTP branches, isolated lock gates and separate configured probes pass. Consent approval is complete; actual P1 authority and worker/producer positive acceptance remain dependencies. The photo-era totals/pending-contract statements below are historical.

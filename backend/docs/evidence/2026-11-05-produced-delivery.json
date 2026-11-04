@@ -1,0 +1,480 @@
+{
+  "pins": {
+    "p1": "7abfd842b0a9c714a6e2d47afad4e811a98ba4e5",
+    "p2": "9fbe5d3cb0246ab79517506ad69a09562d7e3f1b",
+    "main": "3014ad60ca41a9a5aa4d5a0152faed09d0dfdaf0"
+  },
+  "facilitySchema": "815c27293419797ebe3fbab4fe84daaf3580de0b",
+  "reports": [
+    {
+      "input": {
+        "case": "positive",
+        "database": "bc_dba_p2_source_final_20261105",
+        "scope": 5,
+        "events": [
+          {
+            "event_id": "3744cfb0-e9c1-494a-8d75-034e5fd89021",
+            "type": "incident.created.v2",
+            "resource_id": 5,
+            "in_app": 1,
+            "sms": 1
+          },
+          {
+            "event_id": "05bf13cc-f8d8-4de7-8998-df9a81b10217",
+            "type": "announcement.published.v2",
+            "resource_id": 5,
+            "in_app": 2,
+            "sms": 1
+          }
+        ],
+        "delivery_invoked": false,
+        "real_messages": 0
+      },
+      "output": {
+        "case": "positive",
+        "database": "bc_dba_p2_source_final_20261105",
+        "consumer_probe_sha256": "d8e6a7bf88fc27905f8249d482cd81275334d5a629d483451862404ba317f0a4",
+        "producer_fixture_sha256": "0bc53587f46db1227c0798611a7c4f78f7b9313b9b84c63d18bf98a2469e7204",
+        "producer_report_sha256": "3b9b74d316d2743e1f9a390df703f9f73d763ebb3e4d36d106ad21ff31402244",
+        "selected": {
+          "outbox": "App\\Services\\P2\\Persistence\\TypedOutboxWriter",
+          "notification": "App\\Services\\P2\\Persistence\\InAppHandler"
+        },
+        "events": [
+          {
+            "event_id": "3744cfb0-e9c1-494a-8d75-034e5fd89021",
+            "type": "incident.created.v2",
+            "in_app_complete": 1,
+            "sms_intents": 1,
+            "delivery_evidence": [
+              {
+                "delivery_id": 4,
+                "state": "accepted",
+                "attempts": 1,
+                "completed_replay": false,
+                "fake_provider_id": "85004",
+                "current_gates": [
+                  {
+                    "gate": "reservation",
+                    "consent_revision": 1,
+                    "policy_version": "sms-consent.v1",
+                    "template_version": "alert-review.v1"
+                  },
+                  {
+                    "gate": "pre_send",
+                    "consent_revision": 1,
+                    "policy_version": "sms-consent.v1",
+                    "template_version": "alert-review.v1"
+                  }
+                ]
+              }
+            ],
+            "make": null
+          },
+          {
+            "event_id": "05bf13cc-f8d8-4de7-8998-df9a81b10217",
+            "type": "announcement.published.v2",
+            "in_app_complete": 2,
+            "sms_intents": 1,
+            "delivery_evidence": [
+              {
+                "delivery_id": 5,
+                "state": "accepted",
+                "attempts": 1,
+                "completed_replay": false,
+                "fake_provider_id": "85005",
+                "current_gates": [
+                  {
+                    "gate": "reservation",
+                    "consent_revision": 1,
+                    "policy_version": "sms-consent.v1",
+                    "template_version": "announcement-review.v1"
+                  },
+                  {
+                    "gate": "pre_send",
+                    "consent_revision": 1,
+                    "policy_version": "sms-consent.v1",
+                    "template_version": "announcement-review.v1"
+                  }
+                ]
+              }
+            ],
+            "make": {
+              "authenticated_http": true,
+              "replay_deduplicated": true,
+              "credential_id": "dba-produced-v1",
+              "payload_hash": "1f11e1bf4f8b2aa3720b72fd27b780c1b7d5bf53939a9f5952c48f733c50eb02"
+            }
+          }
+        ],
+        "fake_http_posts": [
+          {
+            "event_id": "3744cfb0-e9c1-494a-8d75-034e5fd89021",
+            "fake_provider_id": 85004,
+            "after_commit": true
+          },
+          {
+            "event_id": "05bf13cc-f8d8-4de7-8998-df9a81b10217",
+            "fake_provider_id": 85005,
+            "after_commit": true
+          }
+        ],
+        "real_provider_calls": 0,
+        "scenario_activated": false,
+        "handset_delivery_tested": false
+      }
+    },
+    {
+      "input": {
+        "case": "missing",
+        "database": "bc_dba_p2_source_final_20261105",
+        "scope": 6,
+        "events": [
+          {
+            "event_id": "f4a93405-3a0f-49ff-a020-4313707f23ea",
+            "type": "incident.created.v2",
+            "resource_id": 6,
+            "in_app": 1,
+            "sms": 0
+          },
+          {
+            "event_id": "68968226-5d13-41d5-87b9-fd13264dc177",
+            "type": "announcement.published.v2",
+            "resource_id": 6,
+            "in_app": 2,
+            "sms": 0
+          }
+        ],
+        "delivery_invoked": false,
+        "real_messages": 0
+      },
+      "output": {
+        "case": "missing",
+        "database": "bc_dba_p2_source_final_20261105",
+        "consumer_probe_sha256": "d8e6a7bf88fc27905f8249d482cd81275334d5a629d483451862404ba317f0a4",
+        "producer_fixture_sha256": "0bc53587f46db1227c0798611a7c4f78f7b9313b9b84c63d18bf98a2469e7204",
+        "producer_report_sha256": "77bd7f3aea37bf13b48fb07aafa3073a68e9d4651e68eb85dcf08b6ed37c7798",
+        "selected": {
+          "outbox": "App\\Services\\P2\\Persistence\\TypedOutboxWriter",
+          "notification": "App\\Services\\P2\\Persistence\\InAppHandler"
+        },
+        "events": [
+          {
+            "event_id": "f4a93405-3a0f-49ff-a020-4313707f23ea",
+            "type": "incident.created.v2",
+            "in_app_complete": 1,
+            "sms_intents": 0,
+            "delivery_evidence": [],
+            "make": null
+          },
+          {
+            "event_id": "68968226-5d13-41d5-87b9-fd13264dc177",
+            "type": "announcement.published.v2",
+            "in_app_complete": 2,
+            "sms_intents": 0,
+            "delivery_evidence": [],
+            "make": null
+          }
+        ],
+        "fake_http_posts": [],
+        "real_provider_calls": 0,
+        "scenario_activated": false,
+        "handset_delivery_tested": false
+      }
+    },
+    {
+      "input": {
+        "case": "revoked",
+        "database": "bc_dba_p2_source_final_20261105",
+        "scope": 7,
+        "events": [
+          {
+            "event_id": "c4ed1480-9429-400b-b8ae-451ee2b502f4",
+            "type": "incident.created.v2",
+            "resource_id": 7,
+            "in_app": 1,
+            "sms": 0
+          },
+          {
+            "event_id": "accc44e6-108b-409c-96f5-50701d6dba0c",
+            "type": "announcement.published.v2",
+            "resource_id": 7,
+            "in_app": 2,
+            "sms": 0
+          }
+        ],
+        "delivery_invoked": false,
+        "real_messages": 0
+      },
+      "output": {
+        "case": "revoked",
+        "database": "bc_dba_p2_source_final_20261105",
+        "consumer_probe_sha256": "d8e6a7bf88fc27905f8249d482cd81275334d5a629d483451862404ba317f0a4",
+        "producer_fixture_sha256": "0bc53587f46db1227c0798611a7c4f78f7b9313b9b84c63d18bf98a2469e7204",
+        "producer_report_sha256": "99f7249cc10be72d4526946328627bfe663f018dbcc5a1fbf210669835ecfca4",
+        "selected": {
+          "outbox": "App\\Services\\P2\\Persistence\\TypedOutboxWriter",
+          "notification": "App\\Services\\P2\\Persistence\\InAppHandler"
+        },
+        "events": [
+          {
+            "event_id": "c4ed1480-9429-400b-b8ae-451ee2b502f4",
+            "type": "incident.created.v2",
+            "in_app_complete": 1,
+            "sms_intents": 0,
+            "delivery_evidence": [],
+            "make": null
+          },
+          {
+            "event_id": "accc44e6-108b-409c-96f5-50701d6dba0c",
+            "type": "announcement.published.v2",
+            "in_app_complete": 2,
+            "sms_intents": 0,
+            "delivery_evidence": [],
+            "make": null
+          }
+        ],
+        "fake_http_posts": [],
+        "real_provider_calls": 0,
+        "scenario_activated": false,
+        "handset_delivery_tested": false
+      }
+    },
+    {
+      "input": {
+        "case": "wrong_purpose",
+        "database": "bc_dba_p2_source_final_20261105",
+        "scope": 8,
+        "events": [
+          {
+            "event_id": "b4e26bfd-b23f-41c4-83f9-ebc10c9c50a3",
+            "type": "incident.created.v2",
+            "resource_id": 8,
+            "in_app": 1,
+            "sms": 0
+          },
+          {
+            "event_id": "bac52b15-f2bf-463a-8f78-cdc117d52169",
+            "type": "announcement.published.v2",
+            "resource_id": 8,
+            "in_app": 2,
+            "sms": 1
+          }
+        ],
+        "delivery_invoked": false,
+        "real_messages": 0
+      },
+      "output": {
+        "case": "wrong_purpose",
+        "database": "bc_dba_p2_source_final_20261105",
+        "consumer_probe_sha256": "d8e6a7bf88fc27905f8249d482cd81275334d5a629d483451862404ba317f0a4",
+        "producer_fixture_sha256": "0bc53587f46db1227c0798611a7c4f78f7b9313b9b84c63d18bf98a2469e7204",
+        "producer_report_sha256": "dac24dd4c199a11f39e009e71bd3d64a9a508d1e1e03889e14e28bee98cc65cb",
+        "selected": {
+          "outbox": "App\\Services\\P2\\Persistence\\TypedOutboxWriter",
+          "notification": "App\\Services\\P2\\Persistence\\InAppHandler"
+        },
+        "events": [
+          {
+            "event_id": "b4e26bfd-b23f-41c4-83f9-ebc10c9c50a3",
+            "type": "incident.created.v2",
+            "in_app_complete": 1,
+            "sms_intents": 0,
+            "delivery_evidence": [],
+            "make": null
+          },
+          {
+            "event_id": "bac52b15-f2bf-463a-8f78-cdc117d52169",
+            "type": "announcement.published.v2",
+            "in_app_complete": 2,
+            "sms_intents": 1,
+            "delivery_evidence": [
+              {
+                "delivery_id": 6,
+                "state": "accepted",
+                "attempts": 1,
+                "completed_replay": false,
+                "fake_provider_id": "85006",
+                "current_gates": [
+                  {
+                    "gate": "reservation",
+                    "consent_revision": 1,
+                    "policy_version": "sms-consent.v1",
+                    "template_version": "announcement-review.v1"
+                  },
+                  {
+                    "gate": "pre_send",
+                    "consent_revision": 1,
+                    "policy_version": "sms-consent.v1",
+                    "template_version": "announcement-review.v1"
+                  }
+                ]
+              }
+            ],
+            "make": {
+              "authenticated_http": true,
+              "replay_deduplicated": true,
+              "credential_id": "dba-produced-v1",
+              "payload_hash": "2a6bf3fda8f8e96c615449077796d614e917ee0765ed185d2ffdb3840d6293f9"
+            }
+          }
+        ],
+        "fake_http_posts": [
+          {
+            "event_id": "bac52b15-f2bf-463a-8f78-cdc117d52169",
+            "fake_provider_id": 85006,
+            "after_commit": true
+          }
+        ],
+        "real_provider_calls": 0,
+        "scenario_activated": false,
+        "handset_delivery_tested": false
+      }
+    }
+  ],
+  "replay": {
+    "positive": {
+      "case": "positive",
+      "database": "bc_dba_p2_source_final_20261105",
+      "consumer_probe_sha256": "d8e6a7bf88fc27905f8249d482cd81275334d5a629d483451862404ba317f0a4",
+      "producer_fixture_sha256": "0bc53587f46db1227c0798611a7c4f78f7b9313b9b84c63d18bf98a2469e7204",
+      "producer_report_sha256": "3b9b74d316d2743e1f9a390df703f9f73d763ebb3e4d36d106ad21ff31402244",
+      "selected": {
+        "outbox": "App\\Services\\P2\\Persistence\\TypedOutboxWriter",
+        "notification": "App\\Services\\P2\\Persistence\\InAppHandler"
+      },
+      "events": [
+        {
+          "event_id": "3744cfb0-e9c1-494a-8d75-034e5fd89021",
+          "type": "incident.created.v2",
+          "in_app_complete": 1,
+          "sms_intents": 1,
+          "delivery_evidence": [
+            {
+              "delivery_id": 4,
+              "state": "accepted",
+              "attempts": 1,
+              "completed_replay": true,
+              "fake_provider_id": "85004",
+              "current_gates": [
+                {
+                  "gate": "reservation",
+                  "consent_revision": 1,
+                  "policy_version": "sms-consent.v1",
+                  "template_version": "alert-review.v1"
+                },
+                {
+                  "gate": "pre_send",
+                  "consent_revision": 1,
+                  "policy_version": "sms-consent.v1",
+                  "template_version": "alert-review.v1"
+                }
+              ]
+            }
+          ],
+          "make": null
+        },
+        {
+          "event_id": "05bf13cc-f8d8-4de7-8998-df9a81b10217",
+          "type": "announcement.published.v2",
+          "in_app_complete": 2,
+          "sms_intents": 1,
+          "delivery_evidence": [
+            {
+              "delivery_id": 5,
+              "state": "accepted",
+              "attempts": 1,
+              "completed_replay": true,
+              "fake_provider_id": "85005",
+              "current_gates": [
+                {
+                  "gate": "reservation",
+                  "consent_revision": 1,
+                  "policy_version": "sms-consent.v1",
+                  "template_version": "announcement-review.v1"
+                },
+                {
+                  "gate": "pre_send",
+                  "consent_revision": 1,
+                  "policy_version": "sms-consent.v1",
+                  "template_version": "announcement-review.v1"
+                }
+              ]
+            }
+          ],
+          "make": {
+            "authenticated_http": true,
+            "replay_deduplicated": true,
+            "credential_id": "dba-produced-v1",
+            "payload_hash": "1f11e1bf4f8b2aa3720b72fd27b780c1b7d5bf53939a9f5952c48f733c50eb02"
+          }
+        }
+      ],
+      "fake_http_posts": [],
+      "real_provider_calls": 0,
+      "scenario_activated": false,
+      "handset_delivery_tested": false
+    },
+    "wrong_purpose": {
+      "case": "wrong_purpose",
+      "database": "bc_dba_p2_source_final_20261105",
+      "consumer_probe_sha256": "d8e6a7bf88fc27905f8249d482cd81275334d5a629d483451862404ba317f0a4",
+      "producer_fixture_sha256": "0bc53587f46db1227c0798611a7c4f78f7b9313b9b84c63d18bf98a2469e7204",
+      "producer_report_sha256": "dac24dd4c199a11f39e009e71bd3d64a9a508d1e1e03889e14e28bee98cc65cb",
+      "selected": {
+        "outbox": "App\\Services\\P2\\Persistence\\TypedOutboxWriter",
+        "notification": "App\\Services\\P2\\Persistence\\InAppHandler"
+      },
+      "events": [
+        {
+          "event_id": "b4e26bfd-b23f-41c4-83f9-ebc10c9c50a3",
+          "type": "incident.created.v2",
+          "in_app_complete": 1,
+          "sms_intents": 0,
+          "delivery_evidence": [],
+          "make": null
+        },
+        {
+          "event_id": "bac52b15-f2bf-463a-8f78-cdc117d52169",
+          "type": "announcement.published.v2",
+          "in_app_complete": 2,
+          "sms_intents": 1,
+          "delivery_evidence": [
+            {
+              "delivery_id": 6,
+              "state": "accepted",
+              "attempts": 1,
+              "completed_replay": true,
+              "fake_provider_id": "85006",
+              "current_gates": [
+                {
+                  "gate": "reservation",
+                  "consent_revision": 1,
+                  "policy_version": "sms-consent.v1",
+                  "template_version": "announcement-review.v1"
+                },
+                {
+                  "gate": "pre_send",
+                  "consent_revision": 1,
+                  "policy_version": "sms-consent.v1",
+                  "template_version": "announcement-review.v1"
+                }
+              ]
+            }
+          ],
+          "make": {
+            "authenticated_http": true,
+            "replay_deduplicated": true,
+            "credential_id": "dba-produced-v1",
+            "payload_hash": "2a6bf3fda8f8e96c615449077796d614e917ee0765ed185d2ffdb3840d6293f9"
+          }
+        }
+      ],
+      "fake_http_posts": [],
+      "real_provider_calls": 0,
+      "scenario_activated": false,
+      "handset_delivery_tested": false
+    }
+  },
+  "normalProductionEnabled": false
+}

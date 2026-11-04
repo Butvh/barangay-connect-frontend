@@ -1,5 +1,7 @@
 # Make/Semaphore fake-transport acceptance — November 4, 2026
 
+**November5 current-owner update:** [Actual source-to-worker proof](ACTUAL-PRODUCER-DELIVERY-ACCEPTANCE.md) supersedes older absent-P1-UTC/P2-producer rulings below. Prior totals remain historical at their exact pins. Facility schema/model is published; P1 full-history writing/projection and final current-pin Linux/browser certification remain separate.
+
 **Current November4 worker update:** [Actual P1 consent + current worker evidence](CURRENT-SMS-WORKER.md) supersedes older missing-authority/worker statements below. Consent persistence and current worker integration are implemented; actual positive P2 producer acceptance and P1 shared UTC configuration remain dependencies. Older totals are retained only at their stated pins.
 
 **Current consent refresh:** [231/1024/zero failures/errors/warnings/skips](CONSENT-PERSISTENCE-ACCEPTANCE.md), P1bbb690e/P25e61893/DBA3e632f3. Ratified persistence is implemented. Default actual configured probe exits0; separate SMS exits2 unsupported; provider_calls0 and no delivery/attempt residue. Existing fake pipeline tests pass. Actual P1 current authority and P2 positive fixtures are absent; current worker/revocation and real provider acceptance are not claimed.

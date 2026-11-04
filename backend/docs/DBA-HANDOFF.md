@@ -1,5 +1,7 @@
 # DBA schema and delivery handoff
 
+**November5 current-owner update:** [Actual source-to-worker proof](ACTUAL-PRODUCER-DELIVERY-ACCEPTANCE.md) supersedes older absent-P1-UTC/P2-producer rulings below. Prior totals remain historical at their exact pins. Facility schema/model is published; P1 full-history writing/projection and final current-pin Linux/browser certification remain separate.
+
 **Current November4 worker update:** [Actual P1 consent + current worker evidence](CURRENT-SMS-WORKER.md) supersedes older missing-authority/worker statements below. Consent persistence and current worker integration are implemented; actual positive P2 producer acceptance and P1 shared UTC configuration remain dependencies. Older totals are retained only at their stated pins.
 
 **Current worker update:** actual P1 CurrentSmsConsent is published at c087eb7/2e8161e; [DBA current reservation/retry/final pre-send integration](CURRENT-SMS-WORKER.md) adds an eleventh append-only evidence migration, leaving the prior ten unchanged. Targeted37/234 passes; full owner/actual P2 producer acceptance is being measured separately. Older missing-authority statements are historical at their stated pins. All normal delivery flags remain off.

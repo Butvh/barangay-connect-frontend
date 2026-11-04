@@ -1,5 +1,7 @@
 # Current worker acceptance — November4,2026
 
+**November5 current-owner update:** [Actual source-to-worker proof](ACTUAL-PRODUCER-DELIVERY-ACCEPTANCE.md) supersedes older absent-P1-UTC/P2-producer rulings below. Prior totals remain historical at their exact pins. Facility schema/model is published; P1 full-history writing/projection and final current-pin Linux/browser certification remain separate.
+
 DBA code **81daca1e156854d4c8b74c6256a02358da9cb6fc** integrates the existing worker with actual P1 CurrentSmsConsent and retains private current-authority evidence. Consent persistence was published immediately at3e632f3 before this phase. [Behavior and owner contracts](CURRENT-SMS-WORKER.md), [implemented ERD](DATABASE-ERD.md), [actual data dictionary](data-dictionary.md).
 
 ## Frozen source and preservation
