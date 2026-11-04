@@ -1,5 +1,7 @@
 # Make/Semaphore fake-transport acceptance — November 4, 2026
 
+**Current November4 worker update:** [Actual P1 consent + current worker evidence](CURRENT-SMS-WORKER.md) supersedes older missing-authority/worker statements below. Consent persistence and current worker integration are implemented; actual positive P2 producer acceptance and P1 shared UTC configuration remain dependencies. Older totals are retained only at their stated pins.
+
 **Current consent refresh:** [231/1024/zero failures/errors/warnings/skips](CONSENT-PERSISTENCE-ACCEPTANCE.md), P1bbb690e/P25e61893/DBA3e632f3. Ratified persistence is implemented. Default actual configured probe exits0; separate SMS exits2 unsupported; provider_calls0 and no delivery/attempt residue. Existing fake pipeline tests pass. Actual P1 current authority and P2 positive fixtures are absent; current worker/revocation and real provider acceptance are not claimed.
 
 **Latest refresh:** [current-head evidence](PHOTO-PERSISTENCE-ACCEPTANCE.md): P1 a821d5d/P2 5f38285 + DBA d2a3217 pass202/922/zero failures/errors/warnings/skips. Actual configured default probe exits0/provider_calls0; separate SMS probe exits2 with the specific unsupported in-app-only diagnostic and0 attempts. P1 publishes unbound consent interfaces; no current authority or positive actual SMS producer exists yet. Existing delivery fakes pass; they do not establish persisted-consent/revocation acceptance.

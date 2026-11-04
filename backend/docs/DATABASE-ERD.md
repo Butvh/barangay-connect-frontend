@@ -1,6 +1,6 @@
-# Implemented MySQL ERD — November4 consent update
+# Implemented MySQL ERD — November4 current-worker update
 
-Generated from the actual tested MySQL8.4.13 schema:40 InnoDB tables,10 migrations. Only PK/FK attributes are shown for compactness; the photo/preference tables additionally show their persisted evidence fields. Composite relationships are one edge per actual constraint, not separate invented references. Nullability determines optional parent references. Unique constraints/indexes and complete types are in [the data dictionary](data-dictionary.md); authority is application policy, never an ERD relationship.
+Generated from the actual tested MySQL8.4.13 schema:41 InnoDB tables,11 migrations,65 FK relationships. Only PK/FK attributes are shown for compactness; photo/preference/authorization tables additionally show persisted evidence fields. Composite relationships are one edge per actual constraint, not separate invented references. Nullability determines optional parent references. Unique constraints/indexes and complete types are in [the data dictionary](data-dictionary.md); authority is application policy, never an ERD relationship.
 
 ~~~mermaid
 erDiagram
@@ -202,6 +202,20 @@ erDiagram
     bigint id PK
     bigint sms_delivery_id FK
   }
+  sms_authorizations {
+    bigint id PK
+    bigint sms_delivery_id FK
+    smallint attempt FK
+    bigint recipient_id FK
+    bigint barangay_id FK
+    char claim_token
+    enum gate
+    enum purpose
+    bigint consent_revision
+    varchar policy_version
+    varchar template_version
+    timestamp checked_at
+  }
   sms_deliveries {
     bigint id PK
     bigint receipt_id FK
@@ -283,6 +297,8 @@ erDiagram
   users ||--o{ rescues : rescues_rescuer_id_foreign
   users o|--o{ sessions : sessions_user_id_foreign
   sms_deliveries ||--o{ sms_attempts : sms_attempts_sms_delivery_id_foreign
+  sms_attempts ||--o{ sms_authorizations : sms_auth_attempt_fk
+  users ||--o{ sms_authorizations : sms_auth_recipient_fk
   delivery_receipts ||--o{ sms_deliveries : sms_deliveries_receipt_id_foreign
   users ||--o{ tanod_memberships : tanod_user_scope_fk
   barangays ||--o{ users : users_barangay_id_foreign
@@ -293,4 +309,4 @@ erDiagram
   users o|--o{ verifications : verifications_reviewer_id_foreign
 ~~~
 
-No user/consent rows, credentials, private bytes or proposed tables are exported. The original nine migrations are unchanged; current authority/byte/worker/producer acceptance remains separate from this implemented schema.
+No user/consent rows, credentials, private bytes or proposed tables are exported. The preceding ten migrations are unchanged; current authority/byte/worker/producer acceptance remains separate from this implemented schema.

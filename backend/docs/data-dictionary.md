@@ -1104,3 +1104,25 @@ Generated from the tested MySQL8.4.13 table, not proposed API fields. Purpose/ch
 | updated_at | timestamp(6) | NO | none |
 
 Unique: preference_user_purpose_channel(user_id,barangay_id,purpose,channel). Indexes: preference_scoped_audience(barangay_id,purpose,channel,state,id), preference_recorder_scope(recorded_by,barangay_id). Scoped RESTRICT FKs to users(id,barangay_id) for both user and recorder; recorded_by=user_id. CHECKs: self, safe revision1..9007199254740991, exact purpose/version pair, grant/revoke state and UTC timestamp chronology. BEFORE UPDATE trigger freezes identity/creation, enforces exact next revision and retained prior-grant evidence. No rows are seeded; model output is private.
+
+
+## sms_authorizations (additive November4 worker evidence)
+
+Actual tested MySQL8.4.13 metadata. Private accepted reservation/pre_send observations; these records neither grant consent nor prove provider delivery. [Current worker contract and acceptance](CURRENT-SMS-WORKER.md).
+
+| Column | Actual type | Nullable | Default |
+| --- | --- | --- | --- |
+| id | bigint unsigned | NO | none |
+| sms_delivery_id | bigint unsigned | NO | none |
+| attempt | smallint unsigned | NO | none |
+| recipient_id | bigint unsigned | NO | none |
+| barangay_id | bigint unsigned | NO | none |
+| claim_token | char(36) | NO | none |
+| gate | enum('reservation','pre_send') | NO | none |
+| purpose | enum('incident_review','barangay_announcements') | NO | none |
+| consent_revision | bigint unsigned | NO | none |
+| policy_version | varchar(80) | NO | none |
+| template_version | varchar(80) | NO | none |
+| checked_at | timestamp(6) | NO | none |
+
+Unique: sms_auth_gate(sms_delivery_id,claim_token,gate). Indexes: sms_auth_attempt(sms_delivery_id,attempt), sms_auth_recipient_scope(recipient_id,barangay_id,checked_at). Composite RESTRICT FKs: delivery/attempt -> sms_attempts(sms_delivery_id,attempt), recipient/barangay -> users(id,barangay_id). CHECKs: attempt>=1, consent revision1..9007199254740991, lowercase UUIDv4 claim token, exact purpose/policy/template pair. BEFORE UPDATE always refuses sms_authorizations_immutable; private model refuses update/delete and serializes no attributes. Retained rows refuse migration downgrade. checked_at is server UTC microsecond time; no caller grant or phone/message field exists. All preceding ten migrations remain unchanged.
