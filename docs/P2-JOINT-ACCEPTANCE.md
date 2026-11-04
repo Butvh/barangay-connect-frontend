@@ -1,5 +1,7 @@
 # P2 attachment call sequence and joint acceptance preparation
 
+Presentation follow-up: [current rehearsal and readiness handoff](P2-PRESENTATION-READINESS.md) supersedes the exceptional guard-cleanup test limitation below. The revised assertion uses a fresh real SQL transaction immediately after failure; a private omitted-cleanup mutation is detected and the restored source passes. The measured results below remain the historical5e61893 acceptance, not a claim that current original-browser registration has been completed.
+
 Reviewed starting P2 `5f3828566f73c40c9473b6b2276206ae07f17b8c`, P1 `a821d5dd4cb45ffc4cbe0d5bf9531e214eb308c6`, and newly published DBA `1dceb0e4234d8bbfd1d467164f257ab45e574bab`. P1/DBA have adopted the photo source contract; P2 explicitly adopts their revision handoff and concrete consent proposal here. DBA's additive photo metadata/model now exists. Actual P1 bytes, active consent persistence/authority and current worker integration are still missing. Source policy stays unbound. No production upload/channel fields or UI are enabled here.
 
 ## Adopted explicit revision handoff

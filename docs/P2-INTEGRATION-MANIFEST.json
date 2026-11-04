@@ -1,7 +1,7 @@
 {
   "date": "2026-11-04",
   "main": "3014ad60ca41a9a5aa4d5a0152faed09d0dfdaf0",
-  "p2_base": "5f3828566f73c40c9473b6b2276206ae07f17b8c",
+  "p2_base": "5e61893861f04f652f4106a3ed923ab461b6a86b",
   "p2_planning_base": "ef9a57a2ea0feeb99829e7928595cc925c25bcc7",
   "owners": {
     "p1": {
@@ -350,6 +350,7 @@
     "backend/tests/P2/sql-form-revisions.php": "aa19caa97147278d8e1067b728a9b714ef602f9ba386f9e2adbdeb8151c1ace1",
     "backend/tests/P2/sql-lock-order.php": "12e5217e24d50abae0832fc5f60ec4a763a3f2b0abf58a74fc72c86d300dce07",
     "backend/tests/P2/sql-lock-worker.php": "d12f2ebbd52b22639013ecdb403ceb28c5bfe6faeba89b817a321ac16fc96a66",
+    "backend/tests/P2/sql-photo-boundary.php": "8d56eae46826084bb570e0d3cd7bbd6f76e458e356cd326666de0c94c3d54f51",
     "backend/tests/P2/sql-photo-policy.php": "e188720bc4efbcbbe90ff6c03c96109c0f3559d6ee3636f65a9ba26785bd10c0",
     "backend/tests/P2/sql-races.php": "59e5ef0c897854924f8cf639e4b139aeebea4c09897507f90462a8946ff83f40",
     "backend/tests/P2/sql-review.php": "ff7aa9ba7efb5098461d307acdcd7345853b3ce6302cb9ab17022e53563a0397",
@@ -365,8 +366,7 @@
     "tests/p2-official-forms.mjs": "7e0156b02217d2eab686a91c28e61f29b6caeaaaa88800fc7a7dff8662643e8a",
     "tests/p2-report-forms.mjs": "4c234af56f214b2c7d4c0267ffe358ee8b04c363a9a318eaa3df387d8f98238d",
     "tests/p2-workflow-http.mjs": "82e15dedc2b4f39e2fcc1a0fc4d17f354c740bb6efe1c860af86de0bf77c384c",
-    "tests/resident-sos-pages.mjs": "27379ec82fc90d67f4b0aa8a4297db7199ace0a77ce4171fa19f21e7f3efd99c",
-    "backend/tests/P2/sql-photo-boundary.php": "cb9ab9e51e3b51c51c47bf057c495953096006c9f007508a2258ae248215ac40"
+    "tests/resident-sos-pages.mjs": "27379ec82fc90d67f4b0aa8a4297db7199ace0a77ce4171fa19f21e7f3efd99c"
   },
   "p2_hash_encoding": "UTF-8 text with CRLF normalized to LF; owner hashes use exact Git blob bytes"
 }

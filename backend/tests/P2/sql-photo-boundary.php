@@ -29,14 +29,20 @@ caseTest('Photo-authorized caller rolls back real details and command outcome on
         verify($e->getMessage() === 'injected-after-real-details', 'Unexpected boundary failure.');
     }
     verify($before === $counts(), 'Caller failure leaked source/history/audit/outbox/command rows.');
+    verify($store instanceof GuardedStore, 'Missing real guarded Store.');
+    // No Store call intervenes after failure: a fresh SQL transaction must not inherit its guards.
+    DB::transaction(function () use ($store, $resident, $alert) {
+        verify(DB::transactionLevel() === 1, 'Cleanup assertion requires a fresh real SQL transaction.');
+        foreach (['assertIncidentLocked' => $alert['id'], 'assertPersonLocked' => $resident->id] as $assertion => $id) {
+            try {
+                $store->{$assertion}($id);
+                throw new RuntimeException('Exception leaked '.$assertion.' into an undeclared transaction.');
+            } catch (LogicException) {
+            }
+        }
+    });
     $current = $incidents->get($resident, $alert['id']);
     verify($current['assignment_revision'] === 0 && $current['description'] !== $body['description'], 'Source patch escaped rollback.');
-    verify($store instanceof GuardedStore, 'Missing real guarded Store.');
-    try {
-        $store->assertIncidentLocked($alert['id']);
-        throw new RuntimeException('Exception leaked declared incident scope.');
-    } catch (LogicException) {
-    }
     $store->transaction(['person:'.$resident->id, 'incident:'.$alert['id']], function () use ($policy, $resident, $alert, $incidents, $body, $key) {
         $policy->assertAttach($resident->observedIdentity(), $alert['id'], $body['expected_revision']);
         $incidents->details($resident, $alert['id'], $body, $key);
