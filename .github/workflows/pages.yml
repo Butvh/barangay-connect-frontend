@@ -19,6 +19,7 @@ jobs:
           node-version: '22'
       - run: node scripts/check.mjs
       - run: node scripts/run-tests.mjs
+      - run: node --test tests/integration-snapshot.mjs
       - run: node tests/frontend-artifact.mjs
       - run: node scripts/stage-frontend.mjs
       - run: node tests/backend-artifact.mjs
@@ -136,7 +137,7 @@ jobs:
         if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
         working-directory: ${{ env.SNAPSHOT_DIR }}
         run: |
-          node --experimental-default-type=module --test tests/p2-adapters.mjs tests/p2-foundation-adapters.mjs
+          node --experimental-vm-modules --experimental-default-type=module --test tests/p2-adapters.mjs tests/p2-foundation-adapters.mjs tests/p2-form-intents.mjs tests/p2-report-forms.mjs tests/p2-official-forms.mjs tests/p2-location-forms.mjs
           node scripts/run-tests.mjs
           node scripts/check.mjs
           node tests/frontend-artifact.mjs
@@ -176,6 +177,10 @@ jobs:
           php backend/tests/Support/prepare-p2-database.php p2_test_integration
           DB_DATABASE=p2_test_integration DB_TEST_DATABASE=p2_test_integration php backend/artisan migrate --force --no-interaction
           DB_DATABASE=p2_test_integration DB_TEST_DATABASE=p2_test_integration IDENTITY_ENABLED=true P2_TEST_BINDINGS=true php backend/tests/P2/sql.php
+      - name: DBA unchanged actual-service lock review
+        if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
+        working-directory: ${{ env.SNAPSHOT_DIR }}
+        run: DB_DATABASE=p2_test_integration DB_TEST_DATABASE=p2_test_integration IDENTITY_ENABLED=true P2_TEST_BINDINGS=true php backend/tests/Review/p2-lock-order.php
       - name: Verify owner source preservation
         if: ${{ always() && env.SNAPSHOT_DIR != '' }}
         working-directory: ${{ env.SNAPSHOT_DIR }}

@@ -7,6 +7,7 @@ use App\Providers\IntegrationServiceProvider;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Facades\DB;
 use Tests\Support\CombinedMysql;
+use Tests\Support\LockedUserIds;
 use Tests\TestCase;
 
 /** Required release gate: do not weaken or mark expected-success while P2 fixes its lock plan. */
@@ -39,10 +40,7 @@ final class CombinedP2LockOrderTest extends TestCase
                 $incidentLocked = true;
             }
             if (str_contains($query->sql, 'from `users`')) {
-                foreach ($query->bindings as $id) {
-                    if (! is_int($id)) {
-                        continue;
-                    }
+                foreach (LockedUserIds::from($query->sql, $query->bindings) as $id) {
                     if ($incidentLocked && ! isset($heldPeople[$id])) {
                         $latePeople[] = $id;
                     }

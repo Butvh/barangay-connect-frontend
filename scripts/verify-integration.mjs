@@ -1,15 +1,10 @@
 import { readFile } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createHash } from 'node:crypto';
+import { verifySources } from './integration-sources.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const manifest = JSON.parse(await readFile(resolve(root, 'integration-manifest.json'), 'utf8'));
-let count = 0;
-for (const files of Object.values(manifest.ownerHashes)) for (const [name, expected] of Object.entries(files)) {
-  if (name.startsWith('/') || name.includes('..') || name.includes('\\')) throw new Error('Invalid owner manifest path');
-  const actual = createHash('sha256').update(await readFile(resolve(root, name))).digest('hex');
-  if (actual !== expected) throw new Error(`Owner source changed: ${name}`);
-  count++;
-}
-console.log(`PASS ${count} DBA/P2 source files retain their pinned bytes; P1 ${manifest.p1}; dirty=${manifest.dirty}`);
+const count = await verifySources(root, manifest);
+const ownerCount = Object.values(manifest.ownerHashes).reduce((n, files) => n + Object.keys(files).length, 0);
+console.log(`PASS ${count} total source fingerprints; ${ownerCount} exact DBA/P2 blobs; ${Object.keys(manifest.sharedOverlays || {}).length} reviewed common-base overlays; P1 ${manifest.p1}; dirty=${manifest.dirty}`);
