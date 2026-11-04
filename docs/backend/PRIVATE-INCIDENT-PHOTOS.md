@@ -1,5 +1,7 @@
 # Private incident-photo contract — revised frozen-revision handoff
 
+Current Nov4 update: DBA1dceb0e active ninth photo migration/model and P25e61893 exact joint acceptance/consent ratification are reviewed and pinned. Photo metadata and consent approval are no longer blockers; statements below at older pins are historical. Actual P1 private bytes proceed next; consent authority waits for DBA persistence. Current-pin browser evidence and the truthful presentation feature matrix are in PR49 and PRESENTATION.md/FEATURE-MATRIX.md. Production remains off.
+
 P1 publishes `App\Contracts\Photos\IncidentPhotos` and `StagedIncidentPhoto`. There is **no production binding or byte-upload implementation yet**. DBA9d6 has no active incident-photo migration/model; verification/personnel document purposes must not be repurposed. P1 now adopts P2 5f38285's exact unbound private-photo source policy; [the current handoff](PHOTO-SMS-HANDOFF.md) supersedes the original missing-policy request and records dimensions, normalization, digests, cleanup and consent decisions. Authenticated upload/download routes still return503; guests get401 and missing-CSRF writes419. A filename or a constructed DTO is never proof of uploaded bytes.
 
 ## Proposed HTTP / PHP handoff

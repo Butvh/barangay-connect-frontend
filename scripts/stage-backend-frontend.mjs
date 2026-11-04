@@ -9,7 +9,7 @@ export async function stageBackendFrontend({ root = projectRoot, operationalTest
   if (operationalTest) {
     if (process.env.DB_TEST_DISPOSABLE !== '1' || process.env.P1_COMBINED_TESTS !== '1' || !/^bc_dba_p1_[a-z0-9_]+$/i.test(process.env.DB_DATABASE || '') || process.env.DB_DATABASE !== process.env.DB_TEST_DATABASE) throw new Error('Operational staging requires the confirmed disposable combined build.');
     const manifest = JSON.parse(await readFile(resolve(root, 'integration-manifest.json'), 'utf8'));
-    if (manifest.dirty || manifest.p2 !== '5f3828566f73c40c9473b6b2276206ae07f17b8c') throw new Error('Use the clean reviewed operational composition.');
+    if (manifest.dirty || manifest.p2 !== '5e61893861f04f652f4106a3ed923ab461b6a86b') throw new Error('Use the clean reviewed operational composition.');
     for (const name of ['operations', 'communications', 'reports', 'p2-domains', 'p2-form-intent']) {
       const ownerFile = await lstat(resolve(root, `assets/js/adapters/${name}.js`));
       if (!ownerFile.isFile() || ownerFile.isSymbolicLink()) throw new Error('Missing reviewed operational adapter.');

@@ -1,5 +1,7 @@
 # Private photo and consent handoff — November 4, 2026
 
+Current Nov4 update: DBA1dceb0e active ninth photo migration/model and P25e61893 exact joint acceptance/consent ratification are reviewed and pinned. Photo metadata and consent approval are no longer blockers; statements below at older pins are historical. Actual P1 private bytes proceed next; consent authority waits for DBA persistence. Current-pin browser evidence and the truthful presentation feature matrix are in PR49 and PRESENTATION.md/FEATURE-MATRIX.md. Production remains off.
+
 Reviewed P1 baseline `526ef0bc12ac54e8a654085d7617288ccb074a92`, DBA `9d6c699250078a54551944fe4e109bde0cb4fb7c`, P2 `5f3828566f73c40c9473b6b2276206ae07f17b8c`. Full pins: integration-lock.json. This supersedes the earlier missing-photo-policy request. P2 has published the exact policy; P1 adopts it. No byte service, consent authority, migration/model, producer or transport is enabled here.
 
 ## Adopted exact photo boundary

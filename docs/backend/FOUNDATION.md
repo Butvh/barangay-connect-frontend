@@ -1,5 +1,7 @@
 # Backend foundation — P1 / DBA / P2 review
 
+Current Nov4 update: DBA1dceb0e active ninth photo migration/model and P25e61893 exact joint acceptance/consent ratification are reviewed and pinned. Photo metadata and consent approval are no longer blockers; statements below at older pins are historical. Actual P1 private bytes proceed next; consent authority waits for DBA persistence. Current-pin browser evidence and the truthful presentation feature matrix are in PR49 and PRESENTATION.md/FEATURE-MATRIX.md. Production remains off.
+
 Status: P1 compatibility follow-up, November 3, 2026. **Not a completed backend release.**
 
 November3 update: [compatibility matrix and exact owner requests](COMPATIBILITY.md) supersede the initial interface proposals below. It pins all three actual branches and documents candidate typed contracts, safe registration gates and reproducible combined tests. Joint acceptance remains pending; no live feature is enabled.

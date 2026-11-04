@@ -1,5 +1,7 @@
 # Original operational browser integration — November 4, 2026
 
+Current Nov4 update: DBA1dceb0e active ninth photo migration/model and P25e61893 exact joint acceptance/consent ratification are reviewed and pinned. Photo metadata and consent approval are no longer blockers; statements below at older pins are historical. Actual P1 private bytes proceed next; consent authority waits for DBA persistence. Current-pin browser evidence and the truthful presentation feature matrix are in PR49 and PRESENTATION.md/FEATURE-MATRIX.md. Production remains off.
+
 Scope: resident SOS/details, manual Secretary responder assignment, responder assessment, manual Captain rescuer assignment, active destination/rescue logs and explicit resolution. Design/markup stays with P2's reviewed original controllers. P1 supplies composition, minimal reference reads and real-browser evidence. Production and dispatch remain disabled.
 
 ## Original read inventory

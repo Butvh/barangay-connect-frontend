@@ -1,5 +1,7 @@
 # Current integration compatibility — November 4, 2026
 
+Current Nov4 update: DBA1dceb0e active ninth photo migration/model and P25e61893 exact joint acceptance/consent ratification are reviewed and pinned. Photo metadata and consent approval are no longer blockers; statements below at older pins are historical. Actual P1 private bytes proceed next; consent authority waits for DBA persistence. Current-pin browser evidence and the truthful presentation feature matrix are in PR49 and PRESENTATION.md/FEATURE-MATRIX.md. Production remains off.
+
 [Current P2 review and evidence](P2-BINDINGS-REVIEW.md) supersedes the old availability/lock-blocker statements. Pins: P1 review 526ef0b, DBA9d6c699, P2 5f38285; full values are in integration-lock.json. Required CI41764879472 independently cleared the historical lock defect at the preceding DBA pin; the newer DBA addition contributes an actual lower-ID transfer test and contract decisions. Final current-pin/original-browser P1/synthetic-merge SHAs and measured results are in draft PR49.
 
 | Boundary | Current implementation / status |
