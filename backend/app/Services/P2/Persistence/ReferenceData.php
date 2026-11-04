@@ -97,8 +97,10 @@ final class ReferenceData implements \App\Contracts\P2\ReferenceData, ActorRefer
 
     public function actorFor(int $authenticatedUserId): Actor
     {
-        // Dispatcher identity precedes source reads; HTTP mutations use locked(observed).
-        $user = $this->user($authenticatedUserId, DB::transactionLevel() > 0);
+        // Dispatcher/display projection may run after an outbox/receipt lock. It must
+        // not acquire a new person lock. Mutations always use locked(original observation)
+        // under declared person guards; notification reads reauthorize current source access.
+        $user = $this->user($authenticatedUserId);
         $identity = $user ? EffectiveIdentity::fromUser($user) : null;
         if (! $identity) {
             throw new Problem('FORBIDDEN', 'Current account access is unavailable.');

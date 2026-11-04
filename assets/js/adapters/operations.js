@@ -1,7 +1,7 @@
 import { ApiError } from '../core/config.js';
 import { client, command, identifier, query, revision } from './p2-contract.js';
 
-export function createOperations({ request }) {
+export function createOperations({ request, privatePhotos = false }) {
   const call = client(request), alert = id => `/alerts/${identifier(id)}`;
   const options = (id, role) => call(query(`${alert(id)}/assignment-options`, { role }));
   const transfer = async (id, input, cancel) => {
@@ -14,6 +14,11 @@ export function createOperations({ request }) {
   };
   return Object.freeze({
     alerts: Object.freeze({
+      ...(privatePhotos ? { stagePhoto: async (file, intent) => {
+        const body = new FormData();
+        body.append('photo', file);
+        return call('/incident-photos', { method: 'POST', body, headers: command(intent) });
+      } } : {}),
       list: async ({ nearby, ...filters } = {}) => call(query(nearby ? '/nearby-alerts' : '/alerts', filters), { complete: true }),
       get: async id => call(alert(id)),
       create: async (input = {}, intent) => call('/alerts', { method: 'POST', body: input, headers: command(intent) }),

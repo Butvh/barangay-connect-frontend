@@ -59,10 +59,15 @@ final class CivicService extends Module
 
     public function publish(Actor $a, array $in, string $key): array
     {
-        return $this->once($a, 'publish', $in, $key, fn () => $this->publishWrite($a, $in), fn ($resource) => $this->announcement($a, $resource));
+        $a->allow(['captain', 'secretary']);
+        Rules::key($key);
+        $sms = $this->smsPreflight($a, 'publish', $key, 'barangay_announcements',
+            fn () => array_values(array_filter($this->references($a)->people($a->barangayId), fn ($p) => in_array($p['role'], ['resident', 'captain', 'secretary'], true))));
+
+        return $this->once($a, 'publish', $in, $key, fn () => $this->publishWrite($a, $in, $sms), fn ($resource) => $this->announcement($a, $resource));
     }
 
-    private function publishWrite(Actor $a, array $in): array
+    private function publishWrite(Actor $a, array $in, array $sms = []): array
     {
         $a->allow(['captain', 'secretary']);
         Rules::only($in, ['title', 'content', 'expires_at']);
@@ -70,10 +75,10 @@ final class CivicService extends Module
         $content = Rules::text($in['content'] ?? null, 'content', 5000);
         $expires = $this->expires($in['expires_at'] ?? null);
 
-        return $this->atomic($a, [], null, function () use ($a, $title, $content, $expires) {
+        return $this->atomic($a, [], null, function () use ($a, $title, $content, $expires, $sms) {
             $r = $this->store->insert('announcements', ['barangay_id' => $a->barangayId, 'posted_by' => $a->id, 'author_role' => $a->role, 'title' => $title, 'content' => $content, 'status' => 'Active', 'expires_at' => $expires, 'created_at' => ($this->clock)(), 'published_at' => ($this->clock)(), 'updated_at' => ($this->clock)(), 'revision' => 1]);
             $this->announcementHistory($a, $r, 'Published');
-            $this->event($a, 'announcement.published', $r['id'], array_values(array_filter($this->references($a)->people($a->barangayId), fn ($p) => in_array($p['role'], ['resident', 'captain', 'secretary'], true))));
+            $this->event($a, 'announcement.published', $r['id'], array_values(array_filter($this->references($a)->people($a->barangayId), fn ($p) => in_array($p['role'], ['resident', 'captain', 'secretary'], true))), $sms);
 
             return $this->announcement($a, $r['id']);
         });

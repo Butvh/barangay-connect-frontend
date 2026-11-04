@@ -133,9 +133,15 @@ caseTest('No-rescue Completed branch still requires explicit official resolution
     $r = $incidents->resolve($captain, $r['id'], ['expected_revision' => $r['assignment_revision']]);
     verify($r['status'] === 'Resolved', 'No-rescue explicit resolution failed.');
 });
-caseTest('Typed outbox rejects unimplemented P1 source families and sends no SMS', function () use ($scope) {
+caseTest('Typed outbox rejects malformed P1 snapshots atomically and keeps SMS disabled', function () use ($scope, $users) {
     $writer = new TypedOutboxWriter;
-    expectsProblem(fn () => DB::transaction(fn () => $writer->record(EventId::generate(), 'security.updated.v2', $scope->id, 1, [], new DateTimeImmutable)), 'UNAVAILABLE');
+    $before = DB::table('outbox_events')->count();
+    try {
+        DB::transaction(fn () => $writer->record(EventId::generate(), 'security.updated.v2', $scope->id, $users[0]->id, [], new DateTimeImmutable));
+        throw new RuntimeException('Malformed security snapshot was accepted.');
+    } catch (InvalidArgumentException) {
+    }
+    verify(DB::table('outbox_events')->count() === $before, 'Malformed source event survived rollback.');
     verify(DB::table('outbox_recipients')->where('sms', true)->count() === 0, 'SMS implicitly enabled.');
 });
 caseTest('Feedback persists typed nullable data and independent operational statuses', function () use ($civic, $resident, $captain) {

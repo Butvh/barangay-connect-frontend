@@ -10,13 +10,54 @@ use App\Contracts\P2\ReferenceData;
 use App\Contracts\P2\ScopedReferences;
 use App\Contracts\P2\Store;
 use App\Services\Audit\AuditRecorder;
+use App\Services\Identity\EffectiveIdentity;
+use App\Services\Identity\SmsEligibilityReferences;
 use App\Services\Messaging\OutboxWriter;
+use App\Support\ApiProblem;
 
 abstract class Module
 {
     use UsesScopedReferences;
 
-    public function __construct(protected Store $store, protected ReferenceData $refs, protected AuditRecorder $audit, protected OutboxWriter $outbox, protected \Closure $clock) {}
+    public function __construct(protected Store $store, protected ReferenceData $refs, protected AuditRecorder $audit, protected OutboxWriter $outbox, protected \Closure $clock, private ?SmsEligibilityReferences $sms = null) {}
+
+    /** Optional recipient consent is checked before any source SQL; it is never delivery authority. */
+    protected function smsPreflight(Actor $actor, string $route, string $key, string $purpose, \Closure $candidates): array
+    {
+        if (! $this->sms) {
+            return [];
+        }
+        if ($this->store->inTransaction()) {
+            throw new \LogicException('SMS preflight must precede the source transaction.');
+        }
+        // The real once/create boundary still checks hash, current original identity and source access.
+        // Do not rerun optional consent for a committed successful intent, including a lost reply.
+        if ($this->store->select('idempotency_requests', ['actor_id' => $actor->id, 'route' => $route, 'request_key' => $key])) {
+            return [];
+        }
+        $allowed = [];
+        foreach ($candidates() as $person) {
+            if (! $person || $person['barangay_id'] !== $actor->barangayId) {
+                continue;
+            }
+            try {
+                $recipient = $this->refs->actorFor($person['id'])->observedIdentity();
+                if ($recipient instanceof EffectiveIdentity && $recipient->barangayId === $actor->barangayId && $this->sms->allows($recipient, $purpose)) {
+                    $allowed[] = $recipient->id;
+                }
+            } catch (ApiProblem $error) {
+                if (! in_array($error->errorCode, ['AUTH', 'FORBIDDEN', 'NOT_AVAILABLE'], true)) {
+                    throw $error;
+                }
+            } catch (Problem $error) {
+                if (! in_array($error->errorCode, ['AUTH', 'FORBIDDEN'], true)) {
+                    throw $error;
+                }
+            }
+        }
+
+        return array_values(array_unique($allowed));
+    }
 
     protected function row(string $table, int $id, Actor $actor): array
     {
@@ -90,13 +131,18 @@ abstract class Module
         return $refs instanceof EligibilityReferences ? $refs->eligiblePerson($id, $actor->barangayId) : $refs->person($id, $actor->barangayId);
     }
 
-    protected function event(Actor $actor, string $type, int $id, array $people): array
+    protected function event(Actor $actor, string $type, int $id, array $people, array $smsRecipients = []): array
     {
         $recipients = [];
         foreach ($people as $p) {
             if (! $p || $p['barangay_id'] !== $actor->barangayId || ! in_array($p['role'], ['resident', 'captain', 'secretary', 'responder', 'rescuer'], true) || ($p['account_status'] ?? 'Active') !== 'Active' || ($p['personnel_status'] ?? 'Active') !== 'Active') {
                 continue;
-            } $recipients[$p['id']] = ['user_id' => $p['id'], 'audience' => $p['role'] === 'resident' ? 'resident' : 'official', 'channels' => ['in_app']];
+            }
+            $channels = ['in_app'];
+            if (in_array($type, ['incident.created', 'announcement.published'], true) && in_array($p['id'], $smsRecipients, true)) {
+                $channels[] = 'sms';
+            }
+            $recipients[$p['id']] = ['user_id' => $p['id'], 'audience' => $p['role'] === 'resident' ? 'resident' : 'official', 'channels' => $channels];
         }
 
         $context = str_starts_with($type, 'incident.') ? ['status' => $this->row('emergency_alerts', $id, $actor)['status']] : [];

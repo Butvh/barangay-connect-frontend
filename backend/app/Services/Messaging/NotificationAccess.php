@@ -7,6 +7,7 @@ namespace App\Services\Messaging;
 use App\Contracts\P2\ReferenceData;
 use App\Contracts\P2\Store;
 use App\Services\P2\Actor;
+use App\Services\P2\Persistence\AdministrativeNotificationSources;
 
 final class NotificationAccess
 {
@@ -14,6 +15,14 @@ final class NotificationAccess
     {
         if ($n['user_id'] !== $a->id || $n['barangay_id'] !== $a->barangayId) {
             return null;
+        }
+        if (in_array($n['resource_type'], AdministrativeNotificationSources::RESOURCES, true)) {
+            if (($a->role === 'resident' ? 'resident' : 'official') !== $n['audience']) {
+                return null;
+            }
+            $source = AdministrativeNotificationSources::row($n['resource_type'], $n['resource_id'], $a->barangayId);
+
+            return $source && AdministrativeNotificationSources::allowed($a, $n['resource_type'], $source) ? $source : null;
         }
         $table = match ($n['resource_type']) {
             'incident' => 'emergency_alerts','feedback' => 'community_feedback','announcement' => 'announcements',default => null
@@ -57,6 +66,11 @@ final class NotificationAccess
         }
 
         return match ($n['resource_type']) {
+            'user' => $n['audience'] === 'resident' ? 'resident-profile.html' : 'official-profile.html',
+            'household' => 'resident-profile.html',
+            'verification' => $n['audience'] === 'resident' ? 'resident-verification.html' : 'official-verification.html?id='.$n['resource_id'],
+            'facility' => 'official-facilities.html?id='.$n['resource_id'],
+            'personnel_appointment' => (int) ($source['user_id'] ?? 0) === $n['user_id'] ? 'official-profile.html' : 'captain-personnel.html?id='.($source['user_id'] ?? ''),
             'incident' => ($n['audience'] === 'resident' ? 'resident' : 'official').'-alert.html?id='.$n['resource_id'],'feedback' => ($n['audience'] === 'resident' ? 'resident' : 'official').'-feedback.html?id='.$n['resource_id'],'announcement' => ($n['audience'] === 'resident' ? 'resident' : 'official').'-announcements.html?id='.$n['resource_id'],default => ''
         };
     }

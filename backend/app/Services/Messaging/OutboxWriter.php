@@ -38,7 +38,7 @@ final class OutboxWriter
                 $source = $this->store->select('community_feedback', ['id' => $resourceId, 'barangay_id' => $scope])[0] ?? throw new Problem('NOT_FOUND', 'Feedback source unavailable.');
                 $snapshot = ['kind' => $source['type'], 'status' => $source['status']];
             }
-            $refs = array_map(fn ($r) => new RecipientReference($r['user_id'], in_array('in_app', $r['channels'], true), false, $r['audience']), $recipientRefs);
+            $refs = array_map(fn ($r) => new RecipientReference($r['user_id'], in_array('in_app', $r['channels'], true), in_array('sms', $r['channels'], true), $r['audience']), $recipientRefs);
             $this->typed->record(new EventId($eventId), $versioned, $scope, $resourceId, $refs, new \DateTimeImmutable($occurredAt), EventContext::forEvent($versioned, $snapshot));
 
             return ['event_id' => $eventId];

@@ -1,5 +1,7 @@
 # P2 presentation rehearsal and readiness — November 4, 2026
 
+The later gated actual photo/consent/source-event candidate is documented in [P2-ACTUAL-OWNER-INTEGRATION.md](P2-ACTUAL-OWNER-INTEGRATION.md). Its evidence and owner pins are separate from this retained core rehearsal.
+
 Target: November5,2026 at5 PM Asia/Manila. Reviewed starting P25e61893861f04f652f4106a3ed923ab461b6a86b, P1a821d5dd4cb45ffc4cbe0d5bf9531e214eb308c6, DBA1dceb0e4234d8bbfd1d467164f257ab45e574bab. This follow-up changes tests and handoff documentation, not production logic or design.
 
 ## Current evidence boundaries

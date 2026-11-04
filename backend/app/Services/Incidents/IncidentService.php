@@ -7,13 +7,28 @@ namespace App\Services\Incidents;
 use App\Contracts\P2\ActorReferences;
 use App\Contracts\P2\DestinationReferences;
 use App\Contracts\P2\EligibilityReferences;
+use App\Contracts\P2\ReferenceData;
+use App\Contracts\P2\Store;
+use App\Contracts\Photos\IncidentPhotos;
+use App\Services\Audit\AuditRecorder;
+use App\Services\Identity\EffectiveIdentity;
+use App\Services\Identity\SmsEligibilityReferences;
+use App\Services\Messaging\OutboxWriter;
 use App\Services\P2\Actor;
 use App\Services\P2\Module;
 use App\Services\P2\Problem;
 use App\Services\P2\Rules;
+use Illuminate\Support\Facades\DB;
 
 final class IncidentService extends Module
 {
+    // P1 explicitly selects the actual byte/consent ports; existing/default bindings remain disabled.
+    public function __construct(Store $store, ReferenceData $refs, AuditRecorder $audit, OutboxWriter $outbox, \Closure $clock,
+        private ?IncidentPhotos $photos = null, ?SmsEligibilityReferences $sms = null)
+    {
+        parent::__construct($store, $refs, $audit, $outbox, $clock, $sms);
+    }
+
     public const STAGES = ['Pending', 'Acknowledged', 'Responding', 'Rescue in progress', 'Resolved'];
 
     public const TYPES = ['Fire', 'Flood', 'Typhoon/Storm', 'Landslide', 'Earthquake', 'Other'];
@@ -133,10 +148,11 @@ final class IncidentService extends Module
     {
         $a->allow(['resident']);
         Rules::key($key);
+        $sms = $this->smsPreflight($a, 'alerts.create', $key, 'incident_review', fn () => $this->officials($a));
         ksort($in);
         $hash = hash('sha256', json_encode($in, JSON_THROW_ON_ERROR));
 
-        return $this->store->transaction(['person:'.$a->id, 'sos:'.$a->id], fn () => $this->atomic($a, [], null, function () use ($a, $key, $hash, $in) {
+        return $this->store->transaction(['person:'.$a->id, 'sos:'.$a->id], fn () => $this->atomic($a, [], null, function () use ($a, $key, $hash, $in, $sms) {
             if (! $this->references($a)->approved($a->id, $a->barangayId)) {
                 throw new Problem('FORBIDDEN', 'Approved residency is required before SOS.');
             }
@@ -158,7 +174,7 @@ final class IncidentService extends Module
                 $r = $this->store->insert('emergency_alerts', array_merge($details, ['resident_id' => $a->id, 'household_id' => $home['id'], 'barangay_id' => $a->barangayId, 'status' => 'Pending', 'assignment_revision' => 0, 'acknowledged_by' => null, 'created_at' => $at, 'reported_at' => $at, 'address_snapshot' => $home['address'], 'acknowledged_at' => null, 'resolved_at' => null]));
                 $this->history($a, $r, 'Pending', $at);
                 $this->audit($a, 'alert', $r['id'], 'Incident reported');
-                $this->event($a, 'incident.created', $r['id'], $this->officials($a));
+                $this->event($a, 'incident.created', $r['id'], $this->officials($a), $sms);
             }
             $this->store->insert('idempotency_requests', ['actor_id' => $a->id, 'route' => 'alerts.create', 'request_key' => $key, 'request_hash' => $hash, 'resource_id' => $r['id']]);
 
@@ -168,6 +184,10 @@ final class IncidentService extends Module
 
     public function details(Actor $a, int $id, array $in, ?string $key = null): array
     {
+        if (! empty($in['upload_ids']) && $key === null) {
+            throw new Problem('VALIDATION', 'Photo attachment requires a stable submission key.');
+        }
+
         return $key === null ? $this->detailsWrite($a, $id, $in)
             : $this->once($a, 'alerts.'.$id.'.details', $in, $key, fn () => $this->detailsWrite($a, $id, $in), fn ($resource) => $this->get($a, $resource));
     }
@@ -181,15 +201,20 @@ final class IncidentService extends Module
             if ($r['resident_id'] !== $a->id) {
                 throw new Problem('NOT_FOUND', 'This incident is unavailable.');
             }
+            $revision = $in['expected_revision'] ?? null;
             if (array_key_exists('expected_revision', $in)) {
                 Rules::revision($r, $in, 'assignment_revision');
                 unset($in['expected_revision']);
             }
             if ($r['status'] === 'Resolved') {
                 throw new Problem('INVALID_STATE', 'This incident is resolved.');
-            } $patch = $this->detailsInput($in, $this->references($a)->household($a->id, $a->barangayId) ?? [], true);
+            }
+            $uploads = $in['upload_ids'] ?? [];
+            unset($in['upload_ids']);
+            $patch = $this->detailsInput($in, $this->references($a)->household($a->id, $a->barangayId) ?? [], true);
             $changed = array_filter($patch, fn ($value, $field) => $value !== $r[$field], ARRAY_FILTER_USE_BOTH);
-            if (! $changed) {
+            $attached = $this->attachPhotos($a, $id, $revision, $uploads);
+            if (! $changed && ! $attached) {
                 return $this->project($a, $r);
             }
             $r = $this->store->update('emergency_alerts', $id, $changed + ['assignment_revision' => $r['assignment_revision'] + 1]);
@@ -197,6 +222,39 @@ final class IncidentService extends Module
 
             return $this->project($a, $r);
         });
+    }
+
+    /** Metadata only: actual stage/download byte I/O never runs inside the source command. */
+    private function attachPhotos(Actor $actor, int $id, mixed $revision, mixed $tokens): array
+    {
+        if (! is_array($tokens) || ! array_is_list($tokens) || count($tokens) > 5 || count(array_unique($tokens, SORT_REGULAR)) !== count($tokens)) {
+            throw new Problem('VALIDATION', 'Use at most five distinct staged photo references.');
+        }
+        foreach ($tokens as $token) {
+            if (! is_string($token) || ! preg_match('/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/D', $token)) {
+                throw new Problem('VALIDATION', 'Use a valid staged photo reference.');
+            }
+        }
+        if (! $tokens) {
+            return [];
+        }
+        if (! $this->photos) {
+            throw new Problem('UNAVAILABLE', 'Private photo attachment is awaiting reviewed integration.');
+        }
+        $observed = $actor->observedIdentity();
+        if (! $observed instanceof EffectiveIdentity || ! is_int($revision) || $revision < 0) {
+            throw new Problem('VALIDATION', 'Use the original identity and opening incident revision.');
+        }
+        // Resolve immutable IDs without locks, then use the actual port in stable metadata-ID order.
+        // The actual attach policy checks declared current actor/source/revision BEFORE its photo lock.
+        $ordered = DB::connection(config('integration.connection', 'mysql'))->table('incident_photos')
+            ->where('uploader_id', $actor->id)->where('barangay_id', $actor->barangayId)->whereIn('upload_id', $tokens)
+            ->orderBy('id')->pluck('upload_id')->all();
+        if (count($ordered) !== count($tokens)) {
+            throw new Problem('NOT_FOUND', 'This upload is unavailable.');
+        }
+
+        return array_map(fn ($token) => $this->photos->attach($observed, $token, $id, $revision), $ordered);
     }
 
     private function assignments(array $r, ?string $role = null, bool $active = false): array

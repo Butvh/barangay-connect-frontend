@@ -27,7 +27,7 @@ final class InAppHandler implements InAppNotificationHandler
             throw new \LogicException('Invalid dispatcher receipt context.');
         }
         $definition = EventContract::definition($event);
-        if (! in_array($event->resource_type, ['incident', 'alert', 'feedback', 'announcement'], true)) {
+        if (! in_array($event->resource_type, ['incident', 'alert', 'feedback', 'announcement', ...AdministrativeNotificationSources::RESOURCES], true)) {
             throw new \LogicException('Source handler not integrated.');
         }
         try {
@@ -46,10 +46,19 @@ final class InAppHandler implements InAppNotificationHandler
         $title = match ($resource) {
             'incident' => 'A-'.$event->resource_id.' · '.($status ?? 'New SOS'),
             'feedback' => 'Feedback update',
+            'user' => 'Account update',
+            'household' => 'Household update',
+            'verification' => 'Residency verification update',
+            'facility' => 'Facility update',
+            'personnel_appointment' => 'Personnel appointment update',
             default => 'Announcement published',
         };
         if (! Notification::query()->where(['event_id' => $event->event_id, 'recipient_id' => $recipient->recipient_id])->exists()) {
-            (new Notification)->forceFill(['event_id' => $event->event_id, 'recipient_id' => $recipient->recipient_id, 'barangay_id' => $event->barangay_id, 'resource_type' => $resource, 'resource_id' => $event->resource_id, 'audience' => $audience, 'event_status' => $status, 'template_key' => EventContract::template($definition, 'in_app'), 'kind' => $resource === 'incident' ? 'alert_status' : ($resource === 'feedback' ? 'feedback_update' : 'announcement'), 'target' => NotificationAccess::link($row, $source), 'title' => $title, 'description' => '', 'created_at' => $event->occurred_at])->save();
+            $kind = match ($resource) {
+                'incident' => 'alert_status', 'feedback' => 'feedback_update', 'announcement' => 'announcement',
+                'verification' => 'verification', default => 'account_update',
+            };
+            (new Notification)->forceFill(['event_id' => $event->event_id, 'recipient_id' => $recipient->recipient_id, 'barangay_id' => $event->barangay_id, 'resource_type' => $resource, 'resource_id' => $event->resource_id, 'audience' => $audience, 'event_status' => $status, 'template_key' => EventContract::template($definition, 'in_app'), 'kind' => $kind, 'target' => NotificationAccess::link($row, $source), 'title' => $title, 'description' => '', 'created_at' => $event->occurred_at])->save();
         }
     }
 }
