@@ -43,8 +43,11 @@ final class SmsDeliveryService
                 throw new SmsAuthorizationDenied('recipient_unavailable');
             }
             $message = EventContract::message($snapshot->receipt->event);
-            $delivery = $this->authority->current($snapshot, $observed, function (array $context) use ($id, $message) {
+            $delivery = $this->authority->current($snapshot, $observed, function (array $context) use ($id, $message, $snapshot) {
                 $d = SmsDelivery::whereKey($id)->lockForUpdate()->firstOrFail();
+                if ((int) $d->receipt_id !== (int) $snapshot->receipt_id) {
+                    throw new SmsAuthorizationDenied('delivery_reference_changed');
+                }
                 if ($d->state !== 'pending' || ($d->next_attempt_at && $d->next_attempt_at->isFuture())) {
                     return null;
                 }
@@ -66,8 +69,9 @@ final class SmsDeliveryService
 
                     return null;
                 }
-                if (! $d->budget_reserved_at) {
-                    $day = now()->timezone('Asia/Manila')->toDateString();
+                $day = now()->timezone('Asia/Manila')->toDateString();
+                $reserveBudget = ! $d->budget_reserved_at || $d->budget_reserved_at->timezone('Asia/Manila')->toDateString() !== $day;
+                if ($reserveBudget) {
                     DB::table('messaging_budgets')->insertOrIgnore(['day' => $day, 'reserved_segments' => 0]);
                     $budget = DB::table('messaging_budgets')->where('day', $day)->lockForUpdate()->first();
                     if ($budget->reserved_segments + $segments > config('messaging.sms.daily_segment_budget', 0)) {
@@ -78,7 +82,7 @@ final class SmsDeliveryService
                     DB::table('messaging_budgets')->where('day', $day)->increment('reserved_segments', $segments);
                 }
                 $d->forceFill(['destination' => $number, 'destination_digest' => hash_hmac('sha256', $number, config('messaging.sms.destination_pepper')),
-                    'estimated_segments' => $segments, 'budget_reserved_at' => $d->budget_reserved_at ?? now(), 'state' => 'sending',
+                    'estimated_segments' => $segments, 'budget_reserved_at' => $reserveBudget ? now() : $d->budget_reserved_at, 'state' => 'sending',
                     'attempts' => $d->attempts + 1, 'claim_token' => (string) Str::uuid(),
                     'lease_until' => now()->addSeconds(config('messaging.sms.lease_seconds')), 'last_error' => null])->save();
                 DB::table('sms_attempts')->insert(['sms_delivery_id' => $d->id, 'attempt' => $d->attempts,
@@ -94,6 +98,9 @@ final class SmsDeliveryService
             event(new SmsReserved($delivery->id, $delivery->claim_token));
             $ready = $this->authority->current($snapshot, $observed, function (array $context) use ($delivery) {
                 $d = SmsDelivery::whereKey($delivery->id)->lockForUpdate()->firstOrFail();
+                if ((int) $d->receipt_id !== (int) $delivery->receipt_id) {
+                    throw new SmsAuthorizationDenied('delivery_reference_changed');
+                }
                 if ($d->state !== 'sending' || $d->claim_token !== $delivery->claim_token) {
                     return null;
                 }
@@ -105,6 +112,16 @@ final class SmsDeliveryService
                 $number = $this->destination($d, $context['user']);
                 if ($number !== $delivery->destination) {
                     throw new SmsAuthorizationDenied('destination_changed');
+                }
+                $day = now()->timezone('Asia/Manila')->toDateString();
+                if ($d->budget_reserved_at?->timezone('Asia/Manila')->toDateString() !== $day) {
+                    DB::table('messaging_budgets')->insertOrIgnore(['day' => $day, 'reserved_segments' => 0]);
+                    $budget = DB::table('messaging_budgets')->where('day', $day)->lockForUpdate()->first();
+                    if ($budget->reserved_segments + $d->estimated_segments > config('messaging.sms.daily_segment_budget', 0)) {
+                        throw new SmsAuthorizationDenied('daily_budget_exhausted');
+                    }
+                    DB::table('messaging_budgets')->where('day', $day)->increment('reserved_segments', $d->estimated_segments);
+                    $d->forceFill(['budget_reserved_at' => now()])->save();
                 }
                 $this->authority->record($context, $d, 'pre_send');
 

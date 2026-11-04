@@ -111,9 +111,13 @@ final class SmsCurrentAuthorization
             throw new SmsAuthorizationDenied('sms_receipt_not_authorized');
         }
         EventContract::recipient($event, $recipient, $definition);
-        if ($definition['route'] === 'make' && ! DB::table('make_commands')->where('outbox_event_id', $event->id)
-            ->where('credential_id', config('messaging.make.credential_id'))->lockForUpdate()->exists()) {
-            throw new SmsAuthorizationDenied('make_command_unavailable');
+        if ($definition['route'] === 'make') {
+            $command = DB::table('make_commands')->where('outbox_event_id', $event->id)->lockForUpdate()->first();
+            $hash = hash('sha256', json_encode([$event->event_id, $event->barangay_id, $event->type, $event->template_key], JSON_THROW_ON_ERROR));
+            if (! config('messaging.make.enabled') || $event->barangay_id !== config('messaging.make.barangay_id')
+                || ! $command || $command->credential_id !== config('messaging.make.credential_id') || ! hash_equals($command->payload_hash, $hash)) {
+                throw new SmsAuthorizationDenied('make_command_unavailable');
+            }
         }
 
         return compact('event', 'recipient', 'receipt', 'definition');

@@ -12,6 +12,7 @@ use App\Services\Identity\CurrentSmsConsent;
 use App\Services\Identity\EffectiveIdentity;
 use App\Services\Identity\SmsDeliveryEligibility;
 use App\Services\Messaging\MakeSmsCommandService;
+use App\Services\Messaging\OutboxDispatcher;
 use App\Services\Messaging\SmsDeliveryService;
 use App\Services\Messaging\SmsReserved;
 use Illuminate\Database\Events\QueryExecuted;
@@ -167,6 +168,21 @@ class CurrentSmsWorkerTest extends MessagingTestCase
         $this->assertSame('rejected', DB::table('sms_attempts')->value('outcome'));
     }
 
+    public function test_current_appointment_revocation_between_gates_blocks_staff_delivery(): void
+    {
+        DB::table('users')->where('id', 2)->update(['contact_number' => '09171234567']);
+        $observed = EffectiveIdentity::fromUser(User::with('appointment')->findOrFail(2));
+        app(CurrentSmsConsent::class)->change($observed, 'incident_review', ['state' => 'granted', 'expected_revision' => 0,
+            'policy_version' => 'sms-consent.v1', 'template_version' => 'alert-review.v1']);
+        $event = $this->event('incident.created.v2', 1, 2);
+        app(OutboxDispatcher::class)->dispatchOne($event->event_id);
+        $d = SmsDelivery::firstOrFail();
+        Event::listen(SmsReserved::class, fn () => DB::table('personnel_appointments')->where('user_id', 2)->update(['status' => 'Inactive']));
+        app(SmsDeliveryService::class)->send($d->id);
+        $this->assertDenied($d, 'consent_denied', 1);
+        $this->assertSame(1, DB::table('sms_authorizations')->count());
+    }
+
     #[DataProvider('postReservationChanges')]
     public function test_account_generation_role_contact_and_event_are_rechecked(string $change, string $reason): void
     {
@@ -179,6 +195,7 @@ class CurrentSmsWorkerTest extends MessagingTestCase
                 'role' => DB::table('users')->where('id', 1)->update(['is_captain' => false, 'is_resident' => true]),
                 'contact' => DB::table('users')->where('id', 1)->update(['contact_number' => '09179999999']),
                 'event' => DB::table('outbox_events')->where('id', $d->receipt->event->id)->update(['resource_id' => 2]),
+                'intent' => DB::table('outbox_recipients')->where('outbox_event_id', $d->receipt->event->id)->update(['sms' => false]),
             };
         });
         app(SmsDeliveryService::class)->send($d->id);
@@ -189,7 +206,32 @@ class CurrentSmsWorkerTest extends MessagingTestCase
     public static function postReservationChanges(): array
     {
         return [['inactive', 'consent_denied'], ['generation', 'consent_denied'], ['role', 'consent_denied'],
-            ['contact', 'destination_changed'], ['event', 'event_reference_changed']];
+            ['contact', 'destination_changed'], ['event', 'event_reference_changed'], ['intent', 'sms_receipt_not_authorized']];
+    }
+
+    #[DataProvider('makeRevocations')]
+    public function test_make_credential_scope_and_authenticated_payload_are_current(string $change): void
+    {
+        $this->consent('barangay_announcements');
+        $d = $this->prepare('announcement.published.v2');
+        $event = $d->receipt->event;
+        config(['messaging.make.enabled' => true, 'messaging.make.barangay_id' => 1]);
+        app(MakeSmsCommandService::class)->accept(['event_id' => $event->event_id, 'barangay_id' => 1,
+            'type' => $event->type, 'template_key' => $event->template_key]);
+        Event::listen(SmsReserved::class, function () use ($change, $event) {
+            if ($change === 'scope') {
+                config(['messaging.make.barangay_id' => 2]);
+            } else {
+                DB::table('make_commands')->where('outbox_event_id', $event->id)->update(['payload_hash' => str_repeat('a', 64)]);
+            }
+        });
+        app(SmsDeliveryService::class)->send($d->id);
+        $this->assertDenied($d, 'make_command_unavailable', 1);
+    }
+
+    public static function makeRevocations(): array
+    {
+        return [['scope'], ['payload']];
     }
 
     public function test_revoke_before_definite_retry_does_not_make_another_post(): void
@@ -204,6 +246,44 @@ class CurrentSmsWorkerTest extends MessagingTestCase
         Http::assertSentCount(1);
         $this->assertSame('consent_denied', $d->fresh()->last_error);
         $this->assertSame(1, DB::table('sms_attempts')->count());
+    }
+
+    public function test_next_day_definite_retry_requires_that_days_budget(): void
+    {
+        $this->consent();
+        $d = $this->prepare();
+        Http::fake(['*' => Http::response([], 429, ['Retry-After' => '1'])]);
+        app(SmsDeliveryService::class)->send($d->id);
+        $originalDay = $d->fresh()->budget_reserved_at->timezone('Asia/Manila')->toDateString();
+        $this->travel(1)->days();
+        try {
+            config(['messaging.sms.daily_segment_budget' => 0]);
+            app(SmsDeliveryService::class)->send($d->id);
+            $this->assertSame('daily_budget_exhausted', $d->fresh()->last_error);
+            $this->assertSame(1, (int) DB::table('messaging_budgets')->where('day', $originalDay)->value('reserved_segments'));
+            Http::assertSentCount(1);
+            $this->assertSame(1, DB::table('sms_attempts')->count());
+        } finally {
+            $this->travelBack();
+        }
+    }
+
+    public function test_midnight_between_current_gates_rechecks_the_new_day_budget(): void
+    {
+        $this->consent();
+        $d = $this->prepare();
+        $this->travelTo(now('Asia/Manila')->endOfDay()->startOfSecond());
+        Event::listen(SmsReserved::class, function () {
+            $this->travel(2)->seconds();
+            config(['messaging.sms.daily_segment_budget' => 0]);
+        });
+        try {
+            app(SmsDeliveryService::class)->send($d->id);
+            $this->assertDenied($d, 'daily_budget_exhausted', 1);
+            $this->assertSame(1, DB::table('sms_authorizations')->count());
+        } finally {
+            $this->travelBack();
+        }
     }
 
     public function test_legacy_family_cannot_obtain_new_sms_authority(): void
