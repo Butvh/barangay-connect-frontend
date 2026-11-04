@@ -1,76 +1,77 @@
-# DBA lock/photo/delivery acceptance — November 3, 2026
+# Independent DBA acceptance — November 4, 2026, Asia/Manila
 
-**Lock-order acceptance remains unresolved.** Latest combined run: **181 tests / 797 assertions, one failure, zero errors/skips**. The sole failure is P1's new actual-P2-service lock-order gate; it is retained unchanged. All DBA photo/delivery tests pass. The photo schema is an **unratified proposal outside active migrations**. No teammate services, Composer/bootstrap/CI, shared/live database, production binding, real SMS, Make activation, deployment or main merge was changed.
+**P2's published lock correction is independently accepted for the reviewed current command paths.** Final combined run: **184 tests /811 assertions, zero failures/errors/skips**. The old real inversion/deadlock on P2 3d23092 is superseded for acc9f56, with its evidence retained. Photo migration/model and actual SMS intent still await explicit owner contracts; no agreement, private bytes or SMS producer is invented. Keep #48 draft.
 
-## Exact reviewed inputs
+## Exact reviewed source
 
 | Input | Revision |
 | --- | --- |
 | Main |3014ad60ca41a9a5aa4d5a0152faed09d0dfdaf0 |
-| Starting DBA #48 |3d2b3a2dd6afa88ea34b9a441f48da3863787bbd |
-| Published DBA review implementation |ea542833b5fb3638fbeb913f54a39559bea02bed |
-| DBA implementation tree |37e48f7ffd497b093223383680c94e3bdb45a9f5 |
-| Starting P1 baseline |c0a32cfaf4b26b86d57681cd1ed6aa42d6c87bb1 |
-| Latest reviewed P1 #49 |aec4e78dab6557a41053d5a76c6ee217db73a16e |
-| P2 #50, still uncorrected |3d23092883e0f24aa89b4c86ce93862e35880e3e |
+| Starting DBA #48 |b9f7a7e106fe7fe699abad1afd900c6141c38756 |
+| Published DBA transfer test/decision record |4c3f67208d40fc2831d57428d3f4d6fc89256681 |
+| DBA implementation tree |60c917d2de9ebce4f0d1c8e3ba24d2205a364663 |
+| Initial reviewed P1 |aec4e78dab6557a41053d5a76c6ee217db73a16e |
+| Final reviewed P1 #49 |5447d8723c84caf98844df8a4276d3c21c727546 |
+| Corrected P2 #50 |acc9f56f37d34c96021c415ab81612bef92dac63 |
 | P2 planning base |ef9a57a2ea0feeb99829e7928595cc925c25bcc7 |
-| Local-only frozen composition |cd1e37bc2e2428fe0c5f7e3b1ca40cf44c57d7eb |
-| Local composition tree |99e8b4c7ee4bc754682213b046b0c88f45f43971 |
+| Local-only frozen composition |48576182fbe4cf3c46a64165487f598e989aea63 |
+| Local composition tree |bb6d1c9fd347ab3b8185b28d5648228ec60a3b5f |
 
-The private composition starts at P1, copies the exact P2 planning-base diff and adds DBA-owned source. It is not a published integration branch or approved merge. All **499 P1 tracked files and62 P2 changed files** match their pinned Git blobs after checkout CRLF normalization; per-file SHA256 records are retained. All eight existing migrations match the starting DBA revision. Tested application/config/database/route/test fingerprint: **208 files, SHA256 `6b532e9f66a59773ea8d96ad8973ab63e84873711be7bc0c45089ad00d491938`**. Later documentation changes do not alter tested code.
+The private composition is test evidence, not a published integration branch or approved merge. It preserves **498 non-overlapping P1 tracked files, including all backend files, and all82 P2 changed files**. Five original operational frontend/test paths are selected from P2's exact blobs only after checking P1 still matches the common main/planning base; no newer P1 edit is overwritten. Before/after hashes for those five selections and per-file hashes are retained. Text checkout CRLF is normalized; binary bytes remain exact. All eight active DBA migrations and both existing tests/Review scripts are unchanged.
 
-Runtime: PHP8.5.12, Composer2.11.1, Node24.22.1, P1's unchanged root Laravel13.39.0/Testbench11.3.0/PHPUnit12.5.43 lock, genuine MySQL Community8.4.13/InnoDB/utf8mb4. Dependencies use an external vendor directory (`composer install --no-scripts`) and private ignored vendor junction; no P1 source/dependency patch. SQL ran only on loopback disposable bc_dba_p1_*/bc_dba_p2_*/p2_test_* databases with a database-scoped account. The private deadlock observer used the existing local administrator separately, without granting monitoring privileges to the app account. No credentials or private bootstrap are published.
+Tested application/config/database/route/test fingerprint: **218 files, SHA256 `16924e9a888d6bc9648c2f5a63f10de75d904aedf761432ffaa0a128edd459d5`**. Later documentation changes do not alter tested code. No P1 Composer/bootstrap/CI/shared registration or P2 service/frontend source was edited by DBA.
 
-## Work delivered and measured results
+Runtime: PHP8.5.12, Composer2.11.1, Node24.22.1, P1's unchanged root Laravel13.39.0/Testbench11.3.0/PHPUnit12.5.43 lock and genuine MySQL Community8.4.13/InnoDB/utf8mb4. Composer installed with --no-scripts into external private vendor; an ignored vendor junction supplies framework path resolution. SQL uses only fresh loopback disposable bc_dba_p1_*/bc_dba_p2_*/p2_test_* databases and a database-scoped account. A separate private administrator reads the enabled InnoDB metric without expanding application grants. No private env, credential or bootstrap is published.
 
-| Gate | Exact result / limit |
+## Measured results
+
+| Gate | Independent result |
 | --- | --- |
-| Latest P1 aec4e78 combined profile |181 tests,797 assertions,1 failure,0 errors/skips;146.818118s JUnit test time; fail-on-warning enabled |
-| Sole failing case |CombinedP2LockOrderTest::test_actual_assignment_never_acquires_a_new_person_row_after_the_incident_lock; newly acquired participant15 reported |
-| DBA photo candidate |23 tests /56 assertions,0 failures/errors/skips;20 invalid SQL cases, seeded additive up, rollback/intent uniqueness, retained-data down refusal and empty down/up |
-| New delivery acceptance |3 tests /19 assertions,0 failures/errors/skips; credential ID, immutable v2 template/no fabricated SMS, shared one-segment budget/channel independence |
-| Unchanged core DBA suite |Migration/seeded upgrade, generation, constraints, protocol races, encrypted backup/restore, EXPLAIN, delivery uncertainty/replay/reconciliation and recovery all execute; no DBA test failure |
-| P2 actual published runner |33 SQL/HTTP/race cases pass on P1 c0a32cf composition; real services/SQL/independent processes, no MemoryStore substitution |
-| Additional actual P2 race/order review |Latest P1: both response/details processes commit,1 response, victim_count0,2 row-lock waits and1 observed InnoDB deadlock; new user after incident confirmed; gate exit2 |
-| Latest configured actual adapter CLI |Pass with P1's guarded P2_TEST_BINDINGS profile selecting TypedOutboxWriter/InAppHandler; provider calls0, SMS intent not requested |
-| Explicit real P2 SMS-intent probe |Exit2: writer remains in-app-only; no provider sends; separate owner dependency |
-| Frontend/portable/style/artifacts |Original405 frontend checks plus current P1 transport/polling/intent/bridge pass; P2 portable48 and adapters11 pass;435-file scanner, both artifact suites and combined LF-normalized Pint pass |
-| Dependencies / ownership |P1 strict Composer validation and locked security audit pass, no advisories;499/62 teammate files preserved and8 migrations unchanged |
+| Final complete P1/DBA profile |**184 tests /811 assertions,0 failures/errors/skips**,113.058874s JUnit test time; fail-on-warning enabled |
+| Suites, tests/assertions |Unit34/137; Feature76/411; Database62/209; Integration3/23; Compatibility9/31 |
+| P1 required actual-service order gate |Pass unchanged at5447d87; no late mutable users |
+| New DBA actual lower-ID transfer |1 test/12 assertions; old/new/actor guard order and exactly those prelocked users, retained history, capacity release and revision |
+| Existing photo proposal / new delivery cases |23/56 and3/19 respectively; all pass; photo remains a non-active candidate |
+| P2 unchanged published SQL runner |41 SQL/HTTP/concurrency cases plus two original-controller HTTP workflow branches pass on exact final pins |
+| P2 deterministic regression |Unchanged sql-lock-order.php isolated rerun passes; actual independent assignment peer uses one outer attempt, no retry masking |
+| DBA unchanged manual gate/worker |Exit0; late_user_ids=[]; both actual response/details workers commit;1 response; victim_count0 |
+| Enabled lock_deadlocks metric |Published runner0->0; isolated deterministic schedule0->0; unchanged manual gate0->0; sequential isolated measurements, STATUS=enabled |
+| Real configured in-app adapter |TypedOutboxWriter/InAppHandler pass caller rollback/visibility, event-time dispatch, independent receipt replay, revocation and invalid contracts; provider_calls=0 |
+| Explicit actual SMS intent |Unsupported by current P2 producer/writer; diagnostic p2_sms_intent_contract_not_implemented; zero provider attempts, not a claimed positive SMS fixture |
+| Frontend / P2 portable |Original405 plus current P1 transport/polling/intent/bridge pass; P2 portable48 and adapter/form/controller19 Node entries pass |
+| Artifact / snapshot / static |Both artifact suites and445-file scanner pass; P1's6 new snapshot preservation/collision/path tests pass,0 skips |
+| Style / dependencies |Combined read-only Pint on isolated LF copy passes; root strict Composer validation, platform requirements and locked audit pass; no advisories |
 
-Before P1 published aec4e78, the same DBA changes passed **178 tests /781 assertions, zero failures/errors/skips** against c0a32cf (151.857408s). That baseline remains separate evidence. P1's new update adds guarded disposable real-class selection, current P2 pin/allowlist, SQL/HTTP/race CI registration and the required failing lock-order test. We copied every changed P1 file unchanged and reran the full profile; **the newest result is not green**. No test was removed, skipped, made expected-success or patched to clear the gate.
+The full unchanged DBA suite retains fresh/seeded migration, generation/default/cast/missing-attribute denial, scoped constraints, independent-process protocol fixtures, encrypted fictional backup/restore, EXPLAIN, channel receipts/replay, uncertain timeout/rate/budget/reconciliation, credential/template scope and recovery. No skip or expected-success marker replaces a failed gate.
 
-## Lock review — correction still unpublished
+## Protocol acceptance and preserved negative evidence
 
-The user confirmed P2 has not published the correction. Actual acknowledgment locks actor/candidate users, then incident, then a previously unheld resident via ReferenceData.person -> user(). Nested once/atomic planning can also expand an incomplete person set. See [precise source findings and owner changes](P2-LOCK-ORDER-REVIEW.md).
+[Detailed review](P2-LOCK-ORDER-REVIEW.md) covers RelationalStore, ReferenceData, Module, IncidentService and CivicService. Mutable eligibility requires people declared in the same GuardedStore, with sorted operations/SOS guards and current user/appointment/Tanod rows before sources/assignments/destination. Authorized display and household references no longer acquire new user locks after sources. Actual nested paths reuse their declared actor; transfer includes old/new/actor, feedback includes Tanod and resolution revalidates revision. Original captured generation, current destination, capacity2/1, staffing3/6/6 and caller rollback are preserved. No audience-wide lock or production guard change is used to obtain green tests.
 
-DBA's manual review uses actual P2 services and a common-start independent-process response-versus-resident-edit race. The earlier baseline completed both writes without a new deadlock. The final run on latest P1 aec4e78 completed both writes with one response/victim_count0, while the isolated private observer measured **two row-lock waits and one added InnoDB deadlock**. That is consistent with P2's transaction retry absorbing a victim; successful final counts are insufficient. The gate remains exit2, and P2 still owes its deterministic failing regression/correction. Guard helpers alone are not presented as actual-service proof. P1 still owns future role/status/facility mutation races and should make its lock-test ID extraction distinguish user IDs from integer scope bindings; no P1 test is edited here.
+P2's deterministic test preinitializes committed guard rows before its barrier: new upserts can otherwise retain gap locks and hide the intended schedule. Its one-attempt outer transaction exposes rather than retries a1213. We ran the published runner, then that unchanged deterministic file separately, then the unchanged DBA gate, measuring the enabled INFORMATION_SCHEMA.INNODB_METRICS row NAME=lock_deadlocks before/after each schedule. Normal row-lock waits are reported separately and are not called deadlocks. This is evidence for the reviewed schedules, not universal deadlock freedom.
 
-## Photo proposal — not ratified or auto-applied
+An intermediate populated-database run against P1 aec4e78 failed182/808 because its test treated an integer barangay predicate as a user ID. A separate unrelated-scope fixture made its unchanged test report user5001 while only users1/2/3 existed in scope5001. Raw failure/JUnit/query facts remain retained; they are not a P2 inversion. Fresh aec4e78 baseline passed182/807. P1 then published5447d87 with an ID-predicate extractor that rejects unknown whole-user locks; we adopted its source unchanged. The retained mismatched-scope counterexample plus its helper tests now pass3/7, and the final full184/811 passes. The real older181/797 failure/deadlock on P2 3d23092 is retained in [November3 evidence](INTEGRATION-ACCEPTANCE-2026-11-03.md).
 
-[Proposal and ownership decisions](INCIDENT-PHOTO-METADATA-PROPOSAL.md) define scoped uploader/incident-owner FKs, UUID token, HMAC submit intent, private disk/random object key, detected MIME/size/hash, original generation, lifecycle/cleanup claims, UTC timestamps and expiry/recovery indexes. The executable candidate is in **database/proposals/**, not database/migrations; it adds no active model or byte service. Existing verification/personnel document purposes are untouched. Candidate tests call it only on disposable data and remove only that candidate before other migration tests.
+## Photo and SMS implementation prerequisites
 
-P1/P2 must agree uploader roles,24h staging lifetime, exact attach/download purpose policy, resolved/history access, cleanup/retention and storage-integrity semantics before an additive migration/model is published. P1 owns actual byte inspection/staging/private download/cleanup; P2 owns exact persisted incident/source/revision authorization. Metadata tests do not prove byte privacy, token-consumption/cleanup concurrency or the future photo service.
+[Concrete owner decisions](PHOTO-SMS-CONTRACT-DECISIONS.md) review actual P1 ports/lifecycle text, P2's current household/source policy and the PR discussions. Neither owner has jointly ratified the proposed metadata/lifetime/purpose policy at these pins; P2 expressly excludes photo/SMS adoption. The existing resident-ID household policy does not authorize an exact incident attach/download purpose.
 
-## Make/Semaphore — fake acceptance and missing P2 intent
+The [photo candidate](INCIDENT-PHOTO-METADATA-PROPOSAL.md) stays in database/proposals/, with no ninth active migration/model. P1/P2 must explicitly settle reporter-only ownership, incident states/resolved/history/transfer access, captured generation/submitted revision,24h lifetime, private disk/key, processing/cleanup fencing and retention. P1 owns real bytes/download/cleanup; P2 owns exact source authorization. After agreement, DBA will publish the additive migration/model and rehearse retained-data down refusal plus partial-DDL interruption/validated forward repair on disposable data. Those future byte/active-migration tests are not claimed complete by the existing23 proposal tests.
 
-[Delivery evidence and exact P2 contract request](DELIVERY-FAKE-ACCEPTANCE.md) retain the one dispatcher and independent receipts, all14 in-app definitions, two narrowly permitted v2 SMS events, replay/credential scope, budgets/rate/low balance, timeout uncertainty and known-ID reconciliation. Urgent delivery remains Laravel worker directly to Semaphore; approved announcement automation remains nonurgent Make -> scoped Laravel command -> the same SMS ledger. All normal transports are fakes.
+The one dispatcher/SMS ledger and independent receipts remain. Urgent incident.created.v2 goes Laravel worker directly to Semaphore; approved announcement.published.v2 goes nonurgent Make -> scoped Laravel command -> the same ledger. Other12 v2 families remain SMS-denied. Current actual P2 producers and typed writer still emit only in-app intent. Approved persisted recipient/channel permission/consent and real producer fixtures must arrive before a positive separate sms-intent production probe. Make, phone presence or in-app permission never invent that grant. Existing normal delivery tests use fakes; no real SMS/mail, paid action or Make activation occurs.
 
-P2's actual in-app adapter now passes the unchanged configured SQL/receipt checker through latest P1's isolated profile. Earlier absent-adapter/Pint/context/discovery statements are superseded. Default production flags remain off. Both Module::event and TypedOutboxWriter still deliberately exclude SMS. A real source transaction must explicitly select approved SMS recipients/channels for incident.created.v2 or announcement.published.v2 and persist that intent; neither Make, an in-app permission nor phone presence may invent it. Other12 v2 families remain in-app only. No real SMS or Make scenario is activated.
+## Commands and remaining coordination
 
-## Reproduction and remaining release gates
-
-Private bootstrap supplies exact matching DB_*/DB_TEST_* values, APP_BASE_PATH in process/$_ENV, root autoloader, MySQL binaries, APP_ENV=testing, DB_TEST_DISPOSABLE=1, P1_COMBINED_TESTS=1 and MYSQL_INTEGRATION=1. Provider/module/dispatch flags remain false. From the workspace root:
+Private bootstrap supplies matching DB_*/DB_TEST_*, APP_BASE_PATH in process/$_ENV, root autoloader and MySQL binary directory; APP_ENV=testing, DB_TEST_DISPOSABLE=1, P1_COMBINED_TESTS=1 and MYSQL_INTEGRATION=1. Providers/modules/dispatch stay disabled. Local full command:
 
 ```powershell
-# Latest unchanged P1 root settings + its Database/Integration/Compatibility discovery.
-php work/lock-photo-vendor/phpunit/phpunit/phpunit --configuration work/dba-lock-photo-verification/backend/phpunit.review.xml --bootstrap <absolute>/work/lock-photo-bootstrap.php --display-warnings --fail-on-warning --log-junit work/lock-photo-latest-results.xml
-# Earlier c0a32cf baseline used the same command with lock-photo-combined-results.xml.
+php work/corrected-lock-vendor/phpunit/phpunit/phpunit --configuration work/dba-corrected-lock-verification/backend/phpunit.corrected.xml --bootstrap <absolute>/work/corrected-lock-bootstrap.php --display-warnings --fail-on-warning --log-junit work/corrected-lock-latest-results.xml
 ```
 
-From the combined root, with fresh `p2_test_*` env and IDENTITY_ENABLED=true: `php backend/artisan migrate --force --no-interaction`, then `php backend/tests/P2/sql.php`; the latter refuses populated fixtures. The manual `php backend/tests/Review/p2-lock-order.php` adds its own fictional fixtures and returns2 at this candidate. For latest P1's configured CLI use a migrated bc_dba_p2_* database, **P2_TEST_BINDINGS=true**, IDENTITY_ENABLED=true and providers/modules/dispatch false, then `php backend/tests/Compatibility/check-shared-contracts.php`. All actual bindings come from P1's guarded test profile; no test double is selected.
+On a migrated fresh p2_test_* dataset with identity enabled, `php backend/tests/P2/sql.php` runs unchanged cases. Private observation includes that exact sql-cases.php entry and reruns unchanged sql-lock-order.php sequentially, recording only enabled metric values; it implements no domain service. `php backend/tests/Review/p2-lock-order.php` is the unchanged standalone gate. Its separate private observer records the enabled metric before/after. P1's exact current root runtime/discovery is retained; no shared dependency/CI file is edited.
 
-Independent passing commands: `node scripts/run-tests.mjs`, `node scripts/check.mjs`, `node tests/frontend-artifact.mjs`, `node tests/backend-artifact.mjs`, `node --test tests/p2-adapters.mjs tests/p2-foundation-adapters.mjs`, `php backend/tests/P2/run.php`, root Composer strict validation/locked audit and read-only combined Pint on an isolated LF copy. Private setup initially lacked the worker identity env and the new budget test initially compared SUM's string to an int; these harness issues were corrected before final recorded runs, without owner code changes.
+Other independent passing commands: `node scripts/run-tests.mjs`, `node scripts/check.mjs`, `node tests/frontend-artifact.mjs`, `node tests/backend-artifact.mjs`, `node --test tests/integration-snapshot.mjs`, `node --experimental-vm-modules --test tests/p2-adapters.mjs tests/p2-foundation-adapters.mjs tests/p2-form-intents.mjs tests/p2-report-forms.mjs tests/p2-official-forms.mjs tests/p2-location-forms.mjs`, `php backend/tests/P2/run.php`, Composer strict/locked audit/platform and combined Pint. The configured CLI uses P1's isolated real-class bindings on a separate bc_dba_p2_* dataset, never a test-double selection. All intermediate failures are retained as dated diagnostics.
 
-Keep #48 draft. Required remaining inputs: P2's published lock correction/regression, photo agreement and actual private bytes/policy, explicit authorized P2 SMS intent, P1 pin to this DBA review, broader source-family/form registration, required-green combined CI and original-domain/host acceptance. P1's safe Pages artifact/private Laravel web root remain release gates; main is unchanged and its old whole-checkout upload is not a safe backend release. Windows results do not certify Linux-only artifact branches. No live deployment/worker/provider success is claimed.
+Acceptance and precise dependencies are posted to #49/#50. P1 must pin this DBA update and retain its current P2 pin, isolation and snapshot reconciliation. Photo ratification/private byte+policy implementation, approved SMS intent, dedicated rescuer-last-slot concurrency, actual P1 mutation versus P2 transfer/facility use, fully registered five-role browser/host/worker acceptance remain separate gates. Keep #48 draft; main and teammate branches are not merged. Safe frontend artifact/private Laravel public root remain release requirements; no deployment/live success is inferred from these tests.
 
-History retained separately: [135/567 typed-checker round](INTEGRATION-ACCEPTANCE-TYPED.md), [99/421 initial integration](INTEGRATION-ACCEPTANCE-INITIAL.md), [55/218 original standalone](ACCEPTANCE.md). None is the latest combined result.
+Historical reports: [November3 failing lock composition](INTEGRATION-ACCEPTANCE-2026-11-03.md), [135/567 typed round](INTEGRATION-ACCEPTANCE-TYPED.md), [99/421 initial](INTEGRATION-ACCEPTANCE-INITIAL.md), [55/218 standalone](ACCEPTANCE.md). Current184/811 is independent evidence for the explicit final pins, not a retroactive relabeling of older runs.

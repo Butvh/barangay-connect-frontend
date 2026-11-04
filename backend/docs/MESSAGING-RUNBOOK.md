@@ -4,7 +4,7 @@ November 3 contract update: see [INTEGRATION-CONTRACT-V2.md](INTEGRATION-CONTRAC
 
 ## Current integration status
 
-The typed SQL gate resolves P1's actual bindings/configured app classes. P2 now supplies TypedOutboxWriter/InAppHandler and passes the selected **in-app-only** SQL/receipt probe with zero provider calls. Default production config remains unselected/off. The separate fake SMS-intent case still exits2 because P2's writer and producer deliberately allow only in-app. See [fake delivery evidence and explicit owner request](DELIVERY-FAKE-ACCEPTANCE.md) and [current acceptance](INTEGRATION-ACCEPTANCE.md). A green DBA fixture does not certify actual P2 SMS intent, the unpublished lock correction or live operational setup.
+The typed SQL gate resolves actual reviewed classes. Current P2 acc9f56 independently passes the in-app SQL/receipt probe and corrected lock gates; P1 5447d87 retains isolated test selection and disabled production defaults. The separate fake SMS-intent case remains unsupported because the actual producer/writer deliberately allow only in-app. See [fake evidence](DELIVERY-FAKE-ACCEPTANCE.md), [specific eligibility/fixture decisions](PHOTO-SMS-CONTRACT-DECISIONS.md) and [current results](INTEGRATION-ACCEPTANCE.md). No fixture silently turns in-app permission into SMS consent or certifies live operational setup.
 
 Code and offline fakes are supplied; no live Semaphore key, sender approval, Make workspace/scenario or hosting/worker access was provided. The Make blueprint is an unconfigured, redacted import candidate; importing/configuring it in the real workspace and capturing a controlled end-to-end trace remain external work. No real SMS or credit purchase is authorized or performed.
 

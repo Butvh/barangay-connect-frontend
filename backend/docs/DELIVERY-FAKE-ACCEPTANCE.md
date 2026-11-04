@@ -1,10 +1,12 @@
-# Make/Semaphore fake-transport acceptance — November 3, 2026
+# Make/Semaphore fake-transport acceptance — November 4, 2026
+
+**November4 independent refresh:** P1 5447d87/P2 acc9f56 with DBA review passes184 tests/811 assertions,0 failures/errors/skips, including all existing fake delivery tests. Real selected in-app adapters pass; SMS-intent remains explicitly unimplemented, zero provider attempts. The old lock failure is superseded for this candidate. [Current results](INTEGRATION-ACCEPTANCE.md) and [precise owner decisions](PHOTO-SMS-CONTRACT-DECISIONS.md) take precedence over historical totals below. No approved real P2 SMS fixture or live transport success is invented.
 
 This verifies DBA's existing **single dispatcher and independent channel receipts**. No live SMS, paid credits, sender change or Make activation is performed or authorized. Urgent `incident.created.v2` stays Laravel worker -> Semaphore directly; approved nonurgent `announcement.published.v2` stays Make webhook -> scoped Laravel command -> the same SMS ledger/queue. Legacy v1 pairs remain explicit compatibility cases, not new producer aliases.
 
 ## Current evidence
 
-The full P1 c0a32cf/DBA baseline passes **178 tests / 781 assertions, zero failures/errors/skips** on PHP8.5.12, P1 locked Laravel13.39.0/Testbench11.3.0/PHPUnit12.5.43 and MySQL8.4.13. P1 subsequently published aec4e78 with a required failing actual-service lock-order regression; its separate latest-composition result is recorded in [current evidence](INTEGRATION-ACCEPTANCE.md), and is not described as green. The unchanged delivery cases cover:
+The current184/811 suite passes on PHP8.5.12, P1's unchanged locked Laravel13.39.0/Testbench11.3.0/PHPUnit12.5.43 and MySQL8.4.13. Older178/781 and failing lock compositions remain separately retained in [current acceptance](INTEGRATION-ACCEPTANCE.md). The unchanged delivery cases cover:
 
 - All14 registered v2 shapes in-app; exactly two permitted v2 SMS families; unknown type/version/context/template/channel combinations fail closed without false successful receipts.
 - Independent event/recipient/channel/template receipts; duplicate dispatcher/send jobs and Make callbacks preserve one logical intent; completed in-app work does not repeat on SMS retries.

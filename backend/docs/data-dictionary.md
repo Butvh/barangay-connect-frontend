@@ -6,6 +6,8 @@ November 3 follow-up changes no DDL or migration. The original six migrations an
 
 Incident-photo metadata is a separate [unratified proposal](INCIDENT-PHOTO-METADATA-PROPOSAL.md) under database/proposals/, not part of the migrated38-table schema below. Its tests execute only on disposable databases; no active migration/model or private-byte implementation is added.
 
+November4 acceptance changes no DDL: all eight active migrations remain byte-equivalent Git inputs. The P2 lock correction is independently accepted; [explicit photo/SMS decisions](PHOTO-SMS-CONTRACT-DECISIONS.md) still precede any new migration/model or actual SMS-intent adoption.
+
 ## activity_logs
 
 | Column | Type | Nullable | Default | Extra / generated expression |

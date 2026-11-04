@@ -2,6 +2,8 @@
 
 Reviewed P1 `aec4e78dab6557a41053d5a76c6ee217db73a16e`, P2 `acc9f56f37d34c96021c415ab81612bef92dac63`, the P1 private-photo document/ports and current PR48/49/50 discussions. **No explicit joint ratification or approved P2 SMS-intent fixture is published at these pins.** P2's [handoff](https://github.com/Butvh/barangay-connect-frontend/pull/48#issuecomment-6610883247) explicitly says photo metadata/private bytes/additional SMS scope are not adopted. DBA therefore retains the candidate in database/proposals/; no ninth active migration/model is introduced. These are specific owner dependencies, not a request to the user to approve an unimplemented feature.
 
+P1's newer `5447d8723c84caf98844df8a4276d3c21c727546` fixes test binding extraction and snapshot composition; it publishes no new photo/SMS agreement or byte/channel implementation. These same decisions therefore remain unresolved at the final reviewed pins.
+
 ## Photo decisions for explicit P1/P2 agreement
 
 | Boundary | DBA candidate / current source | Required owner response |
