@@ -1,5 +1,7 @@
 # DBA photo persistence and delivery acceptance — November 4, 2026
 
+**Subsequent consent implementation:** P2 ratification is now published at5e61893; [the additive consent persistence](SMS-CONSENT-PROPOSAL.md) supersedes the pending-P2 dependency below. All202/922 results here remain the measured photo-era run at its stated pins, not tests of the later consent migration. Actual byte/current-authority/worker/producer acceptance remains separate.
+
 Implemented at d2a3217811b2c0ff5af5ba42fd2dc31f64269087 (tree22e5787a5ab5dc477f22c37bd5ff45be0079fbc7). PR48 remains draft, based on main. No P1/P2 service, shared Composer/bootstrap/CI or frontend was edited.
 
 | Frozen source | Commit |

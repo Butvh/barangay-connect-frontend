@@ -1,6 +1,6 @@
 # MySQL data dictionary
 
-**November4 additive update:** [incident_photos and its field/index/constraint contract](PHOTO-METADATA-AGREEMENT.md) add the39th table through a NEW ninth migration. Original eight unchanged. The earlier unratified-proposal statement below is historical; consent persistence remains unratified and inactive.
+**Current November4 additive update:** [incident_photos](PHOTO-METADATA-AGREEMENT.md) is the39th table/ninth migration; ratified [notification_preferences](SMS-CONSENT-PROPOSAL.md) adds the40th table/tenth migration. All nine preceding migrations remain unchanged. Earlier absent/unratified statements below preserve historical pins. Persistence does not certify actual P1 byte/current-authority services or external delivery.
 
 Generated from the migrated MySQL Community 8.4.13 schema. Types/nullability/indexes below are actual DDL metadata, not inferred frontend fields. All tables use InnoDB. See DBA-HANDOFF.md for DTO mapping, scope/lock rules, service responsibilities and migration order. No resident rows, secrets or dump data are included.
 

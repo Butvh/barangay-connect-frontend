@@ -44,4 +44,4 @@ MySQL commits DDL separately. up validates existing named supporting index/trigg
 
 Run migrations serially with CREATE/ALTER/DROP/TRIGGER privileges. Inspect incompatibility and forward-fix under review, never delete retained data to force rerun. Every row, including removed tombstones, blocks down with incident_photo_metadata_retained. Empty down drops only the agreed table/trigger and compatible supporting index. Disposable tests cover failure after the committed supporting index, missing trigger recovery, repeat up and incompatible objects.
 
-Consent remains [unratified](SMS-CONSENT-PROPOSAL.md). No byte route, SMS producer or transport is enabled.
+Consent is now [ratified with additive persistence](SMS-CONSENT-PROPOSAL.md); P2 acceptance is published at5e61893. Actual P1 authority and worker/producer integration still gate SMS. No byte route, SMS producer or transport is enabled by metadata.

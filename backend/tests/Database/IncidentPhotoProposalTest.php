@@ -56,7 +56,7 @@ class IncidentPhotoProposalTest extends MysqlDbaTestCase
         $this->proposal->up();
         $this->assertSame(3, DB::table('emergency_alerts')->count());
         $this->assertSame(3, DB::table('users')->count());
-        $this->assertCount(9, glob(__DIR__.'/../../database/migrations/*.php'));
+        $this->assertCount(10, glob(__DIR__.'/../../database/migrations/*.php'));
         $this->assertSame('InnoDB', DB::selectOne("SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='incident_photos'")->ENGINE);
         $this->assertSame(1, DB::selectOne("SELECT COUNT(*) AS n FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='incident_photos' AND INDEX_NAME='photo_expiry_scan' AND SEQ_IN_INDEX=1")->n);
     }
