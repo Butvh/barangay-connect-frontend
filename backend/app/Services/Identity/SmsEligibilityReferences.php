@@ -2,7 +2,7 @@
 
 namespace App\Services\Identity;
 
-/** P1-owned contract awaiting owner confirmation; no persistence implementation or binding yet. */
+/** Ratified P1 port; CurrentSmsConsent is selected only in the reviewed opt-in profile. */
 interface SmsEligibilityReferences
 {
     /**

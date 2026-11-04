@@ -1,5 +1,11 @@
 # Backend work log
 
+## November4 — current self-consent authority
+
+- Implement actual CurrentSmsConsent/self-only GET/PUT against DBA3e632f3, current recipient-before-consent guards, exact versions/original revision and atomic existing typed audit. Original observed identity, scope and revoke-after-role-loss rules remain enforced.
+- Bind both ratified interfaces to the real scoped service only in explicitly opted-in reviewed disposable builds; default/public integration and SMS/Make/dispatch remain off. Publish owner handoff before DBA worker/P2 producer integration.
+- Real MySQL/HTTP/concurrency tests cover current reads, stale RR rejection, concurrent grant CAS, audit rollback and reservation/revoke serialization. These do not certify DBA provider work or P2 positive producers. Cleanup scanning now excludes unexpired leases/backoff so bounded runs can reach eligible rows.
+
 ## November4 — actual private bytes after preserved presentation baseline
 
 - Preserve bbb690e current-pin core: CI41799565014 passes202/923,48 P2 SQL/2 HTTP branches,10 operational/5 identity browser scenarios;735 fingerprints/219 exact owner blobs/5 overlays. Guarded launch/reset/login walkthrough and truthful feature matrix published. Local genuine MySQL8.4 preparation and original Chrome resident/Captain login/report/private-root checks pass.

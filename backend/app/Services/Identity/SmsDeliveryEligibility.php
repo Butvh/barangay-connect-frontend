@@ -4,7 +4,7 @@ namespace App\Services\Identity;
 
 use Closure;
 
-/** Unbound until current consent persistence and the reviewed DBA reservation integration exist. */
+/** Actual P1 authority exists; DBA's current reservation integration remains separately gated. */
 interface SmsDeliveryEligibility
 {
     /**

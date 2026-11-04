@@ -5,6 +5,9 @@ namespace App\Providers;
 use App\Contracts\Events\AuditRecorder;
 use App\Contracts\Events\OutboxWriter;
 use App\Jobs\Messaging\DispatchOutbox;
+use App\Services\Identity\CurrentSmsConsent;
+use App\Services\Identity\SmsDeliveryEligibility;
+use App\Services\Identity\SmsEligibilityReferences;
 use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\ServiceProvider;
 use LogicException;
@@ -15,6 +18,9 @@ final class IntegrationServiceProvider extends ServiceProvider
     public function register(): void
     {
         $testBindings = (bool) config('integration.test_bindings');
+        if (config('integration.consent_test_bindings') && ! $testBindings) {
+            throw new LogicException('Current consent bindings require the reviewed disposable profile.');
+        }
         if ($testBindings || config('integration.p2_enabled')) {
             $this->assertIsolatedBuild();
         }
@@ -48,6 +54,11 @@ final class IntegrationServiceProvider extends ServiceProvider
             $this->bindReviewed($port, $key);
         }
         $this->app->register($provider);
+        if (config('integration.consent_test_bindings')) {
+            $this->app->scoped(CurrentSmsConsent::class);
+            $this->app->alias(CurrentSmsConsent::class, SmsEligibilityReferences::class);
+            $this->app->alias(CurrentSmsConsent::class, SmsDeliveryEligibility::class);
+        }
         if ($testBindings) {
             $this->bindReviewed('App\\Services\\Messaging\\InAppNotificationHandler', 'notification_adapter');
         }

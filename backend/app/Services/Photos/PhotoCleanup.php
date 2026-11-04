@@ -66,7 +66,10 @@ final class PhotoCleanup
     {
         $db = $this->db();
         $ids = $db->table('incident_photos')->whereNull('incident_id')->whereIn('state', ['processing', 'ready', 'failed', 'removing'])
-            ->where('expires_at', '<=', now('UTC'))->where('cleanup_attempts', '<', 20)->orderBy('id')->limit(max(1, min(100, $limit)))->pluck('id');
+            ->where('expires_at', '<=', now('UTC'))->where('cleanup_attempts', '<', 20)
+            ->where(fn ($query) => $query->where('state', '<>', 'removing')->orWhere('cleanup_lease_until', '<=', now('UTC')))
+            ->where(fn ($query) => $query->whereNull('failure_code')->orWhere('failure_code', '<>', 'cleanup_failed')->orWhere('updated_at', '<=', now('UTC')->subMinutes(5)))
+            ->orderBy('id')->limit(max(1, min(100, $limit)))->pluck('id');
         $result = ['claimed' => 0, 'removed' => 0, 'failed' => 0, 'stale' => 0];
         foreach ($ids as $id) {
             $row = $this->claim((int) $id);

@@ -33,6 +33,7 @@ final class ApiExceptions
             404 => ['NOT_FOUND', 'This record was not found.'],
             405 => ['NOT_FOUND', 'This action was not found.'],
             409 => ['CONFLICT', 'This record changed. Refresh and try again.'],
+            413 => ['VALIDATION', 'The uploaded request exceeds the allowed size.'],
             419 => ['CSRF', 'Your session changed. Refresh and try again.'],
             422 => ['VALIDATION', 'Check the highlighted fields.'],
             429 => ['RATE_LIMIT', 'Too many attempts. Try again later.'],

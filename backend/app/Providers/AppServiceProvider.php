@@ -32,6 +32,7 @@ class AppServiceProvider extends ServiceProvider
         }
         RateLimiter::for('csrf', fn (Request $request) => Limit::perMinute(120)->by($request->ip()));
         RateLimiter::for('photo-upload', fn (Request $request) => Limit::perMinute(10)->by('photo:'.$request->user()?->getAuthIdentifier().':'.$request->ip()));
+        RateLimiter::for('consent-write', fn (Request $request) => Limit::perMinute(20)->by('consent:'.$request->user()?->getAuthIdentifier().':'.$request->ip()));
         RateLimiter::for('login', function (Request $request) {
             $input = $request->input('email');
             $email = is_string($input) ? mb_strtolower(trim($input)) : '';
