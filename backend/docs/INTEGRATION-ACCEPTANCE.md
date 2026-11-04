@@ -1,5 +1,7 @@
 # Independent DBA acceptance — November 4, 2026, Asia/Manila
 
+**Latest November4:** [photo persistence/current-head acceptance](PHOTO-PERSISTENCE-ACCEPTANCE.md) supersedes totals and absent-photo-contract statements below: P1 a821d5d/P2 5f38285 + DBA d2a3217 pass202 tests/922 assertions, zero failures/errors/warnings/skips;45 current P2 SQL cases+2 HTTP branches, isolated deterministic/manual service gates and separate configured probes pass. Photo agreement and NEW ninth metadata migration/model are published. Consent/current authority and positive actual-producer SMS remain dependencies. Earlier evidence below is retained at its stated pins.
+
 **P2's published lock correction is independently accepted for the reviewed current command paths.** Final combined run: **184 tests /811 assertions, zero failures/errors/skips**. The old real inversion/deadlock on P2 3d23092 is superseded for acc9f56, with its evidence retained. Photo migration/model and actual SMS intent still await explicit owner contracts; no agreement, private bytes or SMS producer is invented. Keep #48 draft.
 
 ## Exact reviewed source
