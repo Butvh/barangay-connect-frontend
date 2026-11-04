@@ -9,6 +9,7 @@ return [
     'dispatch_enabled' => (bool) env('OUTBOX_DISPATCH_ENABLED', false),
     'test_bindings' => (bool) env('P2_TEST_BINDINGS', false),
     'consent_test_bindings' => (bool) env('P1_CONSENT_TEST_BINDINGS', false),
+    'admin_test_bindings' => (bool) env('P1_ADMIN_TEST_BINDINGS', false),
     // Selection only, never default enablement. Provider requires an isolated disposable test context.
     'reviewed_test_adapters' => [
         'store_adapter' => 'App\\Services\\P2\\Persistence\\RelationalStore',

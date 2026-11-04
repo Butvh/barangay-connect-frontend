@@ -31,7 +31,10 @@ class AppServiceProvider extends ServiceProvider
             throw new LogicException('Production requires HTTPS, protected cookies, and debug disabled.');
         }
         RateLimiter::for('csrf', fn (Request $request) => Limit::perMinute(120)->by($request->ip()));
+        RateLimiter::for('registration', fn (Request $request) => Limit::perMinute(5)->by('register:'.$request->ip()));
+        RateLimiter::for('password-change', fn (Request $request) => Limit::perMinute(5)->by('password:'.$request->user()?->getAuthIdentifier().':'.$request->ip()));
         RateLimiter::for('photo-upload', fn (Request $request) => Limit::perMinute(10)->by('photo:'.$request->user()?->getAuthIdentifier().':'.$request->ip()));
+        RateLimiter::for('private-documents', fn (Request $request) => Limit::perMinute(5)->by('document:'.$request->user()?->getAuthIdentifier().':'.$request->ip()));
         RateLimiter::for('consent-write', fn (Request $request) => Limit::perMinute(20)->by('consent:'.$request->user()?->getAuthIdentifier().':'.$request->ip()));
         RateLimiter::for('login', function (Request $request) {
             $input = $request->input('email');

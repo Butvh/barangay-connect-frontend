@@ -18,7 +18,7 @@ final class IntegrationServiceProvider extends ServiceProvider
     public function register(): void
     {
         $testBindings = (bool) config('integration.test_bindings');
-        if (config('integration.consent_test_bindings') && ! $testBindings) {
+        if ((config('integration.consent_test_bindings') || config('integration.admin_test_bindings')) && ! $testBindings) {
             throw new LogicException('Current consent bindings require the reviewed disposable profile.');
         }
         if ($testBindings || config('integration.p2_enabled')) {
