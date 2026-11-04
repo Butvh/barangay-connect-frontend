@@ -137,7 +137,20 @@ final class SqlContractProbe
             $this->checks[] = 'typed_uuid_context_and_audit_size_rejected';
 
             if ($smsIntent) {
-                $sms = $this->commitEvent($writer, true);
+                try {
+                    $sms = $this->commitEvent($writer, true);
+                } catch (\LogicException $error) {
+                    // Only the reviewed writer's deliberate SMS rejection is unsupported.
+                    // Other LogicExceptions (including the same text elsewhere) stay failures.
+                    $class = 'App\\Services\\P2\\Persistence\\TypedOutboxWriter';
+                    $method = get_class($writer) === $class ? new \ReflectionMethod($class, 'record') : null;
+                    if ($method && $error->getMessage() === 'Use distinct in-app-only recipient references.'
+                        && $error->getFile() === $method->getFileName()
+                        && $error->getLine() >= $method->getStartLine() && $error->getLine() <= $method->getEndLine()) {
+                        throw new ContractCheckFailure('sms_intent_unsupported_in_app_only_writer', previous: $error);
+                    }
+                    throw $error;
+                }
                 $this->dispatchAndAssert($sms, 'complete');
                 $row = DB::table('delivery_receipts')->where('outbox_event_id', $this->event($sms)->id)->where('channel', 'sms')->first();
                 $this->ensure($row && $row->template_key === 'alert-review.v1' && $row->state === 'pending', 'authorized_sms_intent_not_independent');

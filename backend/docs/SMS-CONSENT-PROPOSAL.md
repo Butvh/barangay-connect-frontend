@@ -1,0 +1,24 @@
+# SMS consent — awaiting P1/P2 agreement
+
+No active migration/model/binding. P1 a821d5dd4cb45ffc4cbe0d5bf9531e214eb308c6 publishes unbound interfaces, not current authority. P2 5f38285 deliberately rejects sms=true. P1 [accepted the concrete contract](https://github.com/Butvh/barangay-connect-frontend/pull/50#issuecomment-6623410722); DBA [accepted its versions/API](https://github.com/Butvh/barangay-connect-frontend/pull/50#issuecomment-6623587475). P2's explicit ratification of those newly concrete values/boundaries is still pending.
+
+Proposed notification_preferences: unsigned bigint id,user_id,barangay_id,recorded_by; purpose enum incident_review/barangay_announcements; channel sms; state granted/revoked; revision unsigned >=1; bounded nonempty policy_version/template_version; granted_at/revoked_at/created_at/updated_at UTC microseconds. UNIQUE(user_id,barangay_id,purpose,channel). Scoped RESTRICT user and recorded_by FKs. Index(barangay_id,purpose,channel,state,id).
+
+Grant requires granted_at and no revoked_at; revoke requires revoked_at. Initial revoked-only state may lack prior granted_at. Self grant/revoke uses revision compare-and-swap and atomically writes existing audit evidence: preference, purpose/channel, prior/new state, revision/versions, actor/scope/time; no phone/message. Regrant records new grant time; audit retains transitions. Missing/revoked/obsolete/unknown versions deny. No backfill from phone, role, config, publication approval or old data.
+
+P1 owns self-consent policy, accepted policy versions, namespace/API/registration and current account/appointment eligibility. DBA owns agreed persistence and worker integration. P2 owns audience/channel intent and actual service fixtures. Administrators cannot grant another user's consent without a separately agreed authority rule.
+
+Exact versions accepted by P1/DBA: incident_review / sms-consent.v1 / alert-review.v1; barangay_announcements / sms-consent.v1 / announcement-review.v1. recorded_by=self; absent preference is not_granted/revision0 at API only, never a persisted granted default. Keep revoked history. Revoke remains available to the active owner after losing grant-eligible role.
+
+P1 now publishes App\Services\Identity\SmsEligibilityReferences::allows(EffectiveIdentity $recipient,string $purpose):bool as an unbound outside-existing-transaction short current single-recipient preflight. Filter before opening the domain transaction, then intersect with its actual minimal authorized audience. Decision only; no phone/message DTO, audience-wide locks or locked fanout after source locks.
+
+P1 also publishes the unbound SmsDeliveryEligibility::withCurrentEligibility(EffectiveIdentity $recipient,string $purpose,Closure $reserve):bool. It must own an isolated short single-recipient transaction outside source/photo locks: current person/account/appointment -> consent -> DBA source check/ledger reservation callback, commit before provider I/O. The callback receives consentRevision,policyVersion,templateVersion and performs no network/bytes. Denial skips it; missing binding/schema/current-read capability is unavailable, never true. Revocation uses the same person/preference boundary. Recheck each reservation/retry/final pre-send gate. Revocation committed before that gate denies; an already-started request cannot be cancelled. Event-time consent/stale repeatable-read snapshots are insufficient. Persist reservation revision/versions privately. P1 must implement this authority after agreed persistence; DBA must then integrate the existing worker without taking a user lock after its delivery/source lock.
+
+| Event | Purpose / audience | Template / path |
+| --- | --- | --- |
+| incident.created.v2 | incident_review; same-scope current Captain/Secretary in exact official source audience | alert-review.v1; urgent Laravel worker -> Semaphore |
+| announcement.published.v2 | barangay_announcements; same-scope current Resident/Captain/Secretary in P2 readable publication audience | announcement-review.v1; approved nonurgent Make -> authenticated Laravel command -> same ledger/worker |
+
+P1/DBA accept P2's authorized-publication-as-content-approval proposal, distinct from recipient consent. No retroactive enqueue. Other producer families deny SMS. No browser channel/recipient/template/number/message, second writer/dispatcher/client.
+
+After agreement/authority: test fresh/seeded up, scoped unique/state/version checks, retained downgrade refusal, atomic audit/revision, concurrent revocation/reservation and stale snapshots; account/appointment/scope/purpose/template/source revocation. Consume actual P2 service-produced incident/announcement intent/replay/rollback, then separate configured default/SMS probes plus existing receipt/channel/Make credential/replay/budget/rate/timeout/reconciliation suites using fakes, provider_calls=0. Fake writers do not prove positive actual-producer acceptance.

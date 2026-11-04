@@ -1,5 +1,7 @@
 # DBA schema and delivery handoff
 
+**Later November4 update:** exact photo policy/byte agreement is recorded and one NEW additive metadata migration/model is active. Use [PHOTO-METADATA-AGREEMENT.md](PHOTO-METADATA-AGREEMENT.md). [Persisted SMS consent/current authority](SMS-CONSENT-PROPOSAL.md) still requires explicit owner agreement. Earlier pending-photo statements below are historical at their stated pins. No byte route or SMS producer is enabled.
+
 Owner: DBA + SMS/automation engineer. Base: main `3014ad60ca41a9a5aa4d5a0152faed09d0dfdaf0`. Schedule: November2–6,2026, Asia/Manila. **November4:** [P2 acc9f56 lock correction independently accepted](P2-LOCK-ORDER-REVIEW.md); final P1 5447d87 composition passes184 tests/811 assertions,0 errors/failures/skips. Photo migration/model and actual SMS intent await [explicit owner decisions](PHOTO-SMS-CONTRACT-DECISIONS.md). The [photo candidate](INCIDENT-PHOTO-METADATA-PROPOSAL.md) remains outside active migrations; [delivery fakes](DELIVERY-FAKE-ACCEPTANCE.md) and real in-app probe pass. [Current evidence](INTEGRATION-ACCEPTANCE.md) separates old failures from current results. No production enablement or joint release approval is implied.
 
 ## Integration order and boundaries

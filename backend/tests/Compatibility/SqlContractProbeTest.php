@@ -2,8 +2,11 @@
 
 namespace Tests\Compatibility;
 
+use App\Contracts\Events\EventContext;
+use App\Contracts\Events\EventId;
 use App\Contracts\Events\OutboxWriter;
 use App\Services\Messaging\EventContractViolation;
+use App\Services\P2\Persistence\TypedOutboxWriter;
 use Illuminate\Support\Facades\DB;
 use Tests\MysqlDbaTestCase;
 
@@ -55,5 +58,31 @@ class SqlContractProbeTest extends MysqlDbaTestCase
         $this->expectException(ContractCheckFailure::class);
         $this->expectExceptionMessage('handler_receipt_not_complete');
         (new SqlContractProbe($this->app))->run(new Fixtures\CompatibleTypedWriter, new Fixtures\NoopHandler);
+    }
+
+    public function test_actual_p2_sms_rejection_is_specific_and_never_a_positive_probe(): void
+    {
+        $this->expectException(ContractCheckFailure::class);
+        $this->expectExceptionMessage('sms_intent_unsupported_in_app_only_writer');
+        (new SqlContractProbe($this->app))->run(new TypedOutboxWriter,
+            new Fixtures\CompatiblePerRecipientHandler, smsIntent: true);
+    }
+
+    public function test_same_logic_exception_from_an_unexpected_writer_is_not_hidden(): void
+    {
+        $writer = new class extends Fixtures\CompatibleTypedWriter
+        {
+            public function record(EventId $eventId, string $type, int $scope, int $resourceId,
+                array $recipientRefs, \DateTimeImmutable $occurredAt, EventContext $context = new EventContext): void
+            {
+                if ($recipientRefs[0]->sms) {
+                    throw new \LogicException('Use distinct in-app-only recipient references.');
+                }
+                parent::record($eventId, $type, $scope, $resourceId, $recipientRefs, $occurredAt, $context);
+            }
+        };
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('Use distinct in-app-only recipient references.');
+        (new SqlContractProbe($this->app))->run($writer, new Fixtures\CompatiblePerRecipientHandler, smsIntent: true);
     }
 }

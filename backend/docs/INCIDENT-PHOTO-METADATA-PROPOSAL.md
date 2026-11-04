@@ -1,5 +1,7 @@
 # Incident-photo metadata — proposal 1, awaiting P1/P2 review
 
+**Superseded:** agreement is recorded and a new additive migration/model are active. Use [the current handoff](PHOTO-METADATA-AGREEMENT.md), including input/output hashes, five-minute leases and recoverable DDL. The original proposal below is retained as history.
+
 **November4 review:** current P1 5447d87 and P2 acc9f56 publish no joint ratification, exact attach/download incident policy or private-byte implementation. The accepted incident lock correction does not ratify this schema. [Concrete decisions/implementation prerequisites](PHOTO-SMS-CONTRACT-DECISIONS.md) are sent to both owners; no active migration/model is added and the original eight migrations stay immutable.
 
 Reviewed against P1 `c0a32cfaf4b26b86d57681cd1ed6aa42d6c87bb1`, [PRIVATE-INCIDENT-PHOTOS.md](https://github.com/Butvh/barangay-connect-frontend/blob/c0a32cfaf4b26b86d57681cd1ed6aa42d6c87bb1/docs/backend/PRIVATE-INCIDENT-PHOTOS.md), and P2 `3d23092883e0f24aa89b4c86ce93862e35880e3e`. This is **an unratified DBA proposal**, not a running upload feature. The executable candidate is [database/proposals/incident-photo-metadata.php](../database/proposals/incident-photo-metadata.php), deliberately outside Laravel's migrations directory. All eight existing migrations remain unchanged. No table/model/route/binding is enabled by deploying this branch.

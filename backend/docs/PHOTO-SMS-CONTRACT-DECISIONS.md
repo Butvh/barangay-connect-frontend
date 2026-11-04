@@ -1,5 +1,7 @@
 # Photo and SMS contract decisions — November 4, 2026
 
+**Superseded later November4:** P1 526ef0b and P2 5f38285 now publish the exact photo policy and compatible byte decisions. DBA adopted them before the new additive migration/model. Use [current photo agreement](PHOTO-METADATA-AGREEMENT.md) and [pending consent contract](SMS-CONSENT-PROPOSAL.md). The remaining absent-photo-contract statements preserve history at their stated pins.
+
 Reviewed P1 `aec4e78dab6557a41053d5a76c6ee217db73a16e`, P2 `acc9f56f37d34c96021c415ab81612bef92dac63`, the P1 private-photo document/ports and current PR48/49/50 discussions. **No explicit joint ratification or approved P2 SMS-intent fixture is published at these pins.** P2's [handoff](https://github.com/Butvh/barangay-connect-frontend/pull/48#issuecomment-6610883247) explicitly says photo metadata/private bytes/additional SMS scope are not adopted. DBA therefore retains the candidate in database/proposals/; no ninth active migration/model is introduced. These are specific owner dependencies, not a request to the user to approve an unimplemented feature.
 
 P1's newer `5447d8723c84caf98844df8a4276d3c21c727546` fixes test binding extraction and snapshot composition; it publishes no new photo/SMS agreement or byte/channel implementation. These same decisions therefore remain unresolved at the final reviewed pins.
