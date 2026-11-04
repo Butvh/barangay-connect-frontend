@@ -13,8 +13,8 @@ Scope: actual P1/current owner source union in the isolated disposable profile. 
 | SOS/manual response/rescue/resolution | Implemented isolated core: real MySQL, original UI, frozen intents/revisions, manual assignment, both branches, explicit resolution/history/capacity/privacy; current-pin original browser gate required. |
 | Announcements/feedback/reports | P2 services/SQL and adapters exist. Core browser suite is not exhaustive publication/feedback/report UI acceptance. Captain reports must use persisted fixtures; do not show invented historical aggregates. |
 | In-app notifications | Actual typed outbox/writer/handler/recipient API with independent receipts, rollback/replay/revocation. Automated fixture dispatches in-app-only records; no autonomous production worker. |
-| Private incident photos | Active ninth DBA metadata/model and exact P2 policy adopted. Actual P1 byte/HTTP/cleanup implementation is stretch work; keep controls unavailable until real joint tests pass. Metadata tests do not certify decoding/files. |
-| SMS consent | Schema/API/versions ratified by all owners. Persistence/current authority remains a dependency until published/tested; no granted preference is invented. |
+| Private incident photos | Actual P1 byte/HTTP/cleanup service and tests now exist against ninth DBA metadata/model/exact P2 policy. Original form integration/positive controls remain unavailable pending P2 caller/replay and reviewed shared binding. See PRIVATE-PHOTO-SERVICE.md. |
+| SMS consent | Schema/API/versions ratified; DBA3e632f3 now publishes tenth migration/model. P1 current authority follows this persistence; no granted preference is invented. |
 | SMS/Make/carrier delivery | Unavailable positive flow: P2 producers stay in-app-only. Unsupported-intent exit2 is denial evidence. Needs persistence -> current P1 authority -> current DBA worker/P2 producer -> joint fake transport acceptance; real send/Make requires separate explicit authorization. |
 | Public hosting/release | Unavailable. Static Pages is not Laravel; loopback profile is not production enablement or deployment. |
 

@@ -17,7 +17,8 @@ class AppServiceProvider extends ServiceProvider
     {
         // Laravel merges default disks into configuration. Keep only the reviewed
         // private disk before FilesystemServiceProvider registers file-serving routes.
-        $this->app['config']->set('filesystems.disks', ['local' => config('filesystems.disks.local')]);
+        $this->app['config']->set('filesystems.disks', ['local' => config('filesystems.disks.local'),
+            'private_incident_photos' => config('filesystems.disks.private_incident_photos')]);
         // DBA models and P2 writers are registered by their reviewed slices.
     }
 
@@ -30,6 +31,7 @@ class AppServiceProvider extends ServiceProvider
             throw new LogicException('Production requires HTTPS, protected cookies, and debug disabled.');
         }
         RateLimiter::for('csrf', fn (Request $request) => Limit::perMinute(120)->by($request->ip()));
+        RateLimiter::for('photo-upload', fn (Request $request) => Limit::perMinute(10)->by('photo:'.$request->user()?->getAuthIdentifier().':'.$request->ip()));
         RateLimiter::for('login', function (Request $request) {
             $input = $request->input('email');
             $email = is_string($input) ? mb_strtolower(trim($input)) : '';

@@ -1,5 +1,11 @@
 # Backend work log
 
+## November4 — actual private bytes after preserved presentation baseline
+
+- Preserve bbb690e current-pin core: CI41799565014 passes202/923,48 P2 SQL/2 HTTP branches,10 operational/5 identity browser scenarios;735 fingerprints/219 exact owner blobs/5 overlays. Guarded launch/reset/login walkthrough and truthful feature matrix published. Local genuine MySQL8.4 preparation and original Chrome resident/Captain login/report/private-root checks pass.
+- Implement actual P1 bounded decode/normalization, original-input replay, private immutable storage, exact-policy attach/download and fenced cleanup with real MySQL/HTTP/byte/race tests. Controls/interfaces stay unavailable pending actual P2 caller and shared joint binding. Windows symlink coverage is reported separately; Linux CI remains required.
+- Review/adopt new DBA3e632f3 consent persistence without changing any owner model/migration. Next P1 authority uses the already-ratified contracts; approval is not pending. GD platform dependency added without changing locked package versions.
+
 ## November4 — current photo policy and consent contract refresh
 
 - Pin actual P2 5f3828566f73c40c9473b6b2276206ae07f17b8c with unchanged DBA9d6c699; narrowly add its three contract documents and exact execution plan to the snapshot allowlist. Preserve all owner blobs, common-base collision safeguards and required CI/browser suites.
