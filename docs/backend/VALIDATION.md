@@ -1,5 +1,7 @@
 # P1 validation — November 3, 2026
 
+> **November 5 update:** [Current exact-source acceptance and remaining gates](NOV5-INTEGRATION-STATUS.md) supersedes older completion/blocker statements below. Published P2 administrative support and DBA facility history are now integrated. Earlier measurements retain their original source pins.
+
 Current Nov4 update: DBA1dceb0e active ninth photo migration/model and P25e61893 exact joint acceptance/consent ratification are reviewed and pinned. Photo metadata and consent approval are no longer blockers; statements below at older pins are historical. Actual P1 private bytes proceed next; consent authority waits for DBA persistence. Current-pin browser evidence and the truthful presentation feature matrix are in PR49 and PRESENTATION.md/FEATURE-MATRIX.md. Production remains off.
 
 November4 current refresh: P2 5f3828566f73c40c9473b6b2276206ae07f17b8c is now pinned with DBA9d6c699. P1 adopts its exact unbound photo policy; the former missing-policy request is obsolete. The new45 SQL cases and retained original browser acceptance must pass on this composition; older41-case results below remain historical. See PHOTO-SMS-HANDOFF.md for the four-required-argument attach revision and concrete consent/worker contracts. Active DBA metadata/model and agreed consent persistence remain external prerequisites.

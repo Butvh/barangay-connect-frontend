@@ -1,5 +1,7 @@
 # Backend presentation feature matrix â€” November 4, 2026
 
+> **November 5 update:** [Current exact-source acceptance and remaining gates](NOV5-INTEGRATION-STATUS.md) supersedes older completion/blocker statements below. Published P2 administrative support and DBA facility history are now integrated. Earlier measurements retain their original source pins.
+
 Scope: actual P1/current owner source union in the isolated disposable profile. Frontend demo availability is not backend completion. The current integration-lock.json and PR49 CI evidence define tested pins. No public production path is enabled.
 
 | Feature | Status and presentation boundary |

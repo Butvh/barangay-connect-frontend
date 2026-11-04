@@ -1,5 +1,7 @@
 # Original operational browser integration — November 4, 2026
 
+> **November 5 update:** [Current exact-source acceptance and remaining gates](NOV5-INTEGRATION-STATUS.md) supersedes older completion/blocker statements below. Published P2 administrative support and DBA facility history are now integrated. Earlier measurements retain their original source pins.
+
 Current Nov4 update: P1ba06fbb (tree73b4888; local equivalent d01dd64), DBA8cd2740 and P2b477a7c execute in the source-preserving disposable build. Actual private photos, consent authority, current worker and guarded P1 administration sources exist. Positive administration writes still require P2's actual event-family extension; facility widths/full history require DBA additions. Production remains off. Older slice descriptions below do not certify the later administration work.
 
 Scope: resident SOS/details, manual Secretary responder assignment, responder assessment, manual Captain rescuer assignment, active destination/rescue logs and explicit resolution. Design/markup stays with P2's reviewed original controllers. P1 supplies composition, minimal reference reads and real-browser evidence. Production and dispatch remain disabled.

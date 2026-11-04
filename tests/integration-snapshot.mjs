@@ -83,11 +83,12 @@ test('only the named P2 actual-owner acceptance additions are admitted', async (
   const f = await fixture(); f.git('checkout', '--detach', f.lock.p2);
   for (const path of ['backend/tests/Feature/P2AdministrativeNotificationsTest.php', 'backend/tests/Feature/P2ConsentProducerTest.php',
     'backend/tests/Feature/P2IncidentPhotoCommandTest.php', 'tests/p2-photo-upload.mjs', 'tests/p2-photo-form.mjs',
-    'docs/P2-ACTUAL-OWNER-INTEGRATION.md', 'docs/superpowers/plans/2026-11-04-p2-actual-owner-integration.md']) await f.put(path, 'Reviewed owner source\n');
+    'docs/P2-ACTUAL-OWNER-INTEGRATION.md', 'docs/superpowers/plans/2026-11-04-p2-actual-owner-integration.md',
+    'docs/superpowers/plans/2026-11-04-p2-current-owner-certification.md']) await f.put(path, 'Reviewed owner source\n');
   f.lock.p2 = f.commit(); f.git('checkout', '--detach', f.lock.p2_base);
   const manifest = await composeSnapshot(f);
-  assert.equal(Object.keys(manifest.ownerHashes.p2).length, 9);
-  assert.equal(await verifySources(f.destination, manifest), 11);
+  assert.equal(Object.keys(manifest.ownerHashes.p2).length, 10);
+  assert.equal(await verifySources(f.destination, manifest), 12);
   f.git('checkout', '--detach', f.lock.p2); await f.put('backend/tests/Feature/P2UnreviewedTest.php', 'Not approved');
   f.lock.p2 = f.commit(); f.git('checkout', '--detach', f.lock.p2_base);
   await assert.rejects(composeSnapshot({ ...f, destination: await mkdtemp(join(tmpdir(), 'bc-snapshot-reject-')) }), /allowlist/);

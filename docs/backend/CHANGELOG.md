@@ -1,5 +1,13 @@
 # Backend work log
 
+## November5 — current owners, positive administration and a required photo RED
+
+- Integrate the actual P2 administrative/photo/consent source support and DBA immutable full facility schema without editing owner files. Narrowly admit the reviewed P2 certification plan and retain exact source/fingerprint/artifact guards.
+- Write atomic full facility display history, select actual optional owner ports only in the confirmed private composition, bind original consent/photo readers and Captain reports, and fix closed verification reapplication plus trusted image-worker configuration.
+- Linux CI41878055050:384 backend tests/2109 assertions, zero failures/errors/skips; original positive administration13 cases and retained original20 browser cases pass. That overall run fails a photo test authority selector, corrected subsequently; it is not green.
+- The corrected original photo test reproduces an old form adopting a fresh same-role session observation:PATCH200, revision0 ->1. Keep it required and optional defaults disabled; hand off only the P2-owned helper/view fixes. Preserve the passing core fallback and a sanitized captioned backup recording.
+- Exact source combinations, commands, limitations, current evidence and remaining dependencies: [November5 status](NOV5-INTEGRATION-STATUS.md). Older unsupported-event/schema statements below remain historical.
+
 ## November4 — mandatory administration sources and current-owner evidence
 
 - Implement P1 account/profile/password/household/registration, private verification, Captain personnel/fixed Tanod staffing and facility services behind a separately opted-in disposable administration selection. Original forms/readers use the existing single Http/session boundary and real File/FormData; no owner source or competing persistence adapter is introduced. Positive source acceptance remains blocked by P2's unsupported event families.

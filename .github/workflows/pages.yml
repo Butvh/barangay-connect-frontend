@@ -190,6 +190,15 @@ jobs:
           php backend/tests/Support/prepare-p2-database.php p2_test_integration
           DB_DATABASE=p2_test_integration DB_TEST_DATABASE=p2_test_integration php backend/artisan migrate --force --no-interaction
           DB_DATABASE=p2_test_integration DB_TEST_DATABASE=p2_test_integration IDENTITY_ENABLED=true P2_TEST_BINDINGS=true php backend/tests/P2/sql.php
+      - name: Actual P2 source events through the DBA fake-only production-adapter probe
+        if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
+        working-directory: ${{ env.SNAPSHOT_DIR }}
+        run: |
+          for mode in positive missing revoked wrong_purpose; do
+            REPORT="$RUNNER_TEMP/p2-produced-$mode.json"
+            P2_SOURCE_FIXTURE=1 php backend/tests/P2/producer-fixture.php "$mode" > "$REPORT"
+            P2_TEST_BINDINGS=true IDENTITY_ENABLED=true DBA_TEST_AUTOLOAD="$PWD/backend/vendor/autoload.php" php backend/tests/Compatibility/check-produced-delivery.php --fixture-report="$REPORT"
+          done
       - name: DBA unchanged actual-service lock review
         if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
         working-directory: ${{ env.SNAPSHOT_DIR }}

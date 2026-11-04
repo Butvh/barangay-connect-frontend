@@ -1,5 +1,7 @@
 # Mandatory administration integration
 
+> **November 5 update:** [Current exact-source acceptance and remaining gates](NOV5-INTEGRATION-STATUS.md) supersedes older completion/blocker statements below. Published P2 administrative support and DBA facility history are now integrated. Earlier measurements retain their original source pins.
+
 Full account, verification, personnel and facility administration is required by the presenter. It is now mandatory scope, not a deferred enhancement. The verified core remains available at P1 `2e8161e7a9874af8bf88744066dacd9c43e5e776`, CI41806829977 (261 tests /1227 assertions, zero failures/errors/skips). This checkpoint does not certify full administration.
 
 ## Current measured source and remaining blockers

@@ -84,6 +84,7 @@ try {
     const dialog = page.getByRole('dialog', { name: 'Edit facility', exact: true });
     await dialog.locator('[name=name]').fill('Fictional QA updated hospital'); await dialog.locator('[name=notes]').fill('Private local acceptance fixture');
     await dialog.getByRole('button', { name: 'Save changes', exact: true }).click(); await dialog.waitFor({ state: 'detached' });
+    await page.getByRole('heading', { name: 'Fictional QA updated hospital', exact: true }).waitFor();
     for (const action of ['Deactivate', 'Reactivate']) {
       await page.locator(`[data-menu="${facility.id}"]`).click(); await page.getByRole('menuitem', { name: action, exact: true }).click();
       await page.getByRole('dialog', { name: action + ' facility?', exact: true }).getByRole('button', { name: action + ' facility', exact: true }).click();
