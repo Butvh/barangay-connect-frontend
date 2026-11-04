@@ -8,6 +8,25 @@ async function test(name, run) { await run(); count++; console.log(`PASS ${name}
 const json = (body, status = 200, headers = {}) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', ...headers } });
 const csrf = () => json({ data: { csrf_token: 'csrf-test' }, meta: { server_time: '2026-11-02T00:00:00Z' } });
 
+await test('self-consent purpose segments and real multipart uploads keep the shared session boundary', async () => {
+  const calls = [];
+  const http = createHttp({ origin: 'http://localhost:8000', fetchImpl: async (url, init) => {
+    calls.push({ url, init }); return url.endsWith('/auth/csrf') ? csrf() : json({ data: { ok: true } });
+  } });
+  await http.request('me/notification-preferences/incident_review');
+  const body = new FormData(); body.append('photo', new Blob(['actual fixture bytes'], { type: 'image/png' }), 'fixture.png');
+  await http.request('incident-photos', { method: 'POST', body, headers: { 'Idempotency-Key': 'original-photo-intent' } });
+  const sent = calls.at(-1).init;
+  assert.equal(sent.body, body); assert.equal(sent.headers.has('Content-Type'), false);
+  assert.equal(sent.headers.get('X-CSRF-TOKEN'), 'csrf-test'); assert.equal(sent.credentials, 'same-origin');
+});
+await test('photo processing and oversize errors retain safe actionable codes', async () => {
+  for (const [status, code, expected] of [[503, 'PHOTO_PROCESSING', 'PHOTO_PROCESSING'], [409, 'PHOTO_CONFLICT', 'PHOTO_CONFLICT'], [422, 'PHOTO_INVALID', 'PHOTO_INVALID'], [413, 'UNTRUSTED', 'VALIDATION']]) {
+    const http = createHttp({ origin: 'http://localhost', fetchImpl: async () => json({ code, message: 'private exception' }, status) });
+    await assert.rejects(http.request('me'), error => error.code === expected && !error.message.includes('private'));
+  }
+});
+
 await test('same-origin JSON request unwraps data and carries session + CSRF', async () => {
   const calls = [];
   const http = createHttp({ origin: 'http://localhost:8000', fetchImpl: async (url, init) => {

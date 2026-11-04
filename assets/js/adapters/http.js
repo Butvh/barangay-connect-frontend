@@ -1,6 +1,6 @@
 import { ApiError } from '../core/config.js';
 
-const statuses = { 401: 'AUTH', 403: 'FORBIDDEN', 404: 'NOT_FOUND', 409: 'CONFLICT', 419: 'CSRF', 422: 'VALIDATION', 429: 'RATE_LIMIT', 503: 'NOT_AVAILABLE' };
+const statuses = { 401: 'AUTH', 403: 'FORBIDDEN', 404: 'NOT_FOUND', 409: 'CONFLICT', 413: 'VALIDATION', 419: 'CSRF', 422: 'VALIDATION', 429: 'RATE_LIMIT', 503: 'NOT_AVAILABLE' };
 const messages = {
   AUTH: 'Sign in to continue.', FORBIDDEN: 'This action is not available for your account.',
   NOT_FOUND: 'This record was not found.', CONFLICT: 'This record changed. Refresh and try again.',
@@ -11,6 +11,9 @@ const messages = {
   BUSY: 'An active responsibility prevents this change.', INVALID_STATE: 'This action is no longer available.',
   INVALID_CODE: 'Check the code and try again.', CODE_EXPIRED: 'This code has expired. Request another code.',
   AUTHORIZATION_EXPIRED: 'This reset authorization has expired. Start again.', COOLDOWN: 'Wait before requesting another code.',
+  PHOTO_PROCESSING: 'This photo is still being processed. Retry the same upload shortly.',
+  PHOTO_CONFLICT: 'This upload intent already has different photo bytes.', PHOTO_INVALID: 'Choose a valid JPEG or PNG within the photo limits.',
+  PHOTO_NOT_FOUND: 'This photo is not available.', PHOTO_INTEGRITY: 'This private photo is unavailable.', PHOTO_STORAGE: 'Private photo storage is unavailable.',
 };
 
 export function createHttp({ fetchImpl = globalThis.fetch, origin = globalThis.location?.origin, timeout = 15000, onServerTime = () => {} } = {}) {
@@ -29,7 +32,7 @@ export function createHttp({ fetchImpl = globalThis.fetch, origin = globalThis.l
   }
   async function send(path, { method = 'GET', body, query = {}, signal, headers: suppliedHeaders = {} } = {}) {
     const observedIdentity = identityContext;
-    if (typeof path !== 'string' || !/^[a-z][a-z0-9-]*(?:\/[a-z0-9-]+)*$/i.test(path)) throw problem('VALIDATION');
+    if (typeof path !== 'string' || !/^[a-z][a-z0-9-]*(?:\/[a-z0-9_-]+)*$/i.test(path)) throw problem('VALIDATION');
     method = method.toUpperCase();
     if (!['GET', 'POST', 'PATCH', 'PUT', 'DELETE'].includes(method)) throw problem('VALIDATION');
     const url = new URL(path, base);
@@ -65,6 +68,8 @@ export function createHttp({ fetchImpl = globalThis.fetch, origin = globalThis.l
       let code = statuses[response.status] || 'SERVER';
       const domainCodes = ['CAPACITY', 'BUSY', 'INVALID_STATE', 'INVALID_CODE', 'CODE_EXPIRED', 'AUTHORIZATION_EXPIRED', 'COOLDOWN'];
       if ([409, 422, 429].includes(response.status) && domainCodes.includes(payload?.code)) code = payload.code;
+      const photoCodes = { 404: ['PHOTO_NOT_FOUND'], 409: ['PHOTO_CONFLICT'], 422: ['PHOTO_INVALID'], 503: ['PHOTO_PROCESSING', 'PHOTO_INTEGRITY', 'PHOTO_STORAGE'] };
+      if (photoCodes[response.status]?.includes(payload?.code)) code = payload.code;
       throw problem(code, response.status, payload, response);
     }
     if (!payload || !Object.hasOwn(payload, 'data')) throw problem('SERVER', response.status);

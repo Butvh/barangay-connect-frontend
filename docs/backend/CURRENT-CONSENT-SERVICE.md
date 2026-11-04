@@ -6,6 +6,8 @@ DBA3e632f37e5090295b665c0a0907c492d34af9997 publishes the ratified tenth notific
 
 GET/PUT /api/v1/me/notification-preferences/{purpose} use current.identity, original session generation/scope and normal CSRF. PUT accepts only state(granted/revoked), original integer expected_revision, policy_version and template_version. No target user/barangay/recorder/channel/phone/message fields. Unknown purpose/version422, stale revision409, invalid session401, grant-role403, unavailable authority503. Default normal profile remains503; guests401.
 
+Shared browser transport accepts the exact underscore purpose segments while retaining its traversal/external-URL rejection. Use its existing request/envelope API; multipart FormData preserves the browser boundary and shared CSRF/cookie/identity headers. Photo processing/conflict/validation codes are explicitly whitelisted with safe static copy; unknown server exception text is never trusted. No second fetch/auth client is needed.
+
 Exact pairs: incident_review / sms-consent.v1 / alert-review.v1 (current Captain/Secretary), barangay_announcements / sms-consent.v1 / announcement-review.v1 (current Resident/Captain/Secretary). Consent is only one gate: P2 still intersects exact source audience, DBA still validates current destination/budgets/provider policy. Phone, role, in-app approval and global flags never create consent.
 
 Self GET returns purpose/channel/state/revision/versions/grant and revoke UTC times; absent=not_granted/revision0 without insertion. Explicit mutation starts1 and CAS increments. Active owner may revoke after losing grant-eligible role. Old observations never silently become current; other-scope consent never transfers. Regrant requires a new explicit mutation. No demo account is seeded granted.

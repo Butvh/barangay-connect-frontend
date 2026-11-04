@@ -2,6 +2,7 @@
 
 ## November4 — current self-consent authority
 
+- The shared HTTP regression reproduced rejection of ratified underscore purpose paths; narrowly allow underscores in later path segments. Retain external/traversal rejection, real multipart boundaries/shared CSRF and explicit safe photo-processing codes;18 transport checks pass. No UI/owner service is redesigned.
 - Implement actual CurrentSmsConsent/self-only GET/PUT against DBA3e632f3, current recipient-before-consent guards, exact versions/original revision and atomic existing typed audit. Original observed identity, scope and revoke-after-role-loss rules remain enforced.
 - Bind both ratified interfaces to the real scoped service only in explicitly opted-in reviewed disposable builds; default/public integration and SMS/Make/dispatch remain off. Publish owner handoff before DBA worker/P2 producer integration.
 - Real MySQL/HTTP/concurrency tests cover current reads, stale RR rejection, concurrent grant CAS, audit rollback and reservation/revoke serialization. These do not certify DBA provider work or P2 positive producers. Cleanup scanning now excludes unexpired leases/backoff so bounded runs can reach eligible rows.
