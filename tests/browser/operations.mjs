@@ -31,6 +31,8 @@ async function login(key) {
   const record = records.people[key], context = await browser.newContext({ viewport: { width: 1440, height: 1080 } });
   await context.route('**/*', route => new URL(route.request().url()).origin === origin ? route.continue() : route.abort());
   const page = await context.newPage(); page.setDefaultTimeout(20000);
+  await page.clock.install();
+  page.on('pageerror', error => console.log('BROWSER PAGE ERROR ' + key + ': ' + error.message));
   await page.goto(origin + '/frontend/' + (record.role === 'resident' ? 'resident-login.html' : 'login.html'));
   await page.locator('#email').fill(record.email); await page.locator('#password').fill(record.password); await page.locator('#sign-in').click();
   await page.waitForURL('**/' + (record.role === 'resident' ? 'resident-dashboard.html' : 'official-dashboard.html'));
@@ -89,7 +91,11 @@ async function sos(who, lostReply = false) {
   const id = Number(new URL(page.url()).searchParams.get('id'));
   await page.unroute('**/api/v1/alerts', handler);
   if (lostReply) { assert.equal(calls.length, 2); assert.deepEqual(calls[0], calls[1]); }
-  await page.goto(origin + '/frontend/resident-report.html?step=details&id=' + id);
+  if (lostReply) {
+    await page.waitForURL('**/resident-alert.html?id=' + id);
+    await page.getByRole('link', { name: 'Add details', exact: true }).click();
+  } else await page.locator('#add-details').click();
+  await page.locator('#details').waitFor();
   await page.locator('[data-type=Flood]').click(); await page.locator('#description').fill('Fictional flood at the household');
   await page.locator('#not-sure').uncheck(); await page.locator('#victims').fill('2');
   assert.equal(await page.locator('#photo').isDisabled(), true);
@@ -127,7 +133,6 @@ try {
     rescue = await sos(people.residentRescue); await openAlert(people.secretary, rescue); await pick(people.secretary, rescue);
     await openAlert(people.responder, rescue); await response(people.responder, true, 'Responding');
     // Establish the real polling baseline, then change the assignment while a dirty original dialog is open.
-    await people.responder.page.clock.install();
     await people.responder.page.locator('[data-workflow=logResponse]').click();
     const dirty = people.responder.page.getByRole('dialog', { name: 'Log response', exact: true });
     await dirty.locator('[name=notes]').fill('Keep this unsaved note');
@@ -190,7 +195,6 @@ try {
     for (const notice of notices) { assert.ok(!Object.hasOwn(notice, 'object_key')); assert.ok(!Object.hasOwn(notice, 'password')); if (notice.recipient_id) assert.equal(notice.recipient_id, who.record.id); }
     await screenshot(who.page, 'resident-notifications');
     let polls = 0; who.page.on('request', request => { if (request.url().includes('/revisions/')) polls++; });
-    await who.page.clock.install();
     await who.page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: false })));
     await who.page.clock.fastForward(32000); assert.equal(polls, 0);
   });
@@ -204,7 +208,7 @@ try {
   console.log(`PASS ${report.checks.length} original operational browser scenarios; ${report.screenshots.length} screenshots`);
 } catch (error) {
   report.failure = { message: error.message, stack: error.stack }; await writeFile(resolve(evidence, 'operations-report.json'), JSON.stringify(report, null, 2));
-  for (const [key, who] of Object.entries(people)) { try { await screenshot(who.page, 'failure-' + key); } catch {} }
+  for (const [key, who] of Object.entries(people)) { try { console.log('BROWSER FAILURE VIEW ' + key + ': ' + (await who.page.locator('main').innerText({ timeout: 1000 })).slice(0,1800)); await screenshot(who.page, 'failure-' + key); } catch {} }
   throw error;
 } finally {
   await browser?.close();

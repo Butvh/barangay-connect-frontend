@@ -1,5 +1,7 @@
 # P2 binding review and isolated integration refresh — November 3, 2026
 
+**November4 superseding evidence:** reviewed P2 acc9f56f37d34c96021c415ab81612bef92dac63 with DBA b9f7a7e106fe7fe699abad1afd900c6141c38756. Required [CI41764879472](https://github.com/Butvh/barangay-connect-frontend/actions/runs/41764879472) on P1 5447d8723c84caf98844df8a4276d3c21c727546 passes183 tests/798 assertions, P2 deterministic SQL/race/form cases and DBA manual review (`late_user_ids=[]`, `lock_order_accepted=true`). The specific historical lock blocker below is resolved at that tested composition. Preserve the regression; this is not universal deadlock/release acceptance. [Original-browser slice](OPERATIONAL-BROWSER.md) is the current next acceptance gate, and [photo/SMS handoff](PHOTO-SMS-HANDOFF.md) records remaining dependencies. The remainder records the November3 review against the older source.
+
 Reviewed P1 baseline c0a32cfaf4b26b86d57681cd1ed6aa42d6c87bb1, DBA3d2b3a2dd6afa88ea34b9a441f48da3863787bbd and P2 production candidate3d23092883e0f24aa89b4c86ce93862e35880e3e. Main remains3014ad60ca41a9a5aa4d5a0152faed09d0dfdaf0. The attached plan(2) is byte-identical to plan(1); immediate scope is the user's P1 integration-refresh assignment, not another member's backlog.
 
 ## Actual production-class review

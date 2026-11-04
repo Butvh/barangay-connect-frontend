@@ -1,5 +1,9 @@
 # P1 validation — November 3, 2026
 
+## November4 corrected composition
+
+P1 5447d8723c84caf98844df8a4276d3c21c727546, synthetic test merge14caaf96718096968c300b358e8e0edf7ddd7787; DBA b9f7a7e106fe7fe699abad1afd900c6141c38756; P2 acc9f56f37d34c96021c415ab81612bef92dac63. [Required CI41764879472](https://github.com/Butvh/barangay-connect-frontend/actions/runs/41764879472) is green:183 tests/798 assertions/zero failures/errors/skips,19 P2 Node entries,48 portable checks, required actual-service lock regression and DBA manual review pass.198 exact DBA/P2 blobs and five common-base overlays are preserved among696 source fingerprints. Combined Pint216 files, dependencies, browser identity, artifacts and private-root gates pass. This supersedes the specific November3 late-participant lock blocker. Full original operational browser results are separately reported from the subsequent committed run in PR49.
+
 Current baseline pins are in integration-lock.json. Final follow-up P1/synthetic-merge SHAs, CI totals and browser artifacts are recorded in [draft PR49](https://github.com/Butvh/barangay-connect-frontend/pull/49). A standalone green job is not combined acceptance.
 
 ## Current P2 production refresh

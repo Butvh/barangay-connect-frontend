@@ -6,6 +6,7 @@ import { createSourceFactories, sourceReaders } from '../assets/js/adapters/sour
 assert.deepEqual(Object.keys((await operationalComposition()).factories), []);
 const calls = [], signal = new AbortController().signal;
 const http = { request: async (path, options) => { calls.push({ path, options }); return path.includes('revisions') ? { revision: 'a'.repeat(64) } : []; } };
+http.envelope = async (path, options) => ({ data: await http.request(path, options) });
 const own = createSourceFactories();
 await own.users({ http }).get(7); await own.facilities({ http }).get(8); await own.barangays({ http }).list();
 assert.deepEqual(calls.map(call => call.path), ['references/users/7', 'references/facilities/8', 'references/barangays']);

@@ -1,0 +1,26 @@
+# Private photo and SMS authority handoff — November 4, 2026
+
+Reviewed DBA b9f7a7e106fe7fe699abad1afd900c6141c38756 and P2 acc9f56f37d34c96021c415ab81612bef92dac63. This publishes P1 decisions/change requests; it implements no byte service, migration/model, SMS producer or delivery transport.
+
+## P1 photo decisions for owner ratification
+
+- Accept separate incident_photos metadata and reporter-owned scope FKs; only an approved resident stages/attaches to their own incident. Officials do not upload on another resident's behalf in this slice. Preserve original observed generation and exact locked incident revision. Household authorization is not sufficient photo authorization.
+- Accept private_incident_photos, a random immutable object key, no public symlink/URL, JPEG/PNG detected from actual bytes, at most10MiB submitted bytes and24h maximum unattached staging lifetime. Require successful decode, at most8192 pixels on either edge and16,000,000 total pixels, with bounded decoder memory/time before ready metadata. Never return a processing receipt as ready.
+- Strip EXIF/location/other ancillary metadata by controlled image normalization before storage; hash/size fields describe the actual immutable stored bytes. **DBA change request:** also persist a private immutable input_sha256 (original submitted bytes) for same-intent/different-input rejection after normalization; it is never a public receipt field or a global deduplication key. Validate the input/output digest pairing and ready/attached constraints in the additive migration tests.
+- Same intent while processing returns an explicit retryable in-progress result; it neither allocates another object nor returns a successful receipt. Same completed intent with identical input returns its original token; different input conflicts. Preserve filename-independent authority and private orphan processing if storage succeeds before SQL.
+- Accept fenced removing leases of5 minutes with a fresh token on recovery. Claim only expired unattached rows, commit, remove the verified object outside the transaction, then record outcome only under that claim token. Never lock photo then incident/user, delete attached bytes on staging expiry, or prune evidence/tombstones without a separate retention agreement. Keep cleanup attempts bounded and observable; permanent failures remain retained for review.
+- Downloads reauthorize every request and verify immutable private-root path/size/hash; reject symlinks and escape, use generated attachment names, private/no-store/nosniff. Proposed attached retention is indefinite pending a separately approved policy;24h is not an attached deletion deadline.
+
+## Exact P2 policy dependency
+
+No published exact-incident attach/download port was found in the reviewed P2 contracts; the existing incident household-reference policy cannot certify it. Please publish the concrete purpose-specific contract and fixtures before DBA activates the migration and before P1 implements bytes.
+
+P1 proposes: attachment only by the reporter resident on their own Pending/Acknowledged incident, under the current ordered transaction and original revision/generation; download by that resident or same-scope Captain/Secretary, or a currently active and currently assigned operator. A completed/transferred/historical assignment alone grants no photo download; resolved sources remain available to owner/admin only. Reconcile any required historical operator rule explicitly rather than widening household access. Token ownership/expiry/source checks remain distinct. Please specify locked attach versus nonlocking authorized download reads and any required versioned change to P1's existing attach port.
+
+DBA's candidate is still under database/proposals, outside active migrations, without a production model. Once P1/P2 decisions are ratified, DBA must publish the additive migration/model and preserve the existing eight migrations. P1 will then implement actual staging/download/cleanup and joint byte, rollback, concurrency, revocation and public-root tests. No filename substitute is enabled meanwhile.
+
+## SMS authority and registration
+
+P1 ratifies server-side account eligibility as necessary but insufficient: current active effective identity in the source barangay, purpose-specific recipient authorization, a valid normalized number, and **persisted explicit consent for that purpose/template version** are all required. Phone presence and SMS_ENABLED are never consent. Opt-out/revocation must be rechecked before queued delivery through the current authority, preserving the source event's intent and recipient identity.
+
+P1 has no reviewed persisted consent authority/binding in this slice. Please agree the minimal consent metadata/revocation API before any producer sets sms=true. P2 owns explicit intended recipients/channels only for reviewed incident.created.v2 and announcement.published.v2; DBA owns the single dispatcher, independent channel receipts, Semaphore and Make transports. P1 owns shared registration of the reviewed authority. Existing in-app-only producers remain in-app-only. Provider calls, workers, Make and real SMS/mail remain off in this task; fake/configured-adapter tests do not establish real delivery or consent.

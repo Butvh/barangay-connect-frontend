@@ -143,8 +143,11 @@ jobs:
           node scripts/check.mjs
           node tests/frontend-artifact.mjs
           node tests/backend-artifact.mjs
-          node scripts/stage-backend-frontend.mjs
           node --experimental-default-type=module tests/backend-live.mjs
+      - name: Stage private frontend for independent browser checks
+        if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
+        working-directory: ${{ env.SNAPSHOT_DIR }}
+        run: node scripts/stage-backend-frontend.mjs
       - name: Read-only format check of all owners
         if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
         working-directory: ${{ env.SNAPSHOT_DIR }}/backend

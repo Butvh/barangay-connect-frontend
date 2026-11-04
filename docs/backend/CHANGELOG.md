@@ -1,5 +1,12 @@
 # Backend work log
 
+## November4 — corrected owner composition and original-browser slice
+
+- Reviewed current P2 lock/intent changes and DBA review/proposal additions. Common-base overlay tests now reject concurrent P1 modifications, unapproved collisions, private paths and symlinks; exact before/after/remaining-owner fingerprints are recorded.
+- Required corrected composition passes183/798 and DBA's actual-service manual order review; the historical lock blocker is cleared only for the tested revision. Every owner suite remains required.
+- Prepared P1 minimal own-user/household/verification, scoped barangay and visible-facility readers plus disposable-only operational registration before original pages initialize. Added real Chromium original-page acceptance; final committed results stay explicit in PR49.
+- Published photo lifetime/storage/dimensions/cleanup and SMS authority decisions/change requests. Actual bytes, additive schema, exact incident policy and consent authority remain dependencies.
+
 ## November 3, 2026 — P2 production candidate refresh
 
 - Pinned P2 3d23092 and narrowly added its reviewed documentation/foundation-test paths to snapshot assembly; retained exact owner hashes.
