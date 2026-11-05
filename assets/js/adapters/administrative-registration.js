@@ -19,7 +19,14 @@ export function createAdministrativeFactories() {
     barangays: ({ http }) => ({ list: () => http.request('barangays') }),
     users: ({ http, auth }) => ({
       register: (input, { intent } = {}) => submitAdministrative({ http, path: 'auth/register', input, intent }),
-      get: value => { self(auth, value); return http.request('profile'); },
+      async get(value) {
+        const actor = self(auth, value);
+        const profile = await http.request('profile');
+        const role = auth.roleOf?.(actor) || actor.role;
+        if (role !== 'resident' || profile.verification?.id == null) return profile;
+        const verification = await http.request('verifications/' + id(profile.verification.id));
+        return { ...profile, verification };
+      },
       async update(value, input) { self(auth, value); const result = await http.request('profile', { method: 'PATCH', body: input }); await auth.refresh(); return result; },
     }),
     account: ({ http, auth }) => ({ async changePassword(input) { const result = await http.request('account/password', { method: 'POST', body: input }); await auth.refresh(); return result; } }),

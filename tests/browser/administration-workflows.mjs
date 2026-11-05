@@ -39,10 +39,14 @@ try {
     await page.unroute('**/api/v1/auth/register');
     verification = (await data(applicant, 'verifications'))[0]; assert.equal(verification.review_status, 'Pending');
     await screenshot(page, 'registration-pending');
+    await page.goto(origin + '/frontend/resident-dashboard.html');
+    await page.getByRole('link', { name: 'Verify residency to unlock SOS', exact: true }).waitFor();
   });
   await check('Original correction/resubmission preserves its application and real private history before approval', async () => {
     const id = verification.id; await review('Resubmission requested', 'Please provide a clearer proof of residence.');
     await applicant.page.goto(origin + '/frontend/resident-verification.html');
+    await applicant.page.getByText('Please provide a clearer proof of residence.', { exact: true }).first().waitFor();
+    await applicant.page.getByText('proof-of-residence.png', { exact: true }).waitFor();
     await applicant.page.getByRole('link', { name: 'Resubmit documents', exact: true }).click();
     await applicant.page.locator('#valid-id').setInputFiles(payload('corrected-id.png')); await applicant.page.locator('#proof').setInputFiles(payload('corrected-proof.png'));
     await applicant.page.locator('#submit-documents').click(); await applicant.page.waitForURL('**/resident-verification.html');
@@ -50,7 +54,10 @@ try {
     await review('Approved');
     await applicant.page.goto(origin + '/frontend/resident-verification.html');
     await applicant.page.getByRole('heading', { name: 'Your residency is verified', exact: true }).waitFor();
+    await applicant.page.getByText('corrected-proof.png', { exact: true }).waitFor();
     await screenshot(applicant.page, 'verification-approved');
+    await applicant.page.goto(origin + '/frontend/resident-dashboard.html');
+    await applicant.page.getByRole('link', { name: 'Send SOS', exact: true }).waitFor();
   });
   await check('Original resident profile and password change persist actual values and permit only the new credential', async () => {
     const page = applicant.page; await page.goto(origin + '/frontend/resident-profile.html'); await page.locator('#profile-full_name').waitFor();
