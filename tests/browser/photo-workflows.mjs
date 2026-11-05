@@ -15,6 +15,14 @@ async function photo(who, id) {
   const response = await who.context.request.get(origin + '/api/v1/incident-photos/references/' + id); assert.equal(response.status(), 200);
   const rows = (await response.json()).data; assert.equal(rows.length, 1); assert.deepEqual(Object.keys(rows[0]).sort(), ['bytes', 'id', 'mime']); return rows[0];
 }
+async function verifyGallery(page, metadata) {
+  const url = '/api/v1/incident-photos/' + metadata.id + '/download';
+  const gallery = page.locator('.incident-photo-grid'), image = gallery.getByRole('img');
+  await image.scrollIntoViewIfNeeded();
+  assert.equal(await image.getAttribute('src'), url);
+  assert.equal(await gallery.getByRole('link', { name: 'Download photo 1', exact: true }).getAttribute('href'), url);
+  assert.equal(await image.evaluate(async photo => { await photo.decode(); return photo.complete && photo.naturalWidth > 0; }), true);
+}
 let resident, secretary, captain, replacement, responder, other;
 try {
   resident = await login('resident'); secretary = await login('secretary'); captain = await login('captain'); responder = await login('responder'); replacement = await login('replacement'); other = await login('otherResident');
@@ -41,11 +49,12 @@ try {
     await screenshot(stale, 'stale-original-photo-details'); await stale.close();
     assert.equal((await resident.context.request.get(origin + '/api/v1/incident-photos/' + metadata.id + '/download')).status(), 200);
     assert.equal((await other.context.request.get(origin + '/api/v1/incident-photos/' + metadata.id + '/download')).status(), 404);
+    await verifyGallery(resident.page, metadata);
+    await screenshot(resident.page, 'resident-private-photo-gallery');
     await secretary.page.goto(origin + '/frontend/official-alert.html?id=' + id);
-    const gallery = secretary.page.locator('.incident-photo-grid img'); await gallery.waitFor(); await gallery.scrollIntoViewIfNeeded();
-    assert.equal(await gallery.evaluate(async image => { await image.decode(); return image.complete && image.naturalWidth > 0; }), true);
+    await verifyGallery(secretary.page, metadata);
     await screenshot(secretary.page, 'authorized-photo-gallery');
-    report.residentGalleryPresent = await resident.page.locator('.incident-photo-grid img').count() > 0;
+    report.residentGalleryPresent = true;
   });
   await check('Photo bytes follow current assignment on transfer and remain owner/admin history after explicit resolution', async () => {
     const page = captain.page; await page.goto(origin + '/frontend/official-alert.html?id=' + id); await page.locator('[data-workflow=acknowledge]').click();
@@ -58,6 +67,10 @@ try {
     await dialog.locator('[name=response_type]').selectOption('Assessment'); await dialog.locator('[name=rescue_required]').selectOption('No'); await dialog.locator('[name=response_status]').selectOption('Completed'); await dialog.locator('[type=submit]').click(); await dialog.waitFor({ state: 'detached' });
     await page.goto(origin + '/frontend/official-alert.html?id=' + id); await page.locator('[data-workflow=resolve]').click(); await page.getByRole('dialog', { name: 'Resolve alert?', exact: true }).getByRole('button', { name: 'Resolve', exact: true }).click(); await page.getByText('This alert is resolved.', { exact: true }).waitFor();
     assert.equal((await replacement.context.request.get(url)).status(), 404); assert.equal((await resident.context.request.get(url)).status(), 200); assert.equal((await secretary.context.request.get(url)).status(), 200);
+    await resident.page.reload();
+    await resident.page.getByText(/Your alert has been resolved\./).waitFor();
+    await verifyGallery(resident.page, metadata);
+    await screenshot(resident.page, 'resolved-resident-photo-gallery');
     await screenshot(page, 'resolved-private-photo-history');
   });
   await check('A details form opened before same-account reauthentication cannot adopt its new observation while a staged upload reply is pending', async () => {
@@ -94,6 +107,6 @@ try {
     const patchOutcome = patches ? await patchDone : null;
     const after = JSON.parse(cli('backend/tests/Support/browser-operational-fixture.php', 'inspect', String(id)));
     report.sameRoleObservationEvidence = { patchRequests: patches, patchOutcome, originalRevision: before.revision, savedRevision: after.revision, descriptionChanged: before.description !== after.description };
-    await screenshot(page, 'same-role-staged-reply'); assert.equal(patches, 0, 'An old photo form must not prepare a fresh details command after same-role reauthentication.'); assert.equal(after.revision, before.revision);
+    await screenshot(page, 'same-role-staged-reply'); assert.equal(patches, 0, 'An old photo form must not prepare a fresh details command after same-role reauthentication.'); assert.equal(after.revision, before.revision); assert.equal(after.description, before.description);
   });
 } finally { await qa.close(); }
