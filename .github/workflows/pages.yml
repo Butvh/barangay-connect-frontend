@@ -144,6 +144,7 @@ jobs:
         working-directory: ${{ env.SNAPSHOT_DIR }}
         run: |
           node --experimental-vm-modules --experimental-default-type=module --test tests/p2-adapters.mjs tests/p2-foundation-adapters.mjs tests/p2-form-intents.mjs tests/p2-report-forms.mjs tests/p2-official-forms.mjs tests/p2-location-forms.mjs tests/p2-photo-upload.mjs tests/p2-photo-form.mjs tests/p2-resident-photos.mjs
+          node --test backend/tests/P2/rehearsal.test.mjs
           node scripts/run-tests.mjs
           node --experimental-default-type=module tests/operational-registration.mjs
           node scripts/check.mjs
