@@ -1,6 +1,8 @@
 # Database and delivery presentation — November 5, 2026
 
-Current [single-combination evidence](JOINT-CURRENT-ACCEPTANCE-2026-11-05.md): P104cf76c / P29fbe5d3 / DBAb05cb64,383 tests/2104 assertions, zero errors/failures/warnings and one explicit Windows symlink skip. Actual P1 UTC/full-history/photo/consent and P2 producers are implemented. Current Linux/original-browser certification remains P1-owned. Real external delivery is untested.
+**Current November5 candidate review:** [9bc1a04/f4e8df9/22365ad privacy and presentation handoff](CURRENT-CANDIDATE-PRIVACY-READINESS-2026-11-05.md). Reviewed Linux CI41883691022 passes384 tests/2108 assertions but is **overall RED** at the required photo opening-session browser gate; resident gallery is absent. Independent DBA target120 tests/709 assertions passes with one Windows symlink skip; actual local producer/fake-worker modes and replay pass. P1 facility history/UTC and P2 actual producers are implemented. Final corrected-pin photo/browser/Linux acceptance and host operations remain pending; real external delivery is untested. Normal optional/SMS/Make/dispatch flags stay off.
+
+Use the concise queue/scheduler/cleanup, current authority, fake-versus-real delivery, uncertainty and backup/reset checklist in that handoff. The remainder describes the preserved fictional profile and implemented schema.
 
 ## Implemented persistence
 
@@ -31,7 +33,7 @@ Urgent incident.created.v2 uses Laravel -> Semaphore directly. Approved nonurgen
 
 ## Reproducible fictional profile and reset
 
-Use P1's reviewed [presentation launcher/profile](https://github.com/Butvh/barangay-connect-frontend/blob/04cf76c53be175ae2f0a99ac9b5df8b4039425a6/docs/backend/PRESENTATION.md) from an exact source-preserved snapshot. P1 owns Laravel/shared selection and original-browser workflows; do not create another scaffold, writer or seeder.
+Use P1's reviewed [presentation launcher/profile](https://github.com/Butvh/barangay-connect-frontend/blob/9bc1a04b2005602de25879221042511f07a3ffa8/docs/backend/PRESENTATION.md) from an exact source-preserved snapshot. P1 owns Laravel/shared selection and original-browser workflows; do not create another scaffold, writer or seeder.
 
 1. Record exact owner pins/hashes and use the reviewed current additive schema. Supply private local APP_KEY/credentials for loopback MySQL8.4 with the actual +00:00 connector. Use a NEW unique confirmed bc_dba_p1_presentation_* schema with matching disposable DB_TEST_DATABASE.
 2. Follow the unchanged node scripts/presentation-demo.mjs prepare/serve recipe. Preparation refuses an existing dataset, creates fictional accounts and keeps credentials/private bytes outside the public root. Never reuse another device's paths/schema/event IDs. No preapproved consent is fabricated; demonstrate real self-consent only in the accepted profile.

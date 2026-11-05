@@ -1,5 +1,9 @@
 # Joint current acceptance — November 5, 2026
 
+**Current November5 candidate review:** [9bc1a04/f4e8df9/22365ad privacy and presentation handoff](CURRENT-CANDIDATE-PRIVACY-READINESS-2026-11-05.md). Reviewed Linux CI41883691022 passes384 tests/2108 assertions but is **overall RED** at the required photo opening-session browser gate; resident gallery is absent. Independent DBA target120 tests/709 assertions passes with one Windows symlink skip; actual local producer/fake-worker modes and replay pass. P1 facility history/UTC and P2 actual producers are implemented. Final corrected-pin photo/browser/Linux acceptance and host operations remain pending; real external delivery is untested. Normal optional/SMS/Make/dispatch flags stay off.
+
+The remaining document is the retained **historical04cf76c/9fbe5d3/b05cb64** matrix. Its383/2104 result does not certify P19bc1a04.
+
 **One frozen current combination passes383 tests /2,104 assertions, with zero errors/failures/warnings and one explicit Windows symlink skip.** Actual P1 facility-history/photo/consent services, P2 administrative/photo/SMS producers and the existing DBA worker are used. External HTTP is fake. This supersedes absent-UTC/absent-producer/history-implementation rulings at older pins; it is not production or current-browser certification.
 
 ## Exact source and schema

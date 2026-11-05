@@ -1,5 +1,9 @@
 # Actual producer-to-current-worker acceptance
 
+**Current November5 candidate review:** [9bc1a04/f4e8df9/22365ad privacy and presentation handoff](CURRENT-CANDIDATE-PRIVACY-READINESS-2026-11-05.md). Reviewed Linux CI41883691022 passes384 tests/2108 assertions but is **overall RED** at the required photo opening-session browser gate; resident gallery is absent. Independent DBA target120 tests/709 assertions passes with one Windows symlink skip; actual local producer/fake-worker modes and replay pass. P1 facility history/UTC and P2 actual producers are implemented. Final corrected-pin photo/browser/Linux acceptance and host operations remain pending; real external delivery is untested. Normal optional/SMS/Make/dispatch flags stay off.
+
+Historical evidence below retains its original pins and failures; earlier totals and missing-dependency statements do not describe the current candidate.
+
 [Final single-combination evidence](JOINT-CURRENT-ACCEPTANCE-2026-11-05.md): P1 04cf76c53be175ae2f0a99ac9b5df8b4039425a6, P2 9fbe5d3cb0246ab79517506ad69a09562d7e3f1b, DBA runtime/tests b05cb64ffb7ee602c5b43e948c6bb2adea569c94. **383 tests /2104 assertions**, no errors/failures/warnings,1 explicit Windows symlink skip; actual P1 full-history target30/137 passes. Earlier phase reports remain at their published commits and are not summed.
 
 Unchanged P2 producer-fixture.php creates the four modes using actual self-consent/source services. The consumer check-produced-delivery.php selects real configured adapters and P1 current authority and always fakes external HTTP. Positive sends2; missing/revoked0; wrong-purpose publication only1. Completed source-report replay sends0 additional POSTs. Publication uses the actual authenticated scoped Make command and same ledger. Default writer denial exit2 remains separate. [Exact UUIDs, source/report hashes, attempt/gate evidence and replays](evidence/2026-11-05-produced-delivery.json).

@@ -4,7 +4,9 @@ November 3 contract update: see [INTEGRATION-CONTRACT-V2.md](INTEGRATION-CONTRAC
 
 ## Current integration status
 
-The typed SQL gate resolves actual reviewed classes. Current P2 acc9f56 independently passes the in-app SQL/receipt probe and corrected lock gates; P1 5447d87 retains isolated test selection and disabled production defaults. The separate fake SMS-intent case remains unsupported because the actual producer/writer deliberately allow only in-app. See [fake evidence](DELIVERY-FAKE-ACCEPTANCE.md), [specific eligibility/fixture decisions](PHOTO-SMS-CONTRACT-DECISIONS.md) and [current results](INTEGRATION-ACCEPTANCE.md). No fixture silently turns in-app permission into SMS consent or certifies live operational setup.
+**Current November5 candidate review:** [9bc1a04/f4e8df9/22365ad privacy and presentation handoff](CURRENT-CANDIDATE-PRIVACY-READINESS-2026-11-05.md). Reviewed Linux CI41883691022 passes384 tests/2108 assertions but is **overall RED** at the required photo opening-session browser gate; resident gallery is absent. Independent DBA target120 tests/709 assertions passes with one Windows symlink skip; actual local producer/fake-worker modes and replay pass. P1 facility history/UTC and P2 actual producers are implemented. Final corrected-pin photo/browser/Linux acceptance and host operations remain pending; real external delivery is untested. Normal optional/SMS/Make/dispatch flags stay off.
+
+P1's actual UTC/current-consent/full-history and P2's actual incident/publication producer support are resolved. Actual local source events reach the single current worker with fake HTTP; default SMS-intent denial is deliberately separate. Retained historical integration results are linked from the current addendum. The required photo opening-session browser gate remains red.
 
 Code and offline fakes are supplied; no live Semaphore key, sender approval, Make workspace/scenario or hosting/worker access was provided. The Make blueprint is an unconfigured, redacted import candidate; importing/configuring it in the real workspace and capturing a controlled end-to-end trace remain external work. No real SMS or credit purchase is authorized or performed.
 
@@ -32,7 +34,7 @@ MAKE_BARANGAY_ID=0
 
 Generate independent high-entropy secrets for destination HMAC pepper, Make webhook API key and Make callback token (at least 32 characters). APP_KEY encrypts destination numbers at rest; preserve/rotate it with an appropriate decryption plan. Keep runtime/migration database accounts separate; grant only required table privileges and connect privately. Database/session/application keys, hosting document root and same-origin HTTPS/cookie topology are P1 dependencies.
 
-Normalize allowlist mobile numbers to 639xxxxxxxxx. An empty list or zero budget blocks all sends. The budget reserves estimated segments per logical delivery on the Manila day of first send and remains conservatively reserved after definite rejection; it never automatically refunds an uncertain request. Carry-over retries retain their original reservation. Reconcile the ledger and provider balance before increasing/releasing budget. This is a staging segment guard, not a billing estimate or authorization to spend. Only fixed ASCII templates are emitted; extension characters count two GSM units, multipart uses 153-unit segments and unsupported Unicode is rejected. Confirm the actual provider charge in the controlled trace. Do not enable premium priority/OTP endpoints: the urgent **Laravel queue** remains on the ordinary messages endpoint.
+Normalize allowlist mobile numbers to 639xxxxxxxxx. An empty list or zero budget blocks all sends. The budget reserves estimated segments per logical delivery on the Manila day of first send and remains conservatively reserved after definite rejection; it never automatically refunds an uncertain request. A definite retry or a reservation crossing Manila midnight must also reserve/recheck the current day; an earlier conservative reservation remains retained. Reconcile the ledger and provider balance before increasing/releasing budget. This is a staging segment guard, not a billing estimate or authorization to spend. Only fixed ASCII templates are emitted; extension characters count two GSM units, multipart uses 153-unit segments and unsupported Unicode is rejected. Confirm the actual provider charge in the controlled trace. Do not enable premium priority/OTP endpoints: the urgent **Laravel queue** remains on the ordinary messages endpoint.
 
 ## Queue and scheduler setup for P1/host operator
 
@@ -48,6 +50,8 @@ php artisan schedule:run
 php artisan queue:failed
 php artisan queue:restart
 ```
+
+These are host setup instructions, not activation evidence. Normal flags/workers remain off under this handoff. P1's bounded expired-unattached PhotoCleanup service exists, but this source registers no cleanup schedule/command; P1/host must review that setup and retain attached rows/tombstones.
 
 Run schedule:run from private host cron every minute. DispatchOutbox belongs on messaging-control every minute; its durable scan queues SMS and reconciliation as needed. For urgent latency, P1/P2 enqueue it after domain commit as well. Never use synchronous queues with live domain transactions. Monitor the oldest undispatched event/lease, exhausted outbox attempts, blocked/uncertain sends, failed_jobs, default-vs-urgent depth, unconfirmed Make dispatches, budget reservations and queue worker heartbeats. Host alerts are an operational dependency; no notification destination was supplied. Alert on outbox attempts >=10 or Make attempts >=5 with no callback, not just failed_jobs (safe provider rejections are ledger states).
 
