@@ -1,16 +1,80 @@
 # P2 actual owner integration — November 5, 2026
 
-## Opening-session correction (P1 unavailable)
+## Opening-session correction — current experimental evidence
 
-Current correction is tested over frozen P1 `9bc1a04b2005602de25879221042511f07a3ffa8` / DBA `f4e8df958234e0bd2b09fd1b10d749fc22c746c3`, with original P2 baseline `22365ad`. All evidence below the next heading retains its older explicit pins; it is not current-head acceptance.
+Current correction is tested over frozen P1 `9bc1a04b2005602de25879221042511f07a3ffa8` / DBA `f4e8df958234e0bd2b09fd1b10d749fc22c746c3`, with original P2 baseline `22365ad`. The historical checkpoint section below retains its older explicit pins; it is not current-head acceptance.
 
-Actual unchanged P1 Chromium RED: one PATCH200, revision0 to1, description changed after same-account reauthentication while only the committed upload body was delayed (`bc_dba_p1_p2session_red_1793860026744`). After the P2 correction, all three unchanged photo browser groups pass: zero PATCH, revision0 to0, description unchanged, residentGalleryPresent:true (`bc_dba_p1_p2session_green_1793860662842`). Actual staging/one receipt, committed lost-details replay, original stale409/draft preservation, unrelated404, transfer old404/new200 and resolved operator404/owner+admin200 remain passing. Node31 and the original frontend/page/admin/shared tests pass in the owner composition. Broader current tests follow separately.
+The runtime correction was published early at `ce9a6844b9049d1f3db18e5bb393f0afa6dd1177`; this follow-up adds test/evidence only. Actual unchanged P1 Chromium RED: one PATCH200, revision0 to1, description changed after same-account reauthentication while only the committed upload body was delayed (`bc_dba_p1_p2session_red_1793860026744`). Real Set-Cookie was applied once; header replay/401 is a different schedule. Meaningful helper, actual details-construction and gallery page tests were also RED before the correction. After correction, all3 original photo browser groups pass: zero PATCH, revision0 to0, description unchanged, residentGalleryPresent:true (`bc_dba_p1_p2session_green_1793860662842`). Actual staging/one receipt, committed lost-details replay, original stale409/draft preservation, unrelated404, transfer old404/new200 and resolved operator404/owner+admin200 remain passing.
 
-P2 helpers capture opening identity plus opaque session_observation and retain that binding across discard/complete. Cached receipts, hashing, upload/detail replies and first submission validate it; async details-module loading cannot capture a replacement session. The resident alert reuses P1's unchanged safe incidentPhotoGallery and authorized reader. No P1/DBA source, shared helper, schema, staging gate or CI was edited; optional defaults remain disabled.
+P2 helpers capture opening identity plus opaque session_observation and retain that binding across discard/complete. Cached receipts, hashing, upload/detail replies and first submission validate it; async details-module loading cannot capture a replacement session. Original File/canonical draft/key/revision remain stable on ambiguous failure. A rejected late details response may already have committed; client denial does not imply server rollback. Already committed unattached staging may remain for existing expiry cleanup; no source/history deletion or cleanup bypass was added.
 
-This is an explicitly experimental P2 overlay on the clean839-fingerprint P1 baseline snapshot, not a new clean P1 composition or final Linux CI acceptance. P1 still owns narrow admission of the new test/plan and explicit common-baseline reconciliation of resident-alert.js, final repinning, required gallery browser assertion and final CI. The gallery imports the existing P1-owned helper; standalone P2 checkout is not a complete backend frontend artifact. Do not copy a competing helper or relax static/source gates to hide that dependency.
+The resident alert reuses P1's unchanged safe incidentPhotoGallery and authorized reader. Default/demo/gated/empty/denied states add no gallery; invalid metadata/MIME/private path/token cannot manufacture an image URL. Authorized resolved owner history remains supported. No P1/DBA source, shared helper, schema, staging gate or CI was edited; optional defaults remain disabled.
 
-## Current-P1 compatibility checkpoint
+This is an explicitly experimental P2 overlay on the clean839-fingerprint P1 baseline snapshot, not a new clean P1 composition or final Linux CI acceptance. The unchanged P1 composer ran from a clean detached9bc1a04 checkout. Exactly7 existing runtime/test paths are overridden and2 P2 tests are added; all9 hashes match P2. No other baseline source hash differs. The [manifest](P2-INTEGRATION-MANIFEST.json) retains baseline hashes separately from overlays and records JUnit/browser report hashes. P1 Windows working-tree bytes include CRLF; DBA/P2 baseline overlays are exact Git blobs. The P1 source guard was not weakened or relabeled as a clean final composition.
+
+### Fresh measured checks
+
+| Gate | Result |
+| --- | --- |
+| All5 original owner PHPUnit suites | **384 tests/2108 assertions,0 failures/errors,1 Windows symlink-fixture skip**, real private MySQL8.4.13/PHP8.5.12/GD/native Poppler. Includes current photo/source/consent/fake-worker/admin suites. Schema `bc_dba_p1_p2final_1793861053327`; JUnit SHA256 `0fcff84a15c9009b5727734adbb041fc445ebba052bd20988487dfaf49975631`. |
+| Unchanged original non-photo browsers | **33 scenarios**: identity5, operations10, administration5, administration-workflows4, expiry-recovery2, personnel-facility7. Actual original UI/cookies/CSRF/current services and fresh private schemas. |
+| Original photo browser | **3 groups pass**, including zero-PATCH opening-observation schedule above. Existing residentGalleryPresent is still a reported value; P1 must make it required in its owned gate. |
+| Added P2 actual browser | **1 group passes**: same-role reauthentication BEFORE first click yields zero upload/PATCH and unchanged revision; explicit reopening saves0→1, image.decode succeeds, download200, desktop/390px mobile fit. Screenshots inspected. Schema `bc_dba_p1_p2session_reopened_1793862691758`. |
+| P2 Node/page/intent | **32 entries,0 failures/skips**; first-click/import/hash/pending-upload/cached-receipt/pending-details/discard/normal-complete/reopen and retained retry cases. |
+| SQL/HTTP/current order | **48 SQL cases +2 original-controller HTTP branches pass**; unchanged DBA actual-service probe accepted, late_user_ids[], both concurrent commands commit. Schema `p2_test_1793862967065`. No universal deadlock-free claim. |
+| Original frontend/artifacts | Original node/page/admin/shared suites, composed scanner506, frontend artifact and backend staged-module graph pass. |
+| Composer/style | Strict/platform/GD pass. **299 PHP files pass Pint** in separate LF-only style mirror. Raw Windows composition Pint FAILS on unchanged P1 CRLF; original files were not formatted. P1 retains final Linux style gate. |
+| Dependency audit | **FAIL:7 advisories across4 Symfony v8.1.10 packages** in unchanged P1 lock. No P2 update/ignore/suppression. Details below. |
+| Standalone P2 static | **FAIL:1 missing import**, P1-owned core/incident-photos.js. Composed scanner/staged module graph passes. Do not copy a competing helper or relax the checker. |
+
+The earlier358-test/audit0 evidence below is historical. Never combine its counts/pins/audit status with this run. Dependency advisories were reported November4; passing services/browsers do not close that gate.
+
+### Commands and narrow owner handoff
+
+Run in the documented confirmed disposable testing environment with P1's locked Playwright1.64.1, PHP8.5.12/GD and native PDF parser. Keep SMS/Make/outbox dispatch and normal optional activation off. Each browser runner used a fresh private schema; external HTTP was blocked/fake. No real mail/SMS, Make scenario, production worker, shared/live migration, merge/retarget or deployment occurred.
+
+```text
+node scripts/prepare-integration.mjs
+# Above creates the unchanged original baseline; P2 experimental overlay hashes stay separate.
+node scripts/run-tests.mjs
+node scripts/check.mjs
+node --experimental-vm-modules --test tests/p2-adapters.mjs tests/p2-form-intents.mjs tests/p2-foundation-adapters.mjs tests/p2-location-forms.mjs tests/p2-official-forms.mjs tests/p2-photo-form.mjs tests/p2-photo-upload.mjs tests/p2-report-forms.mjs tests/p2-resident-photos.mjs
+php backend/vendor/bin/phpunit -c backend/phpunit.combined.xml --log-junit p2-session-full.xml
+php backend/tests/P2/sql.php
+php backend/tests/Review/p2-lock-order.php
+node tests/browser/identity.mjs
+node tests/browser/operations.mjs
+node tests/browser/administration.mjs
+node tests/browser/administration-workflows.mjs
+node tests/browser/expiry-recovery-workflows.mjs
+node tests/browser/personnel-facility-workflows.mjs
+node tests/browser/photo-workflows.mjs
+node backend/tests/P2/browser-opening-session.mjs
+node tests/frontend-artifact.mjs
+node tests/backend-artifact.mjs
+# From backend/ through the shared Composer runtime:
+composer validate --strict
+composer check-platform-reqs
+composer audit --locked
+php vendor/bin/pint --test --format=json <private-LF-only-published-PHP-mirror>
+```
+
+P1's remaining narrow changes: explicitly reconcile/admit `assets/js/pages/resident-alert.js` at the common baseline; admit new `tests/p2-resident-photos.mjs` and `docs/superpowers/plans/2026-11-05-p2-opening-observation.md`. New `backend/tests/P2/browser-opening-session.mjs` is already under the owned/admitted directory; other edits use existing admitted P2 paths. Repin the final publication through P1's normal workflow, including any exact-head staging guard. Require resident gallery decode/download in its original browser gate, then run the clean composition/verifier and full Linux CI on final pins. Never broadly admit original pages or weaken a failing gate. Shared transport/helper/readers/registration/CI remain P1-owned.
+
+DBA received the early correction and exact pins for independent privacy/source/fake-worker acceptance; no DBA schema/dispatcher change is requested for this frontend defect. Retain zero source command after observation denial, original retry identity and existing orphan cleanup. Current source/worker coverage passes in the384-test suite; DBA owns independent acceptance.
+
+One fresh implementation review found no Critical/Important findings; its minor normal-complete→reauthentication test suggestion was added and passes. No production changes followed that review. Final admission, audit review/remediation and clean full Linux acceptance remain pending. Keep PR50 draft/stacked47 and optional activation disabled.
+
+### New P1 dependency-audit handoff
+
+Current `composer audit --locked` exit1 reports7 advisories in4 packages at v8.1.10. This is a dependency gate result, not a claim that every advisory is exploitable through this Laravel application. P1 must verify applicability and a compatible remedy under its shared dependency ownership, then rerun the required gates. Reported ranges include8.1.10 and end below8.1.11. P2 did not modify the lock or suppress advisories.
+
+- http-foundation: [PKSA-24ph-xkrh-y79j / CVE-2026-118514](https://symfony.com/cve-2026-118514), [PKSA-pr6q-2w5s-kzzf](https://github.com/symfony/symfony/security/advisories/GHSA-3h27-hjv7-fqjx), [PKSA-nxjs-s6hn-vb6m](https://github.com/symfony/symfony/security/advisories/GHSA-xg2q-4rrq-657q), [PKSA-b2gg-vk1g-6d5q](https://github.com/symfony/symfony/security/advisories/GHSA-5mx8-mwrp-5693).
+- http-kernel: [PKSA-3gxv-7xhq-mgmz](https://github.com/symfony/symfony/security/advisories/GHSA-wg5q-m2ww-f3c9).
+- routing: [PKSA-y8c5-1b7f-r1gj / CVE-2026-118516](https://symfony.com/cve-2026-118516).
+- yaml: [PKSA-nktx-f1n1-b4yd](https://github.com/symfony/symfony/security/advisories/GHSA-hwfg-qwvh-2wfx).
+
+## Historical current-P1 compatibility checkpoint
 
 P1 `90208dbba11dbf7908b38e0f5bd100093c5be31d`, DBA `8cd2740d19e311c186b261c14a5c1ac69290ae98`, P2 over `272f8d6`: actual P2 administrative regression failed because current P1 facility creation requires its original command key (5 tests/33 assertions/1 error, private schema `bc_dba_p1_p2final_1793807653160`). The correction supplies a fixed original creation key in that P2 fixture only; no production validation, service or locking behavior changed.
 
@@ -26,7 +90,7 @@ This candidate extends the retained b477a7c presentation checkpoint. It is not w
 
 - P1 `4c537189119c2b4d9a461a14de97221eeb0c66e4`.
 - DBA `815c27293419797ebe3fbab4fe84daaf3580de0b`.
-- P2 source hashes: [current manifest](P2-INTEGRATION-MANIFEST.json), code checkpoint `9fbe5d3cb0246ab79517506ad69a09562d7e3f1b`. The [previous frozen manifest](https://github.com/Butvh/barangay-connect-frontend/blob/272f8d6ff1ca83a50119fe76f006de075d0d21a4/docs/P2-INTEGRATION-MANIFEST.json) reproduces the older bf9d67b composition; it is not current evidence.
+- Historical P2 source hashes: [22365ad manifest](https://github.com/Butvh/barangay-connect-frontend/blob/22365ad10f05bba4d16ba1d84a8e9c9049e2aa0a/docs/P2-INTEGRATION-MANIFEST.json), code checkpoint `9fbe5d3cb0246ab79517506ad69a09562d7e3f1b`. The [previous frozen manifest](https://github.com/Butvh/barangay-connect-frontend/blob/272f8d6ff1ca83a50119fe76f006de075d0d21a4/docs/P2-INTEGRATION-MANIFEST.json) reproduces the older bf9d67b composition; it is not current evidence.
 - Main retained `3014ad60ca41a9a5aa4d5a0152faed09d0dfdaf0`; PR50 remains draft/stacked47.
 - No P1 services/shared registration/readers, DBA models/migrations/transports, shared/live database or external delivery was changed. P1's new explicit `+00:00` MySQL connector is consumed unchanged; older timezone-gap reports refer to the previous pin.
 

@@ -74,3 +74,13 @@ test('demo handoff preserves demo payloads without inventing server keys', async
   const input = { photo_name: 'fictional.jpg' };
   assert.equal(await form.submit(input, async (body, intent) => { assert.deepEqual(body, input); assert.equal(intent, undefined); return 4; }), 4);
 });
+
+test('normal completion does not rebind an old form after same-account reauthentication', async () => {
+  const form = bridge.createFormSubmission({ auth, demo: false });
+  await form.submit({}, async () => ({ id: 1 }));
+  actor = { ...actor, session_observation: 'new-login-after-completion' };
+  let writes = 0;
+  await assert.rejects(form.submit({}, async () => writes++), { code: 'AUTH' });
+  await bridge.createFormSubmission({ auth, demo: false }).submit({}, async () => writes++);
+  assert.equal(writes, 1, 'Only a deliberately reopened form uses the new session.');
+});
