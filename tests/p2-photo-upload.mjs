@@ -57,7 +57,7 @@ test('account change during actual async file preparation denies before an uploa
   assert.equal(writes, 0);
 });
 
-test('account change while an upload reply is pending cannot accept another account receipt', async () => {
+test('account change while an upload reply is pending invalidates the old upload form', async () => {
   let actor = { id: 1, barangay_id: 1, role: 'resident' }, release, started;
   const ready = new Promise(resolve => { started = resolve; });
   const reply = new Promise(resolve => { release = resolve; });
@@ -68,6 +68,26 @@ test('account change while an upload reply is pending cannot accept another acco
   await ready; actor = { ...actor, id: 2 }; release(receipt);
   await assert.rejects(pending, { code: 'AUTH' });
   actor = { ...actor, id: 1 };
-  await upload.stage(file, async (_, intent) => { calls.push(intent.idempotencyKey); return receipt; });
-  assert.equal(calls[0], calls[1], 'Original account retry must preserve its pending upload key.');
+  await assert.rejects(upload.stage(file, async (_, intent) => { calls.push(intent.idempotencyKey); return receipt; }), { code: 'AUTH' });
+  assert.equal(calls.length, 1, 'An invalidated old form cannot resume after switching back.');
+});
+
+for (const phase of ['before-first-stage', 'hashing', 'pending-reply', 'cached-receipt']) test('same-role observation change is denied: ' + phase, async () => {
+  let actor = { id: 1, barangay_id: 1, role: 'resident', session_observation: 'opening' }, release, ready;
+  const wait = new Promise(resolve => { release = resolve; });
+  const started = new Promise(resolve => { ready = resolve; });
+  const file = new class extends File { async arrayBuffer() { if (phase === 'hashing') { ready(); await wait; } return super.arrayBuffer(); } }(['fictional bytes'], 'fixture.png', { type: 'image/png' });
+  const upload = photoModule.createPhotoUpload({ auth: { current: () => actor } });
+  let writes = 0;
+  const write = async () => { writes++; if (phase === 'pending-reply') { ready(); await wait; } return receipt; };
+  if (phase === 'cached-receipt') await upload.stage(file, write);
+  if (phase === 'before-first-stage' || phase === 'cached-receipt') {
+    actor = { ...actor, session_observation: 'new-login' };
+    await assert.rejects(upload.stage(file, write), { code: 'AUTH' });
+  } else {
+    const pending = upload.stage(file, write); await started;
+    actor = { ...actor, session_observation: 'new-login' }; release();
+    await assert.rejects(pending, { code: 'AUTH' });
+  }
+  assert.equal(writes, ['pending-reply', 'cached-receipt'].includes(phase) ? 1 : 0);
 });

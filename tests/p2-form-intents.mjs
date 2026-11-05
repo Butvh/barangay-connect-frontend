@@ -5,7 +5,7 @@ const bridge = await import('../assets/js/adapters/p2-form-intent.js').catch(err
   if (error.code !== 'ERR_MODULE_NOT_FOUND') throw error;
   return {};
 });
-let actor = { id: 1, barangay_id: 1, role: 'secretary' };
+let actor = { id: 1, barangay_id: 1, role: 'secretary', session_observation: 'opening-session' };
 const auth = { current: () => actor, roleOf: value => value.role };
 
 test('unregistered backend forms fail closed before an HTTP mutation', async () => {
@@ -34,16 +34,40 @@ test('editing a failed intent or replacing its revision never starts a silent ne
   await assert.rejects(form.submit({ notes: 'original', expected_revision: 3 }, async () => writes++), { code: 'CONFLICT' });
   assert.equal(writes, 1);
 });
-test('account switch refuses the old form and deliberate discard creates a new key', async () => {
+test('account switch invalidates the old form even after discard; only a reopened form can submit', async () => {
   const form = bridge.createFormSubmission({ auth, demo: false });
   const keys = [];
   const lost = async (_, intent) => { keys.push(intent.idempotencyKey); throw Error('lost'); };
   await assert.rejects(form.submit({}, lost));
   actor = { ...actor, id: 9 };
-  await assert.rejects(form.submit({}, lost), { code: 'CONFLICT' });
+  await assert.rejects(form.submit({}, lost), { code: 'AUTH' });
   form.discard();
-  await assert.rejects(form.submit({}, lost));
+  await assert.rejects(form.submit({}, lost), { code: 'AUTH' });
+  assert.equal(keys.length, 1);
+  const reopened = bridge.createFormSubmission({ auth, demo: false });
+  await assert.rejects(reopened.submit({}, lost), /lost/);
   assert.notEqual(keys[0], keys[1]);
+});
+
+test('same-account reauthentication before first submit cannot be adopted by an old form', async () => {
+  const form = bridge.createFormSubmission({ auth, demo: false });
+  actor = { ...actor, session_observation: 'reauthenticated-before-click' };
+  let writes = 0;
+  await assert.rejects(form.submit({}, async () => writes++), { code: 'AUTH' });
+  assert.equal(writes, 0);
+});
+
+test('a late details reply cannot complete under a new observation or silently rebind on retry', async () => {
+  const form = bridge.createFormSubmission({ auth, demo: false, revision: 3 });
+  let release, writes = 0;
+  const reply = new Promise(resolve => { release = resolve; });
+  const pending = form.submit({ description: 'original' }, async () => { writes++; return reply; });
+  actor = { ...actor, session_observation: 'reauthenticated-during-write' };
+  release({ id: 1 });
+  await assert.rejects(pending, { code: 'AUTH' });
+  form.discard();
+  await assert.rejects(form.submit({ description: 'original' }, async () => writes++), { code: 'AUTH' });
+  assert.equal(writes, 1, 'The first write may have committed; rejecting its late reply must not issue another write.');
 });
 test('demo handoff preserves demo payloads without inventing server keys', async () => {
   const form = bridge.createFormSubmission({ auth, demo: true, revision: 9 });

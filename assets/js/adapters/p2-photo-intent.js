@@ -4,23 +4,15 @@ import { createFormSubmission } from './p2-form-intent.js';
 /** Optional details-only upload; shared P1 intent/transport remain the authority. */
 export function createPhotoUpload({ auth }) {
   const submission = createFormSubmission({ auth, demo: false });
-  let original = null, digest = null, receipt = null, sending = null, observed = null;
-  const actorKey = () => {
-    const actor = auth?.current();
-    if (!actor) throw new ApiError('AUTH', 'Sign in before uploading.');
-    return `${actor.id}:${actor.barangay_id}:${auth.roleOf?.(actor) || actor.role}`;
-  };
-  const assertObserved = () => {
-    if (actorKey() !== observed) throw new ApiError('AUTH', 'Your account changed. Reopen the form.');
-  };
+  let original = null, digest = null, receipt = null, sending = null;
+  const assertObserved = submission.assertCurrent;
   return Object.freeze({
     async stage(file, upload) {
-      const actor = actorKey();
-      if (observed && actor !== observed) throw new ApiError('AUTH', 'Your account changed. Reopen the form.');
+      assertObserved();
       if (original && file !== original) throw new ApiError('CONFLICT', 'Reopen the details form before changing a pending photo.');
       if (!(file instanceof Blob) || !['image/png', 'image/jpeg'].includes(file.type) || file.size < 1 || file.size > 10 * 1024 * 1024) throw new ApiError('VALIDATION', 'Choose a JPG or PNG up to 10 MB.');
       if (typeof upload !== 'function') throw new ApiError('NOT_AVAILABLE', 'Private uploads are awaiting reviewed integration.');
-      original ||= file; observed ||= actor;
+      original ||= file;
       if (receipt) return receipt;
       if (sending) return sending;
       sending = (async () => {

@@ -31,3 +31,23 @@ assert.equal(writes.length, 1);
 assert.deepEqual(structuredClone(writes[0]), { alert_type: 'Fire', description: 'Original description', location_label: 'Original location',
   map_x: 10, map_y: 10, victim_count: 1, upload_ids: ['11111111-1111-4111-8111-111111111111'] });
 console.log('PASS original details listener freezes the entire draft/file before asynchronous staging');
+
+// Exercise the actual details construction boundary, including its asynchronous import.
+const { createFormSubmission, configureOperationalSubmissions } = await import('../assets/js/adapters/p2-form-intent.js');
+const { createSubmissionIntent } = await import('../assets/js/adapters/submission-intent.js');
+const { createPhotoUpload } = await import('../assets/js/adapters/p2-photo-intent.js');
+configureOperationalSubmissions({ createSubmissionIntent });
+let actor = { id: 1, barangay_id: 1, role: 'resident', session_observation: 'opened' }, releaseImport, importStarted;
+const importReady = new Promise(resolve => { importStarted = resolve; });
+const importGate = new Promise(resolve => { releaseImport = resolve; });
+const opening = source.indexOf('async function details(a)');
+const construction = source.slice(opening, source.indexOf('map?.destroy()', opening)) + 'return {submission,uploadPhoto};}';
+const formContext = vm.createContext({ Auth: { current: () => actor }, Config: { DEMO_MODE: false }, Api: { alerts: { stagePhoto() {} } },
+  createFormSubmission: options => createFormSubmission({ ...options, demo: false }) });
+const formModule = new vm.SourceTextModule(construction + '\nexport {details};', { context: formContext,
+  importModuleDynamically: async () => { importStarted(); await importGate; const module = new vm.SyntheticModule(['createPhotoUpload'], function () { this.setExport('createPhotoUpload', createPhotoUpload); }, { context: formContext }); await module.link(() => {}); await module.evaluate(); return module; } });
+await formModule.link(() => {}); await formModule.evaluate();
+const openingForm = formModule.namespace.details({ assignment_revision: 0 }); await importReady;
+actor = { ...actor, session_observation: 'reauthenticated-during-import' }; releaseImport();
+await assert.rejects(openingForm, { code: 'AUTH' });
+console.log('PASS original details construction freezes opening observation before its asynchronous import');

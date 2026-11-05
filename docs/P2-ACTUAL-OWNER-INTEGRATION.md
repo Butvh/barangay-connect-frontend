@@ -1,5 +1,15 @@
 # P2 actual owner integration — November 5, 2026
 
+## Opening-session correction (P1 unavailable)
+
+Current correction is tested over frozen P1 `9bc1a04b2005602de25879221042511f07a3ffa8` / DBA `f4e8df958234e0bd2b09fd1b10d749fc22c746c3`, with original P2 baseline `22365ad`. All evidence below the next heading retains its older explicit pins; it is not current-head acceptance.
+
+Actual unchanged P1 Chromium RED: one PATCH200, revision0 to1, description changed after same-account reauthentication while only the committed upload body was delayed (`bc_dba_p1_p2session_red_1793860026744`). After the P2 correction, all three unchanged photo browser groups pass: zero PATCH, revision0 to0, description unchanged, residentGalleryPresent:true (`bc_dba_p1_p2session_green_1793860662842`). Actual staging/one receipt, committed lost-details replay, original stale409/draft preservation, unrelated404, transfer old404/new200 and resolved operator404/owner+admin200 remain passing. Node31 and the original frontend/page/admin/shared tests pass in the owner composition. Broader current tests follow separately.
+
+P2 helpers capture opening identity plus opaque session_observation and retain that binding across discard/complete. Cached receipts, hashing, upload/detail replies and first submission validate it; async details-module loading cannot capture a replacement session. The resident alert reuses P1's unchanged safe incidentPhotoGallery and authorized reader. No P1/DBA source, shared helper, schema, staging gate or CI was edited; optional defaults remain disabled.
+
+This is an explicitly experimental P2 overlay on the clean839-fingerprint P1 baseline snapshot, not a new clean P1 composition or final Linux CI acceptance. P1 still owns narrow admission of the new test/plan and explicit common-baseline reconciliation of resident-alert.js, final repinning, required gallery browser assertion and final CI. The gallery imports the existing P1-owned helper; standalone P2 checkout is not a complete backend frontend artifact. Do not copy a competing helper or relax static/source gates to hide that dependency.
+
 ## Current-P1 compatibility checkpoint
 
 P1 `90208dbba11dbf7908b38e0f5bd100093c5be31d`, DBA `8cd2740d19e311c186b261c14a5c1ac69290ae98`, P2 over `272f8d6`: actual P2 administrative regression failed because current P1 facility creation requires its original command key (5 tests/33 assertions/1 error, private schema `bc_dba_p1_p2final_1793807653160`). The correction supplies a fixed original creation key in that P2 fixture only; no production validation, service or locking behavior changed.
