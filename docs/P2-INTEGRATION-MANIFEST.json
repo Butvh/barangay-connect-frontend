@@ -1016,5 +1016,42 @@
       "total": 33
     }
   },
-  "historical_manifest": "https://github.com/Butvh/barangay-connect-frontend/blob/22365ad10f05bba4d16ba1d84a8e9c9049e2aa0a/docs/P2-INTEGRATION-MANIFEST.json"
+  "historical_manifest": "https://github.com/Butvh/barangay-connect-frontend/blob/22365ad10f05bba4d16ba1d84a8e9c9049e2aa0a/docs/P2-INTEGRATION-MANIFEST.json",
+  "rehearsal_followup": {
+    "status": "Prepared P2 tooling; final clean P1 repin and independent DBA acceptance pending. Prior experimental evidence above remains historical.",
+    "p1_checkpoint": "811ffafc1196caf26b6942bf233b511a874f02e5",
+    "dba_published": "bf2c5e800bbd9bb996e3070554bbcfdcc4d4169e",
+    "dba_runtime": "f4e8df958234e0bd2b09fd1b10d749fc22c746c3",
+    "p2_dependency_commit": "44b2acff45a3e05d74d6246ec315012e08516bf2",
+    "canonical_dependencies": {
+      "assets/js/core/incident-photos.js": {
+        "git_blob": "01c4bd21f4280a4f5395ff2583f3708ca168e12e",
+        "mode": "100644",
+        "owner": "P1"
+      },
+      "assets/js/core/runtime-config.js": {
+        "git_blob": "c27d4975acf2a8055cbf74c96fb8aec5875214d0",
+        "mode": "100644",
+        "owner": "P1",
+        "default": "demo"
+      }
+    },
+    "files": {
+      "backend/tests/P2/rehearsal.mjs": "3bc335a8d724d4fe2f13487cba56fb8597d5ce6ed438de417add78b21d2caaa3",
+      "backend/tests/P2/rehearsal.test.mjs": "cce4788ed53d9421b27aea2f88eeaa123b6b273a9e55be7c75225e42336d62ce",
+      "backend/tests/P2/REHEARSAL.md": "7292019eb368b8695d680a6f590ca5e91068e3760bf76f63f8754517d0dafb08"
+    },
+    "local_checks": {
+      "orchestration_tests": 7,
+      "failures": 0,
+      "skips": 0,
+      "original_frontend": "pass",
+      "standalone_static": {
+        "files": 516,
+        "result": "pass; resolves82897de missing-import failure"
+      },
+      "standalone_candidate_preflight": "expected refusal2: no admitted integration-manifest"
+    },
+    "final_candidate_evidence": "Await P1 repin; record exact final tuple/report in PR evidence without silently changing this historical baseline."
+  }
 }

@@ -1,6 +1,18 @@
 # P2 actual owner integration — November 5, 2026
 
-## Opening-session correction — current experimental evidence
+## Canonical dependency adoption and portable rehearsal (DBA unavailable)
+
+P1 published checkpoint `811ffafc1196caf26b6942bf233b511a874f02e5`, selecting DBA `bf2c5e800bbd9bb996e3070554bbcfdcc4d4169e` and P2 `82897de9bf836530678bf78fb2ee322cd952f136`. It adds narrow resident-alert/test admission, required resident gallery assertions and exact-source shared dependency adoption. P1 requested both unchanged files in [PR50 comment6658121795](https://github.com/Butvh/barangay-connect-frontend/pull/50#issuecomment-6658121795); P2 dependency-only commit `44b2acff45a3e05d74d6246ec315012e08516bf2` adopts the regular100644 gallery blob `01c4bd21f4280a4f5395ff2583f3708ca168e12e` and demo runtime-config blob `c27d4975acf2a8055cbf74c96fb8aec5875214d0`. P1 retains ownership; no shared implementation or gate was independently edited.
+
+The actual standalone static check was RED on the missing gallery import before this adoption, then GREEN. With this publication's three additional P2 test/runbook files, `node scripts/check.mjs` passes516 files and `node scripts/run-tests.mjs` passes the original frontend/page suites. The old standalone missing-import failure below belongs to82897de and is resolved by the exact dependency adoption; it is not a current failure. Default Runtime remains demo, with photo activation limited to the existing owner-selected disposable profile.
+
+[Portable rehearsal/runbook](../backend/tests/P2/REHEARSAL.md) documents exact independently supplied owner pins, unchanged P1 source verification, static/Node checks, separate fresh-schema SQL/browser phases and the original manual workflow. `node --test backend/tests/P2/rehearsal.test.mjs` passes7 orchestration tests,0 failures/skips, outside Windows sandbox realpath restrictions. The earlier sandbox run failed at `realpath` before the CLI admission assertion; no guard was weakened. Actual CLI preflight on the standalone checkout correctly exits2 with no integration-manifest; copying a runner over an old frozen snapshot is also refused before the verifier. These7 are tool tests, not new domain/database/browser acceptance.
+
+One fresh review of this round's dependency/tooling changes found no Critical/Important issues. Deferred minor: child-process startup errors/signals currently appear only as a failed phase with null exit; richer diagnostic fields can be added later. Failure still stops the phase.
+
+P1 must repin the final P2 publication containing this record and synchronize its exact-head staging guard before the new runner can operate on a clean admitted candidate. Its published811ffaf checkpoint still selects82897de. New full candidate evidence must identify the actual final tuple/manifest; the prior experimental384-test/browser evidence below is not relabeled as that result. P1 owns shared Composer/audit/Linux CI; DBA's published runtime/schema/delivery remains untouched and independent DBA acceptance is pending. No main/teammate merge, production activation, shared reset or real messaging is authorized. Presentation is Saturday November7; the earlier November5 5PM cutoff is superseded.
+
+## Opening-session correction — historical experimental evidence at82897de
 
 Current correction is tested over frozen P1 `9bc1a04b2005602de25879221042511f07a3ffa8` / DBA `f4e8df958234e0bd2b09fd1b10d749fc22c746c3`, with original P2 baseline `22365ad`. The historical checkpoint section below retains its older explicit pins; it is not current-head acceptance.
 
