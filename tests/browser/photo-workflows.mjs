@@ -68,7 +68,7 @@ try {
     await page.goto(origin + '/frontend/official-alert.html?id=' + id); await page.locator('[data-workflow=resolve]').click(); await page.getByRole('dialog', { name: 'Resolve alert?', exact: true }).getByRole('button', { name: 'Resolve', exact: true }).click(); await page.getByText('This alert is resolved.', { exact: true }).waitFor();
     assert.equal((await replacement.context.request.get(url)).status(), 404); assert.equal((await resident.context.request.get(url)).status(), 200); assert.equal((await secretary.context.request.get(url)).status(), 200);
     await resident.page.reload();
-    await resident.page.getByText(/Your alert has been resolved\./).waitFor();
+    await resident.page.getByText('Your alert has been resolved.', { exact: true }).waitFor();
     await verifyGallery(resident.page, metadata);
     await screenshot(resident.page, 'resolved-resident-photo-gallery');
     await screenshot(page, 'resolved-private-photo-history');
