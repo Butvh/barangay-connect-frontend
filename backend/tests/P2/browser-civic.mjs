@@ -39,6 +39,9 @@ async function login(key) {
   await page.goto(origin + '/frontend/' + (account.role === 'resident' ? 'resident-login.html' : 'login.html'));
   await page.locator('#email').fill(account.email); await page.locator('#password').fill(account.password); await page.locator('#sign-in').click();
   await page.waitForURL('**/' + (account.role === 'resident' ? 'resident-dashboard.html' : 'official-dashboard.html'));
+  // The redirect can precede dashboard reads that initialize capacity guards.
+  // Finish those reads before taking full-state denial/replay baselines.
+  await page.waitForLoadState('networkidle');
   return { page, context, account };
 }
 async function http(who, path, { method = 'GET', body } = {}) {
