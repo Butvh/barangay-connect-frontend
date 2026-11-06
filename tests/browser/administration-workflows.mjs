@@ -59,6 +59,54 @@ try {
     await applicant.page.goto(origin + '/frontend/resident-dashboard.html');
     await applicant.page.getByRole('link', { name: 'Send SOS', exact: true }).waitFor();
   });
+
+  await check('Registered civic readers load original Home and Announcements with real expiry and scoped denial', async () => {
+    const resident = await login('resident'), foreign = await login('foreignResident'), anonymous = await guest();
+    const title = 'Fictional shared civic update', content = 'Original-page integration fixture.';
+    // Create fixtures through the registered API. P2 owns the original write-form lifecycle suite.
+    const announcement = await captain.page.evaluate(async ({ title, content }) => {
+      const { Api } = await import('/frontend/assets/js/core/api.js');
+      return Api.announcements.create({ title, content, expires_at: null }, { idempotencyKey: crypto.randomUUID() });
+    }, { title, content });
+    const feedback = await resident.page.evaluate(async () => {
+      const { Api } = await import('/frontend/assets/js/core/api.js');
+      return Api.feedback.create('suggestion', { category: 'Community improvement', description: 'Fictional civic feedback' }, { idempotencyKey: crypto.randomUUID() });
+    });
+    await secretary.page.goto(origin + '/frontend/official-dashboard.html');
+    await secretary.page.getByRole('heading', { name: 'Secretary Dashboard', exact: true }).waitFor();
+    await secretary.page.getByRole('button', { name: new RegExp(title) }).waitFor();
+    assert.ok((await data(secretary, 'feedback')).some(item => item.id === feedback.id));
+    await screenshot(secretary.page, 'secretary-home-civic');
+    const expiry = secretary.page.waitForResponse(response => response.url().endsWith('/api/v1/announcements/expire-overdue') && response.request().method() === 'POST');
+    await secretary.page.goto(origin + '/frontend/official-announcements.html?id=' + announcement.id);
+    assert.equal((await expiry).status(), 200);
+    await secretary.page.getByRole('dialog').getByText(content, { exact: true }).waitFor();
+    await screenshot(secretary.page, 'official-announcement-detail');
+    await resident.page.goto(origin + '/frontend/resident-dashboard.html');
+    await resident.page.getByRole('link', { name: 'Send SOS', exact: true }).waitFor();
+    await resident.page.getByRole('heading', { name: title, exact: true }).waitFor();
+    await resident.page.goto(origin + '/frontend/resident-announcements.html');
+    await resident.page.getByRole('link', { name: new RegExp(title) }).click();
+    await resident.page.getByText(content, { exact: true }).waitFor();
+    await screenshot(resident.page, 'resident-announcement-detail');
+    assert.equal((await data(resident, 'feedback/' + feedback.id)).id, feedback.id);
+
+    for (const [actor, path, expected] of [
+      [anonymous, 'announcements', 401], [anonymous, 'feedback', 401],
+      [foreign, 'announcements/' + announcement.id, 404], [foreign, 'feedback/' + feedback.id, 404],
+      [resident, 'feedback/' + feedback.id + '/assignment-options', 403],
+    ]) assert.equal((await actor.context.request.get(origin + '/api/v1/' + path)).status(), expected, path);
+    const denied = await resident.page.evaluate(async id => {
+      const { Api } = await import('/frontend/assets/js/core/api.js');
+      try { await Api.announcements.update(id, { expected_revision: 0, title: 'Unauthorized edit' }); }
+      catch (error) { return { status: error.status, code: error.code }; }
+      return null;
+    }, announcement.id);
+    assert.deepEqual(denied, { status: 403, code: 'FORBIDDEN' });
+    assert.equal((await data(captain, 'announcements/' + announcement.id)).title, title);
+    for (const actor of [resident, foreign, anonymous]) await actor.context.close();
+  });
+
   await check('Original resident profile and password change persist actual values and permit only the new credential', async () => {
     const page = applicant.page; await page.goto(origin + '/frontend/resident-profile.html'); await page.locator('#profile-full_name').waitFor();
     await page.locator('#profile-full_name').fill('Fictional QA updated resident'); await page.locator('[data-save-profile]:visible').click();
