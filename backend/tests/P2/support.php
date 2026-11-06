@@ -77,7 +77,7 @@ final class MemoryStore implements Store
         } throw new RuntimeException('Missing fixture');
     }
 }
-final class References implements ReferenceData
+class References implements ReferenceData
 {
     public string $homeAddress = 'Private Street';
 

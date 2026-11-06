@@ -5,7 +5,7 @@ import { dirname, isAbsolute, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const browserFiles = { operations: 'tests/browser/operations.mjs', photos: 'tests/browser/photo-workflows.mjs', opening: 'backend/tests/P2/browser-opening-session.mjs' };
-const nodeFiles = ['adapters', 'form-intents', 'foundation-adapters', 'location-forms', 'official-forms', 'photo-form', 'photo-upload', 'report-forms', 'resident-photos'].map(name => 'tests/p2-' + name + '.mjs');
+const nodeFiles = ['adapters', 'form-intents', 'foundation-adapters', 'location-forms', 'official-forms', 'photo-form', 'photo-upload', 'report-forms', 'resident-photos', 'communications-forms'].map(name => 'tests/p2-' + name + '.mjs');
 const step = (runtime, ...args) => ({ runtime, args });
 const requireValue = (condition, message) => { if (!condition) throw new Error(message); };
 

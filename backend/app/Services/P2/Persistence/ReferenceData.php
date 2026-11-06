@@ -10,6 +10,7 @@ use App\Contracts\P2\EligibilityReferences;
 use App\Contracts\P2\GuardedStore;
 use App\Contracts\P2\ScopedReferences;
 use App\Contracts\P2\Store;
+use App\Contracts\P2\TanodReferences;
 use App\Models\User;
 use App\Services\Identity\EffectiveIdentity;
 use App\Services\Identity\EffectiveRole;
@@ -21,7 +22,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 /** Reads only current DBA records; P1 remains the authority for effective portal identity. */
-final class ReferenceData implements \App\Contracts\P2\ReferenceData, ActorReferences, DestinationReferences, EligibilityReferences, ScopedReferences
+final class ReferenceData implements \App\Contracts\P2\ReferenceData, ActorReferences, DestinationReferences, EligibilityReferences, ScopedReferences, TanodReferences
 {
     private ?EffectiveIdentity $observed = null;
 
@@ -132,6 +133,21 @@ final class ReferenceData implements \App\Contracts\P2\ReferenceData, ActorRefer
     public function people(int $barangay): array
     {
         return app(SourceReferences::class)->people($this->identity($barangay));
+    }
+
+    public function feedbackTanods(int $barangay): array
+    {
+        $actor = $this->identity($barangay);
+        app(IdentityReferences::class)->assertCurrent($actor);
+        if (! in_array($actor->role, ['captain', 'secretary'], true)) {
+            throw new Problem('FORBIDDEN', 'Only officials may select Tanods.');
+        }
+
+        return User::on(config('integration.connection', 'mysql'))->where('barangay_id', $barangay)
+            ->where('account_status', 'Active')
+            ->whereHas('tanodMembership', fn ($query) => $query->where('barangay_id', $barangay)->where('active', true))
+            ->with(['appointment', 'tanodMembership'])->orderBy('id')->get()
+            ->map(fn ($user) => $this->project($user))->all();
     }
 
     public function eligiblePerson(int $id, int $barangay): ?array

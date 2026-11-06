@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Civic;
 
 use App\Contracts\P2\ActorReferences;
+use App\Contracts\P2\TanodReferences;
 use App\Services\P2\Actor;
 use App\Services\P2\Module;
 use App\Services\P2\Problem;
@@ -236,6 +237,21 @@ final class CivicService extends Module
         return $this->feedbackChange($a, $id, $in, true);
     }
 
+    // Display-only options never acquire eligibility locks. The write rechecks
+    // the selected person under the existing person -> feedback lock protocol.
+    public function feedbackAssignmentOptions(Actor $a, int $id): array
+    {
+        $a->allow(['captain', 'secretary']);
+        $r = $this->row('community_feedback', $id, $a);
+        if ($r['type'] === 'general' || $r['status'] !== 'Pending') {
+            throw new Problem('INVALID_STATE', 'Only pending complaints and suggestions can be assigned.');
+        }
+        $refs = $this->references($a);
+        $people = array_filter($refs instanceof TanodReferences ? $refs->feedbackTanods($a->barangayId) : $refs->people($a->barangayId), fn ($p) => $p['barangay_id'] === $a->barangayId && ($p['is_tanod'] ?? false) && ($p['account_status'] ?? 'Active') === 'Active' && ($p['personnel_status'] ?? 'Active') === 'Active');
+
+        return ['feedback_revision' => $r['revision'], 'tanods' => array_values(array_map(fn ($p) => ['id' => $p['id'], 'full_name' => $p['full_name']], $people))];
+    }
+
     public function resolveFeedback(Actor $a, int $id, array $in): array
     {
         return $this->feedbackChange($a, $id, $in, false);
@@ -260,7 +276,7 @@ final class CivicService extends Module
             if ($assign) {
                 $idTanod = $tanod;
                 $p = $this->eligiblePerson($a, $idTanod);
-                if (! $p || ! ($p['is_tanod'] ?? false)) {
+                if (! $p || ! ($p['is_tanod'] ?? false) || ($p['account_status'] ?? 'Active') !== 'Active' || ($p['personnel_status'] ?? 'Active') !== 'Active') {
                     throw new Problem('VALIDATION', 'Choose an existing local Tanod.');
                 } $patch += ['assigned_tanod_id' => $idTanod, 'assigned_at' => ($this->clock)(), 'status' => 'Assigned'];
             } else {

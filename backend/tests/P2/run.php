@@ -13,6 +13,7 @@ spl_autoload_register(function (string $class): void {
 });
 require __DIR__.'/support.php';
 
+use App\Contracts\P2\TanodReferences;
 use App\Services\Audit\AuditRecorder;
 use App\Services\Civic\CivicService;
 use App\Services\Incidents\IncidentService;
@@ -222,6 +223,42 @@ check('In-app handler is idempotent, channel-specific and recipient-scoped', fun
     eq($n->clearRead(who(2)), 1);
     eq(count($n->list(who(2))), 0);
     eq(count($n->list(who(3))), 1);
+});
+check('Feedback picker is scoped, read-only and denies stale or ineligible assignment', function () {
+    [$s,$r,$i,$c] = fixture();
+    $f = $c->submitFeedback(who(1), ['type' => 'complaint', 'category' => 'Drainage', 'description' => 'Drain blocked'], commandKey());
+    $before = $s->rows;
+    $options = $c->feedbackAssignmentOptions(who(2), $f['id']);
+    eq($options['feedback_revision'], 0);
+    eq(array_column($options['tanods'], 'id'), [6]);
+    eq($s->rows, $before);
+    denied(fn () => $c->feedbackAssignmentOptions(who(1), $f['id']), 'FORBIDDEN');
+    denied(fn () => $c->feedbackAssignmentOptions(who(9), $f['id']), 'NOT_FOUND');
+    $r->inactive = [6];
+    eq($c->feedbackAssignmentOptions(who(3), $f['id'])['tanods'], []);
+    denied(fn () => $c->assignFeedback(who(2), $f['id'], ['tanod_id' => 6, 'expected_revision' => 0]), 'VALIDATION');
+    eq($s->rows, $before);
+    $r->inactive = [];
+    $c->assignFeedback(who(2), $f['id'], ['tanod_id' => 6, 'expected_revision' => 0]);
+    $assigned = $s->rows;
+    denied(fn () => $c->resolveFeedback(who(2), $f['id'], ['expected_revision' => 0]), 'CONFLICT');
+    eq($s->rows, $assigned);
+    $g = $c->submitFeedback(who(1), ['type' => 'general', 'rating' => 4, 'comment' => 'Useful'], commandKey());
+    denied(fn () => $c->feedbackAssignmentOptions(who(2), $g['id']), 'INVALID_STATE');
+});
+check('Feedback picker uses the active-membership read port when available', function () {
+    [$store,$refs] = fixture();
+    $refs = new class extends References implements TanodReferences
+    {
+        public function feedbackTanods(int $barangay): array
+        {
+            return [];
+        }
+    };
+    $clock = fn () => '2026-11-02T08:00:00+00:00';
+    $civic = new CivicService($store, $refs, new AuditRecorder($store, $clock), new OutboxWriter($store, $clock), $clock);
+    $row = $civic->submitFeedback(who(1), ['type' => 'complaint', 'category' => 'Safety', 'description' => 'Fixture'], commandKey());
+    eq($civic->feedbackAssignmentOptions(who(2), $row['id'])['tanods'], []);
 });
 check('Reports are Captain-only, count distinct incidents and use Manila month boundaries', function () {
     [$s,$r,$i,$c,$n,$handler,$reports] = fixture();

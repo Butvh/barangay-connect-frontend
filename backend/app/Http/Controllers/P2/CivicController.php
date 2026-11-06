@@ -70,6 +70,11 @@ final class CivicController extends P2Controller
         return $this->data($this->civic->assignFeedback($this->actor($r), $this->id($id), $this->body($r)));
     }
 
+    public function feedbackAssignmentOptions(Request $r, string $id)
+    {
+        return $this->data($this->civic->feedbackAssignmentOptions($this->actor($r), $this->id($id)));
+    }
+
     public function resolveFeedback(Request $r, string $id)
     {
         return $this->data($this->civic->resolveFeedback($this->actor($r), $this->id($id), $this->body($r)));

@@ -15,6 +15,7 @@ export function createCommunications({ request }) {
     feedback: Object.freeze({
       list: async filters => call(query('/feedback', filters), { complete: true }),
       get: async id => call(`/feedback/${identifier(id)}`),
+      assignmentOptions: async id => call(`/feedback/${identifier(id)}/assignment-options`),
       create: async (type, input, intent) => call('/feedback', { method: 'POST', body: { ...input, type }, headers: command(intent) }),
       assignTanod: async (id, tanodId, observed) => call(`/feedback/${identifier(id)}/assignment`, { method: 'POST', body: { tanod_id: identifier(tanodId), ...revision(observed) } }),
       resolve: async (id, observed) => call(`/feedback/${identifier(id)}/resolution`, { method: 'POST', body: revision(observed) }),
