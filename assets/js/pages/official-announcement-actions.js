@@ -1,5 +1,6 @@
 import { Auth, Api, Store, UI, Fmt, e, dialog } from './official-shared.js';
 import { announcementStatus, announcementPublishedAt } from '../core/announcements.js';
+import { createFormSubmission } from '../adapters/p2-form-intent.js';
 
 export const announcementAuthor = row => row.author ? `${row.author.is_captain ? 'Captain ' : row.author.is_secretary ? 'Secretary ' : ''}${row.author.full_name}` : 'Barangay official';
 export const announcementBadge = row => {
@@ -24,6 +25,7 @@ export async function readAnnouncement(record, onClose = () => {}) {
 
 const localExpiry = value => value ? new Date(Date.parse(value) + 8 * 3600000).toISOString().slice(0, 16) : '';
 export function composeAnnouncement({ row = null, barangay, onSaved }) {
+  const submission = createFormSubmission({ auth: Auth, revision: row?.revision ?? null });
   let busy = false, dirty = false, closing = false;
   const original = { title: row?.title || '', content: row?.content || '', expires_at: localExpiry(row?.expires_at) };
   const beforeClose = async () => {
@@ -50,7 +52,7 @@ export function composeAnnouncement({ row = null, barangay, onSaved }) {
     if (first) { first.focus(); return; }
     busy = true; form.setAttribute('aria-busy', 'true'); el.querySelectorAll('input,textarea,button').forEach(c => c.disabled = true); save.textContent = row ? 'Saving…' : 'Publishing…'; saveError.hidden = true;
     try {
-      const payload = { title, content, expires_at }, saved = row ? await Api.announcements.update(row.id, { ...payload, expected_revision: row.revision }) : await Api.announcements.create(payload);
+      const payload = { title, content, expires_at, ...(row ? { expected_revision: row.revision } : {}) }, saved = await submission.submit(payload, (body, intent) => row ? Api.announcements.update(row.id, body, intent) : Api.announcements.create(body, intent));
       dirty = false; UI.closeDialog(el); await onSaved(saved, row ? 'edited' : 'published'); UI.toast(row ? 'Announcement updated.' : 'Announcement published.');
     } catch (err) {
       saveError.textContent = err.message; saveError.hidden = false; saveError.tabIndex = -1; saveError.focus();
@@ -61,6 +63,7 @@ export function composeAnnouncement({ row = null, barangay, onSaved }) {
 }
 
 export function retractAnnouncement(row, onSaved) {
+  const submission = createFormSubmission({ auth: Auth, revision: row.revision });
   let busy = false;
   const el = dialog('Retract announcement', `<form class="stack announcement-retract-form" novalidate><div class="announcement-retract-preview"><h3>${e(row.title)}</h3><p>${e(row.content.slice(0, 180))}${row.content.length > 180 ? '…' : ''}</p></div><div class="field"><label for="retraction-reason">Reason for retraction</label><textarea class="textarea" id="retraction-reason" name="reason" required maxlength="500" placeholder="Enter the reason for retraction..." aria-describedby="retraction-error retraction-count retraction-help"></textarea><div class="spread"><small class="error-text" id="retraction-error"></small><small id="retraction-count">0 / 500</small></div></div><p id="retraction-help">The reason will be recorded in the announcement history. Residents will no longer see this announcement.</p><div class="banner banner-error" role="alert" data-error hidden></div><div class="actions"><button type="button" class="btn" data-cancel>Cancel</button><button type="submit" class="btn btn-danger">Retract announcement</button></div></form>`, { sheet: false, beforeClose: () => !busy });
   el.classList.add('announcement-retract-dialog');
@@ -71,7 +74,7 @@ export function retractAnnouncement(row, onSaved) {
     event.preventDefault(); if (busy) return; const reason = field.value.trim();
     if (!reason || reason.length > 500) { hint.textContent = !reason ? 'Enter a reason for retraction.' : 'Use 500 characters or fewer.'; field.setAttribute('aria-invalid', 'true'); field.focus(); return; }
     busy = true; form.setAttribute('aria-busy', 'true'); el.querySelectorAll('button,textarea').forEach(c => c.disabled = true); error.hidden = true;
-    try { const saved = await Api.announcements.retract(row.id, { reason, expected_revision: row.revision }); UI.closeDialog(el); await onSaved(saved, 'retracted'); UI.toast('Announcement retracted.'); }
+    try { const saved = await submission.submit({ reason, expected_revision: row.revision }, (body, intent) => Api.announcements.retract(row.id, body, intent)); UI.closeDialog(el); await onSaved(saved, 'retracted'); UI.toast('Announcement retracted.'); }
     catch (err) { error.textContent = err.message; error.hidden = false; error.tabIndex = -1; error.focus(); }
     finally { busy = false; form.removeAttribute('aria-busy'); el.querySelectorAll('button,textarea').forEach(c => c.disabled = false); }
   });

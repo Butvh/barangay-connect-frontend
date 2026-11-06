@@ -3,6 +3,7 @@ import { Shell } from '../core/shell-official.js';
 import { announcementAuthor, announcementBadge, announcementTiming, readAnnouncement, composeAnnouncement, retractAnnouncement } from './official-announcement-actions.js';
 import { announcementPage } from './official-announcements-model.js';
 import { announcementStatus, announcementPublishedAt, nextAnnouncementExpiry } from '../core/announcements.js';
+import { createFormSubmission } from '../adapters/p2-form-intent.js';
 
 let user;
 try { Auth.requireRole(['secretary', 'captain']); user = Auth.current(); }
@@ -24,13 +25,16 @@ if (user) {
   }
   function compose(row = null) { if (composer?.open) return; composer = composeAnnouncement({ row, barangay, onSaved: saved }); composer.addEventListener('close', () => { composer = null; }, { once: true }); }
   async function action(row, name) {
+    const opening = createFormSubmission({ auth: Auth });
     try {
       if (name === 'view') { await open(row); return; }
-      const current = await Api.announcements.get(row.id), state = announcementStatus(current, Store.now());
+      const current = await Api.announcements.get(row.id); opening.assertCurrent();
+      const state = announcementStatus(current, Store.now());
       if (name === 'edit') { if (state !== 'Active') throw new Error('Only active announcements can be edited.'); compose(current); }
       if (name === 'archive') {
         if (state !== 'Active') throw new Error('Only active announcements can be archived.');
-        if (await UI.confirm({ title: 'Archive announcement?', text: `Residents will no longer see “${current.title}”. The record and publication history will be preserved.`, confirmLabel: 'Archive' })) { const archived = await Api.announcements.archive(current.id, { expected_revision: current.revision }); await saved(archived, 'archived'); UI.toast('Announcement archived.'); }
+        const submission = createFormSubmission({ auth: Auth, revision: current.revision });
+        if (await UI.confirm({ title: 'Archive announcement?', text: `Residents will no longer see “${current.title}”. The record and publication history will be preserved.`, confirmLabel: 'Archive' })) { const archived = await submission.submit({ expected_revision: current.revision }, observed => Api.announcements.archive(current.id, observed)); await saved(archived, 'archived'); UI.toast('Announcement archived.'); }
       }
       if (name === 'retract') { if (!['Active', 'Archived'].includes(state)) throw new Error('This announcement cannot be retracted.'); retractAnnouncement(current, saved); }
     } catch (err) { UI.toast(err.message, 'error'); await load(); }
