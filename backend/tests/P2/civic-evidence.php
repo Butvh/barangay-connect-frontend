@@ -23,6 +23,22 @@ function civicRowsHash(array $rows): string
     return hash('sha256', implode("\n", $encoded));
 }
 
+function civicLockedUserIds(string $sql, array $bindings): array
+{
+    // Scope is also a numeric binding: it is not another locked user's ID.
+    if (! preg_match('/(?:`users`\.)?`id`\s*(?:=\s*\?|in\s*\(\s*\?(?:\s*,\s*\?)*\s*\))/i', $sql, $match, PREG_OFFSET_CAPTURE)) {
+        throw new LogicException('Unrecognized user-lock query shape.');
+    }
+    $start = substr_count(substr($sql, 0, $match[0][1]), '?');
+    $count = substr_count($match[0][0], '?');
+    $ids = array_slice($bindings, $start, $count);
+    if (count($ids) !== $count) {
+        throw new LogicException('Missing user-lock evidence bindings.');
+    }
+
+    return array_map('intval', $ids);
+}
+
 function civicDatabaseState(): array
 {
     $state = [];

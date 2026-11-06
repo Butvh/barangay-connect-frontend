@@ -581,5 +581,12 @@ check('Civic evidence detects changed payload with identical row counts and igno
     eq(civicRowsHash($rows) === civicRowsHash([$rows[0], $rows[0]]), false);
 });
 
+check('Civic lock evidence separates user IDs from barangay scope bindings', function () {
+    require_once __DIR__.'/civic-evidence.php';
+    eq(function_exists('civicLockedUserIds'), true);
+    eq(civicLockedUserIds('select * from `users` where `id` = ? and `barangay_id` = ? limit 1 for update', [13, 1]), [13]);
+    eq(civicLockedUserIds('select * from `users` where `barangay_id` = ? and `users`.`id` = ? limit 1 for update', [1, 13]), [13]);
+    eq(civicLockedUserIds('select `id` from `users` where `id` in (?, ?) order by `id` for update', [13, 17]), [13, 17]);
+});
 echo "$count P2 contract checks passed; $failures failed. Database/HTTP integration is not tested by this runner.\n";
 exit($failures ? 1 : 0);

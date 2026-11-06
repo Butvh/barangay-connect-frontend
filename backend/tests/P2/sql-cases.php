@@ -314,7 +314,7 @@ caseTest('SQL feedback picker retains scoped revision and rejects membership cha
         }
         foreach (['users', 'personnel_appointments', 'tanod_memberships', 'community_feedback'] as $table) {
             if (str_contains($query->sql, 'from `'.$table.'`')) {
-                $trace[] = ['table' => $table, 'ids' => $table === 'users' ? array_map('intval', $query->bindings) : []];
+                $trace[] = ['table' => $table, 'ids' => $table === 'users' ? civicLockedUserIds($query->sql, $query->bindings) : []];
             }
         }
     });
