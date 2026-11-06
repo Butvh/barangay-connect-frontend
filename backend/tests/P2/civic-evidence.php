@@ -42,7 +42,7 @@ function civicLockedUserIds(string $sql, array $bindings): array
 function civicDatabaseState(): array
 {
     $state = [];
-    foreach (Schema::getTableListing(null, false) as $table) {
+    foreach (Schema::getTableListing(DB::connection()->getDatabaseName(), false) as $table) {
         if (in_array($table, ['sessions', 'cache', 'cache_locks'], true)) {
             continue;
         }

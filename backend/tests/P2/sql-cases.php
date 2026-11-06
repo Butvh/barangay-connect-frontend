@@ -76,6 +76,27 @@ $app->register(P2ServiceProvider::class);
 caseTest('P2 provider preserves foundation-selected implementation bindings', function () use ($app, $selectedStore) {
     verify($app->make(Store::class) === $selectedStore, 'P2 replaced the foundation-selected Store binding.');
 });
+caseTest('Civic evidence hashes only the current database despite another accessible schema', function () {
+    require_once __DIR__.'/civic-evidence.php';
+    $connection = DB::connection();
+    $database = $connection->getDatabaseName();
+    verify(getenv('DB_TEST_DISPOSABLE') === '1' && getenv('DB_TEST_DATABASE') === $database &&
+        in_array($connection->getConfig('host'), ['127.0.0.1', 'localhost', '::1'], true) &&
+        preg_match('/^p2_test_[a-zA-Z0-9_]+$/D', $database) === 1, 'Use a confirmed disposable local observer target.');
+    $foreign = substr($database, 0, 40).'_observer_'.bin2hex(random_bytes(6));
+    $connection->statement('CREATE DATABASE `'.$foreign.'`'); // New name must not already exist.
+    try {
+        $connection->statement('CREATE TABLE `'.$foreign.'`.`p2_observer_foreign_only` (`id` bigint primary key)');
+        $connection->statement('INSERT INTO `'.$foreign.'`.`p2_observer_foreign_only` VALUES (1)');
+        $before = civicDatabaseState();
+        verify(! array_key_exists('p2_observer_foreign_only', $before), 'Observer included another schema.');
+        $connection->statement('INSERT INTO `'.$foreign.'`.`p2_observer_foreign_only` VALUES (2)');
+        verify(civicDatabaseState() === $before, 'Foreign rows changed the current database evidence.');
+        verify(isset($before['users'], $before['community_feedback'], $before['private_photo_objects']), 'Current table/object coverage was lost.');
+    } finally {
+        $connection->statement('DROP DATABASE `'.$foreign.'`'); // Only this invocation created this name.
+    }
+});
 $scope = saveModel(Barangay::class, ['name' => 'P2 isolated fixture']);
 $home = saveModel(Household::class, ['barangay_id' => $scope->id, 'address' => 'Fixture Road', 'map_x' => 23, 'map_y' => 45]);
 $users = [];

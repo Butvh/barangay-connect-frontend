@@ -165,9 +165,20 @@ try {
     await captain.page.locator('[data-resolve]').click(); await captain.page.getByRole('dialog', { name: 'Mark feedback resolved?', exact: true }).getByRole('button', { name: 'Mark resolved', exact: true }).click();
     await captain.page.getByText('Resolved feedback is read-only.', { exact: true }).waitFor(); assert.equal(state().feedback.find(row => row.id === complaint).status, 'Resolved');
     await captain.page.locator('tr.is-selected').getByText('Resolved', { exact: true }).waitFor(); assert.equal((await http(resident, 'feedback/' + complaint)).data.status, 'Resolved');
-    await selected(secretary, 'suggestion', suggestion); const assign = await picker(secretary); await assign.locator('[data-save]').click(); await assign.waitFor({ state: 'detached' });
-    await secretary.page.locator('[data-resolve]').click(); await secretary.page.getByRole('dialog', { name: 'Mark feedback resolved?', exact: true }).getByRole('button', { name: 'Mark resolved', exact: true }).click();
-    await secretary.page.getByText('Resolved feedback is read-only.', { exact: true }).waitFor(); assert.equal(state().feedback.find(row => row.id === suggestion).status, 'Resolved');
+    await selected(secretary, 'suggestion', suggestion);
+    // Closing Assign precedes the real list reload. Keep that response slow so
+    // this regression cannot pass by clicking the old, internally guarded action.
+    const slowRefresh = async route => {
+      if (route.request().method() !== 'GET') return route.continue();
+      const reply = await route.fetch(); await new Promise(resolve => setTimeout(resolve, 1200)); await route.fulfill({ response: reply });
+    };
+    await secretary.page.route('**/api/v1/feedback', slowRefresh);
+    try {
+      const assign = await picker(secretary); await assign.locator('[data-save]').click(); await assign.waitFor({ state: 'detached' });
+      await secretary.page.locator('tr.is-selected').getByText('Assigned', { exact: true }).waitFor();
+      await secretary.page.locator('[data-resolve]:enabled').click(); await secretary.page.getByRole('dialog', { name: 'Mark feedback resolved?', exact: true }).getByRole('button', { name: 'Mark resolved', exact: true }).click();
+      await secretary.page.getByText('Resolved feedback is read-only.', { exact: true }).waitFor(); assert.equal(state().feedback.find(row => row.id === suggestion).status, 'Resolved');
+    } finally { await secretary.page.unroute('**/api/v1/feedback', slowRefresh); }
   });
   await check('Original publication retries lost create reply exactly, preserving single history/audit/outbox/receipt result', async () => {
     await announcements(captain); await captain.page.locator('[data-compose]').click(); const dialog = captain.page.getByRole('dialog', { name: 'New announcement', exact: true });
