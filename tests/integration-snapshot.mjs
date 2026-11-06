@@ -130,6 +130,27 @@ test('only the named P2 actual-owner acceptance additions are admitted', async (
   await assert.rejects(composeSnapshot({ ...f, destination: await mkdtemp(join(tmpdir(), 'bc-snapshot-reject-')) }), /allowlist/);
 });
 
+
+test('reviewed civic source preserves its owner blobs and rejects divergent shared pages', async () => {
+  const page = 'assets/js/pages/official-announcements.js';
+  const additions = ['backend/app/Contracts/P2/TanodReferences.php', 'docs/P2-COMMUNICATIONS-CLOSURE.md', 'tests/p2-communications-forms.mjs'];
+  const f = await fixture(page);
+  f.git('checkout', '--detach', f.lock.p2);
+  for (const path of additions) await f.put(path, 'Reviewed civic source\n');
+  f.lock.p2 = f.commit();
+  f.git('checkout', '--detach', f.lock.p2_base);
+  const manifest = await composeSnapshot(f);
+  assert.equal(manifest.sharedOverlays[page].base, f.lock.p2_base);
+  for (const path of [page, ...additions]) {
+    const expected = f.git('show', f.lock.p2 + ':' + path) + '\n';
+    assert.equal(await readFile(join(f.destination, path), 'utf8'), expected);
+    assert.equal(manifest.ownerHashes.p2[path], createHash('sha256').update(expected).digest('hex'));
+  }
+  await f.put(page, 'Independent P1 edit\n');
+  f.commit();
+  await assert.rejects(composeSnapshot(f), /reconciliation/);
+});
+
 test('path validation rejects traversal, Windows roots, private bytes and dependencies', () => {
   for (const path of ['../escape', 'a/../b', '/root', 'C:/escape', 'a\\b', '.git/config', 'backend/.env', 'backend/.env.local', 'backend/vendor/a.php', 'backend/public/frontend/a.js', 'backend/storage/private/a.pdf', 'node_modules/a.js']) assert.throws(() => assertSourcePath(path), /Unsafe/);
   for (const path of [page, 'backend/.env.example', 'backend/storage/app/private/.gitignore']) assert.doesNotThrow(() => assertSourcePath(path));

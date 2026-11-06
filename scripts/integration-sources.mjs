@@ -3,7 +3,12 @@ import { mkdir, readFile, writeFile, lstat } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { createHash } from 'node:crypto';
 
-const shared = new Set(['assets/js/pages/official-alert-actions.js', 'assets/js/pages/official-assignment.js', 'assets/js/pages/resident-alert.js', 'assets/js/pages/resident-report-model.js', 'assets/js/pages/resident-report.js', 'tests/resident-sos-pages.mjs']);
+const shared = new Set(['assets/js/pages/official-alert-actions.js', 'assets/js/pages/official-assignment.js', 'assets/js/pages/resident-alert.js', 'assets/js/pages/resident-report-model.js', 'assets/js/pages/resident-report.js', 'tests/resident-sos-pages.mjs',
+  'assets/js/pages/official-announcement-actions.js', 'assets/js/pages/official-announcements.js', 'assets/js/pages/official-feedback.js', 'assets/js/pages/resident-feedback-new.js',
+]);
+const civicAdditions = new Set([
+  'backend/app/Contracts/P2/TanodReferences.php', 'docs/P2-COMMUNICATIONS-CLOSURE.md', 'tests/p2-communications-forms.mjs',
+]);
 const photoDependencies = new Map([
   ['assets/js/core/incident-photos.js', '01c4bd21f4280a4f5395ff2583f3708ca168e12e'],
   ['assets/js/core/runtime-config.js', 'c27d4975acf2a8055cbf74c96fb8aec5875214d0'],
@@ -42,7 +47,7 @@ export async function composeSnapshot({ root, destination, lock }) {
     for (const name of paths) {
       assertSourcePath(name);
       const dependencyBlob = owner === 'p2' && photoDependencies.get(name);
-      if (owner === 'p2' && !dependencyBlob && !shared.has(name) && !p2Allowed.test(name)) throw new Error(`P2 path outside reviewed allowlist: ${name}`);
+      if (owner === 'p2' && !dependencyBlob && !shared.has(name) && !civicAdditions.has(name) && !p2Allowed.test(name)) throw new Error(`P2 path outside reviewed allowlist: ${name}`);
       const entry = incoming.get(name);
       if (entry?.type !== 'blob' || entry.mode !== '100644') throw new Error(`Deleted, nonregular or symbolic owner source: ${name}`);
       const content = blob(sha, name);

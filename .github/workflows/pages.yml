@@ -135,7 +135,7 @@ jobs:
       - name: P1 and unchanged DBA suites on genuine MySQL
         working-directory: ${{ env.SNAPSHOT_DIR }}/backend
         run: php vendor/phpunit/phpunit/phpunit -c phpunit.combined.xml --display-warnings --fail-on-warning --log-junit combined-junit.xml
-      - name: Unchanged P2 contract suite
+      - name: Pinned P2 contract suite
         if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
         working-directory: ${{ env.SNAPSHOT_DIR }}
         run: php backend/tests/P2/run.php
@@ -143,7 +143,7 @@ jobs:
         if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
         working-directory: ${{ env.SNAPSHOT_DIR }}
         run: |
-          node --experimental-vm-modules --experimental-default-type=module --test tests/p2-adapters.mjs tests/p2-foundation-adapters.mjs tests/p2-form-intents.mjs tests/p2-report-forms.mjs tests/p2-official-forms.mjs tests/p2-location-forms.mjs tests/p2-photo-upload.mjs tests/p2-photo-form.mjs tests/p2-resident-photos.mjs
+          node --experimental-vm-modules --experimental-default-type=module --test tests/p2-adapters.mjs tests/p2-foundation-adapters.mjs tests/p2-form-intents.mjs tests/p2-report-forms.mjs tests/p2-official-forms.mjs tests/p2-location-forms.mjs tests/p2-photo-upload.mjs tests/p2-photo-form.mjs tests/p2-resident-photos.mjs tests/p2-communications-forms.mjs
           node --test backend/tests/P2/rehearsal.test.mjs
           node scripts/run-tests.mjs
           node --experimental-default-type=module tests/operational-registration.mjs
@@ -184,7 +184,7 @@ jobs:
         if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
         working-directory: ${{ env.SNAPSHOT_DIR }}/backend
         run: P2_TEST_BINDINGS=true IDENTITY_ENABLED=true DBA_TEST_AUTOLOAD="$PWD/vendor/autoload.php" php tests/Compatibility/check-shared-contracts.php
-      - name: Unchanged P2 production SQL HTTP and race suites
+      - name: Pinned P2 production SQL HTTP and race suites
         if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
         working-directory: ${{ env.SNAPSHOT_DIR }}
         run: |

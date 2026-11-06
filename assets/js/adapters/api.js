@@ -12,7 +12,7 @@ const methods = {
   notificationPreferences: ['get', 'set'],
   alerts: ['list', 'get', 'create', 'addDetails', 'assignmentOptions', 'acknowledge', 'assign', 'reassign', 'cancelAssignment', 'logResponse', 'logRescue', 'resolve'],
   announcements: ['list', 'get', 'create', 'update', 'archive', 'retract', 'expireOverdue'],
-  feedback: ['list', 'get', 'create', 'assignTanod', 'resolve'],
+  feedback: ['list', 'get', 'create', 'assignmentOptions', 'assignTanod', 'resolve'],
   notifications: ['list', 'get', 'markRead', 'markUnread', 'dismiss', 'markAllRead', 'clearRead'],
   dashboard: ['officialStats'], map: ['get'], reports: ['snapshot', 'summary', 'incidents', 'incident', 'activity', 'performance', 'exportPath'],
 };
