@@ -80,7 +80,9 @@ try {
     const expiry = secretary.page.waitForResponse(response => response.url().endsWith('/api/v1/announcements/expire-overdue') && response.request().method() === 'POST');
     await secretary.page.goto(origin + '/frontend/official-announcements.html?id=' + announcement.id);
     assert.equal((await expiry).status(), 200);
-    await secretary.page.getByRole('dialog').getByText(content, { exact: true }).waitFor();
+    const officialContent = secretary.page.getByRole('dialog', { name: 'Announcement', exact: true }).locator('.official-announcement-detail > p.official-long-copy');
+    await officialContent.waitFor();
+    assert.equal(await officialContent.textContent(), content);
     await screenshot(secretary.page, 'official-announcement-detail');
     await resident.page.goto(origin + '/frontend/resident-dashboard.html');
     await resident.page.getByRole('link', { name: 'Send SOS', exact: true }).waitFor();
