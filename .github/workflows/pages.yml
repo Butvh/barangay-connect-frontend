@@ -285,6 +285,25 @@ jobs:
           name: p2-opening-session
           path: ${{ env.SNAPSHOT_DIR }}/tests/browser/evidence/p-two-opening-session
           if-no-files-found: ignore
+      - name: Original P2 civic browser suite on a separate fresh schema
+        if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
+        working-directory: ${{ env.SNAPSHOT_DIR }}
+        run: |
+          php backend/tests/Support/prepare-browser-database.php bc_dba_p1_civic_ci
+          export DB_DATABASE=bc_dba_p1_civic_ci DB_TEST_DATABASE=bc_dba_p1_civic_ci
+          php backend/artisan migrate --force --no-interaction
+          export APP_BASE_PATH="$PWD/backend" P1_BROWSER_MODULE="$RUNNER_TEMP/bc-browser-runtime/node_modules/playwright/index.mjs"
+          export P2_CANDIDATE_P1="$GITHUB_SHA"
+          export P2_CANDIDATE_DBA="$(node -p 'require("./docs/backend/integration-lock.json").dba')"
+          export P2_CANDIDATE_P2="$(node -p 'require("./docs/backend/integration-lock.json").p2')"
+          node backend/tests/P2/rehearsal.mjs civic
+      - name: P2 civic browser evidence
+        if: ${{ always() && env.SNAPSHOT_DIR != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: p2-civic-browser
+          path: ${{ env.SNAPSHOT_DIR }}/tests/browser/evidence/p-two-civic
+          if-no-files-found: ignore
       - name: Verify owner source preservation
         if: ${{ always() && env.SNAPSHOT_DIR != '' }}
         working-directory: ${{ env.SNAPSHOT_DIR }}

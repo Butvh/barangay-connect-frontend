@@ -8,6 +8,7 @@ const shared = new Set(['assets/js/pages/official-alert-actions.js', 'assets/js/
 ]);
 const civicAdditions = new Set([
   'backend/app/Contracts/P2/TanodReferences.php', 'docs/P2-COMMUNICATIONS-CLOSURE.md', 'tests/p2-communications-forms.mjs',
+  'backend/tests/P2/browser-civic.mjs', 'backend/tests/P2/civic-fixture.php', 'backend/tests/P2/civic-evidence.php',
 ]);
 const photoDependencies = new Map([
   ['assets/js/core/incident-photos.js', '01c4bd21f4280a4f5395ff2583f3708ca168e12e'],
