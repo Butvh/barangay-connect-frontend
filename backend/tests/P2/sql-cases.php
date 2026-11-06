@@ -277,6 +277,7 @@ require __DIR__.'/sql-photo-boundary.php';
 echo 'MySQL '.$version.'; original controllers exercised over HTTP; full registered-browser acceptance and remaining cross-owner races are separate gates.'.PHP_EOL;
 
 caseTest('SQL feedback picker retains scoped revision and rejects membership changes without effects', function () use ($civic, $resident, $captain, $scope) {
+    require_once __DIR__.'/civic-evidence.php';
     $tanod = saveModel(User::class, ['barangay_id' => $scope->id, 'full_name' => 'Picker Tanod', 'email' => bin2hex(random_bytes(8)).'@example.test', 'password' => 'Fixture123', 'account_status' => 'Active']);
     $membership = saveModel(TanodMembership::class, ['user_id' => $tanod->id, 'barangay_id' => $scope->id, 'active' => true]);
     $row = $civic->submitFeedback($resident, ['type' => 'suggestion', 'category' => 'Safety', 'description' => 'Picker fixture'], 'sql-picker-create');
@@ -284,16 +285,58 @@ caseTest('SQL feedback picker retains scoped revision and rejects membership cha
     verify($options['feedback_revision'] === 0 && in_array($tanod->id, array_column($options['tanods'], 'id'), true), 'Current local Tanod missing.');
     verify(array_keys($options['tanods'][0]) === ['id', 'full_name'], 'Picker leaked private account fields.');
     expectsProblem(fn () => $civic->feedbackAssignmentOptions($resident, $row['id']), 'FORBIDDEN');
-    $counts = fn () => array_map(fn ($table) => DB::table($table)->count(), ['community_feedback', 'activity_logs', 'outbox_events']);
-    $before = $counts();
     $membership->forceFill(['active' => false])->save();
+    $before = civicDatabaseState(); // Baseline AFTER the deliberate authority mutation.
     verify(! in_array($tanod->id, array_column($civic->feedbackAssignmentOptions($captain, $row['id'])['tanods'], 'id'), true), 'Inactive membership remained available.');
     expectsProblem(fn () => $civic->assignFeedback($captain, $row['id'], ['tanod_id' => $tanod->id, 'expected_revision' => 0]), 'VALIDATION');
-    verify($counts() === $before && $civic->feedbackItem($resident, $row['id'])['revision'] === 0, 'Rejected selection changed source or events.');
+    verify(civicDatabaseState() === $before && $civic->feedbackItem($resident, $row['id'])['revision'] === 0, 'Rejected selection changed stored rows/payloads/objects.');
     $membership->forceFill(['active' => true])->save();
-    $civic->assignFeedback($captain, $row['id'], ['tanod_id' => $tanod->id, 'expected_revision' => 0]);
-    $before = $counts();
+    $tanod->forceFill(['account_status' => 'Inactive'])->save();
+    $before = civicDatabaseState();
+    expectsProblem(fn () => $civic->assignFeedback($captain, $row['id'], ['tanod_id' => $tanod->id, 'expected_revision' => 0]), 'VALIDATION');
+    verify(civicDatabaseState() === $before, 'Rejected inactive account changed stored rows.');
+    $tanod->forceFill(['account_status' => 'Active'])->save();
+    $before = civicDatabaseState();
+    expectsProblem(fn () => $civic->assignFeedback($resident, $row['id'], ['tanod_id' => $tanod->id, 'expected_revision' => 0]), 'FORBIDDEN');
+    verify(civicDatabaseState() === $before, 'Unauthorized assignment changed stored rows.');
+    $foreignScope = saveModel(Barangay::class, ['name' => 'Foreign civic scope']);
+    $foreign = saveModel(User::class, ['barangay_id' => $foreignScope->id, 'full_name' => 'Foreign civic official', 'email' => bin2hex(random_bytes(8)).'@example.test', 'password' => 'Fixture123', 'account_status' => 'Active', 'is_captain' => true]);
+    $foreignActor = app(ReferenceData::class)->actorFor($foreign->id);
+    $before = civicDatabaseState();
+    expectsProblem(fn () => $civic->feedbackAssignmentOptions($foreignActor, $row['id']), 'NOT_FOUND');
+    expectsProblem(fn () => $civic->assignFeedback($foreignActor, $row['id'], ['tanod_id' => $tanod->id, 'expected_revision' => 0]), 'NOT_FOUND');
+    verify(civicDatabaseState() === $before, 'Foreign assignment changed stored rows.');
+    $trace = [];
+    $recording = true;
+    DB::listen(function ($query) use (&$trace, &$recording) {
+        if (! $recording || ! str_contains(strtolower($query->sql), 'for update')) {
+            return;
+        }
+        foreach (['users', 'personnel_appointments', 'tanod_memberships', 'community_feedback'] as $table) {
+            if (str_contains($query->sql, 'from `'.$table.'`')) {
+                $trace[] = ['table' => $table, 'ids' => $table === 'users' ? array_map('intval', $query->bindings) : []];
+            }
+        }
+    });
+    try {
+        $civic->assignFeedback($captain, $row['id'], ['tanod_id' => $tanod->id, 'expected_revision' => 0]);
+    } finally {
+        $recording = false;
+    }
+    $tables = array_column($trace, 'table');
+    $boundary = array_search('community_feedback', $tables, true);
+    verify($boundary !== false, 'Missing actual CivicService feedback lock trace.');
+    foreach (['users', 'personnel_appointments', 'tanod_memberships'] as $table) {
+        $first = array_search($table, $tables, true);
+        verify($first !== false && $first < $boundary, 'Eligibility locks were not declared before feedback.');
+    }
+    foreach ($trace as $lock) {
+        if ($lock['table'] === 'users') {
+            verify(array_diff($lock['ids'], [$captain->id, $tanod->id]) === [], 'Civic service locked an undeclared user.');
+        }
+    }
+    $before = civicDatabaseState();
     expectsProblem(fn () => $civic->resolveFeedback($captain, $row['id'], ['expected_revision' => 0]), 'CONFLICT');
-    verify($counts() === $before, 'Stale completion recorded extra effects.');
+    verify(civicDatabaseState() === $before, 'Stale completion changed rows/history/payloads/receipts/objects.');
     $civic->resolveFeedback($captain, $row['id'], ['expected_revision' => 1]);
 });

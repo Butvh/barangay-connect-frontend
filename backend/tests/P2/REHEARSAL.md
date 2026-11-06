@@ -66,15 +66,28 @@ P1_BROWSER_MODULE=<absolute private locked Playwright index.mjs; browsers only>
 If `DBA_TEST_AUTOLOAD` is set, it must name this composition's own `backend/vendor/autoload.php`. Verify actual `SELECT VERSION(),DATABASE(),@@port` against the prepared schema/instance and actual runtime config, not just environment text. Require genuine MySQL8.4; retained/shared databases are outside this procedure. Use P1's normal APP_KEY, storage/session/GD/PDF and installed-browser prerequisites.
 
 ```text
-# Fresh SQL schema:48 existing SQL cases +2 HTTP branches, then unchanged DBA order probe.
+# Fresh SQL schema: report actual current case totals, then unchanged DBA order probe.
 node backend/tests/P2/rehearsal.mjs sql
 # New separate browser schema for EACH line:
 node backend/tests/P2/rehearsal.mjs operations
 node backend/tests/P2/rehearsal.mjs photos
 node backend/tests/P2/rehearsal.mjs opening
+# Additional NEW civic-only schema named bc_dba_p1_civic_<unique>:
+node backend/tests/P2/rehearsal.mjs civic
 ```
 
 Each phase stops at its first failed command, preserves existing checks and prints exact phase/pins/exit evidence. A passing phase is not final DBA approval or full P1 Linux CI. No new test counts should be fabricated if an entry point does not run. Save local logs and original runner reports/screenshots privately; publish only safe source IDs/state/counts/hashes.
+
+## Civic R2 test admission
+
+P1 must admit these P2 additions before freezing the replacement candidate:
+`backend/tests/P2/browser-civic.mjs`, `civic-fixture.php`, and `civic-evidence.php` in the same directory. Include the updated rehearsal runner/tests, portable runner, SQL case and this runbook from the same P2 commit. This does not replace the prior three civic additions or four original page overlays. Do not copy tests into a previously frozen manifest or relax its source guard.
+
+The civic phase uses P1's existing guarded staging/router, real login pages/cookies/CSRF and MySQL. Prepare the new schema through the agreed existing setup first; it refuses a nonempty users table and never resets/migrates/reseeds an existing dataset. Each run needs a fresh schema. The fixture only creates fictional test identities and deliberately changes its own Tanod eligibility or publication deadline. Hash comparisons begin after each deliberate authority change. No shared database or retained rehearsal dataset is a test target.
+
+Prepared checks cover original three-type feedback creation, exact lost-create reply/body/key replay, original announcement lifecycle/expiry/confirmations, scoped picker projections and denial, current membership/account changes, stale revisions, row/detail status, same-role session change and measured general-detail widths. All-table evidence hashes include complete source/history/audit/receipt/event payload rows (excluding session/cache tables) and referenced private-photo byte hashes. The portable hash regression detects equal-count payload mutations. The actual SQL CivicService trace checks that declared user/appointment/membership locks precede feedback, without locking an entire audience. This trace is separate from the existing independent-process MySQL lock regression; neither establishes universal deadlock freedom.
+
+General-feedback review/archive remains unavailable. Civic layout checks do not replace the full operational/photo/capacity/destination/notification/device and retained-restart matrix below. Store the actual civic `report.json` and fictional screenshots privately; never publish credentials, request bodies/keys, cookies, private object keys/paths/bytes or raw SQL. The runner blocks off-origin browser requests and leaves all external delivery disabled. Test preparation, syntax/unit checks and admission are not an executed SQL/browser pass.
 
 ## Short manual rehearsal on the presentation device
 

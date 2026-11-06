@@ -567,5 +567,19 @@ check('SOS history and outbox share event time even when the clock advances betw
     eq($store->select('incident_status_history')[0]['occurred_at'], $store->select('outbox_events')[0]['occurred_at']);
 });
 
+check('Civic evidence detects changed payload with identical row counts and ignores row ordering', function () {
+    if (is_file(__DIR__.'/civic-evidence.php')) {
+        require_once __DIR__.'/civic-evidence.php';
+    }
+    eq(function_exists('civicRowsHash'), true);
+    $rows = [['id' => 1, 'payload' => ['a' => 1, 'b' => 2]], ['id' => 2, 'text' => 'safe']];
+    eq(civicRowsHash($rows), civicRowsHash(array_reverse($rows)));
+    eq(civicRowsHash($rows), civicRowsHash([['payload' => ['b' => 2, 'a' => 1], 'id' => 1], $rows[1]]));
+    $changed = $rows;
+    $changed[0]['payload']['b'] = 3;
+    eq(civicRowsHash($rows) === civicRowsHash($changed), false);
+    eq(civicRowsHash($rows) === civicRowsHash([$rows[0], $rows[0]]), false);
+});
+
 echo "$count P2 contract checks passed; $failures failed. Database/HTTP integration is not tested by this runner.\n";
 exit($failures ? 1 : 0);

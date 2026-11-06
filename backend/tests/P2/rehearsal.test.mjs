@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { mkdtemp, mkdir, copyFile, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, copyFile, writeFile, readFile, rm } from 'node:fs/promises';
+import vm from 'node:vm';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -52,6 +53,22 @@ test('browser phase preserves original operational/photo runners and explicit re
 test('unknown phases, production environments and enabled external delivery fail before launching work', () => {
   assert.throws(() => rehearsalPlan(manifest, pins, 'all', env));
   for (const change of [{ APP_ENV: 'production' }, { SMS_ENABLED: 'true' }, { MAKE_ENABLED: 'true' }, { OUTBOX_DISPATCH_ENABLED: 'true' }]) assert.throws(() => rehearsalPlan(manifest, pins, 'preflight', { ...env, ...change }));
+});
+test('civic browser uses its own fresh schema and keeps the original source verifier', () => {
+  const browser = { ...sql, DB_DATABASE: 'bc_dba_p1_civic_rehearsal', DB_TEST_DATABASE: 'bc_dba_p1_civic_rehearsal', P1_BROWSER_MODULE: process.platform === 'win32' ? 'C:/private/playwright/index.mjs' : '/private/playwright/index.mjs' };
+  assert.deepEqual(rehearsalPlan(manifest, pins, 'civic', browser).at(-1), { runtime: 'node', args: ['backend/tests/P2/browser-civic.mjs'] });
+  assert.throws(() => rehearsalPlan(manifest, pins, 'civic', { ...browser, DB_DATABASE: 'bc_dba_p1_retained', DB_TEST_DATABASE: 'bc_dba_p1_retained' }));
+});
+test('civic readiness selectors exist in original announcement markup (selector contract only)', async () => {
+  const source = await readFile(new URL('./browser-civic.mjs', import.meta.url), 'utf8');
+  const original = await readFile(new URL('../../../assets/js/pages/official-announcements.js', import.meta.url), 'utf8');
+  const markup = original.split('\n').find(line => line.trim().startsWith('main.innerHTML ='));
+  const open = vm.runInNewContext('(' + source.slice(source.indexOf('async function announcements('), source.indexOf('async function menu(')) + ')', { origin: 'http://local.invalid' });
+  await open({ page: { async goto() {}, locator(selector) { return { async waitFor() {
+    for (const match of selector.matchAll(/\.([\w-]+)|\[([\w-]+)\]/g)) {
+      assert.ok(match[1] ? new RegExp('class="[^"]*\\b' + match[1] + '\\b').test(markup) : new RegExp('\\b' + match[2] + '(?:[= >])').test(markup), 'No original element matches ' + selector);
+    }
+  } }; } } });
 });
 test('actual CLI refuses an unadmitted copied runner before launching even the source verifier', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'bc-p2-rehearsal-'));

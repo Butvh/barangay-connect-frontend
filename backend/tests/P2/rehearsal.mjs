@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { dirname, isAbsolute, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-const browserFiles = { operations: 'tests/browser/operations.mjs', photos: 'tests/browser/photo-workflows.mjs', opening: 'backend/tests/P2/browser-opening-session.mjs' };
+const browserFiles = { operations: 'tests/browser/operations.mjs', photos: 'tests/browser/photo-workflows.mjs', opening: 'backend/tests/P2/browser-opening-session.mjs', civic: 'backend/tests/P2/browser-civic.mjs' };
 const nodeFiles = ['adapters', 'form-intents', 'foundation-adapters', 'location-forms', 'official-forms', 'photo-form', 'photo-upload', 'report-forms', 'resident-photos', 'communications-forms'].map(name => 'tests/p2-' + name + '.mjs');
 const step = (runtime, ...args) => ({ runtime, args });
 const requireValue = (condition, message) => { if (!condition) throw new Error(message); };
@@ -12,7 +12,7 @@ const requireValue = (condition, message) => { if (!condition) throw new Error(m
 // This validates orchestration inputs, not authority or source authenticity.
 // The actual unchanged P1 verifier and production entry points remain required.
 export function rehearsalPlan(manifest, expected, phase, env) {
-  requireValue(['preflight', 'node', 'sql', ...Object.keys(browserFiles)].includes(phase), 'Choose preflight, node, sql, operations, photos or opening.');
+  requireValue(['preflight', 'node', 'sql', ...Object.keys(browserFiles)].includes(phase), 'Choose preflight, node, sql, operations, photos, opening or civic.');
   for (const owner of ['p1', 'dba', 'p2']) requireValue(/^[a-f0-9]{40}$/.test(expected[owner] || '') && manifest[owner] === expected[owner], 'Provide matching exact candidate pins for ' + owner + '.');
   requireValue(manifest.dirty === false, 'Use a clean P1-admitted candidate.');
   for (const files of [manifest.p1Hashes, manifest.ownerHashes?.dba, manifest.ownerHashes?.p2]) requireValue(files && Object.keys(files).length > 0, 'Missing owner source fingerprints.');
@@ -25,7 +25,7 @@ export function rehearsalPlan(manifest, expected, phase, env) {
   requireValue(['127.0.0.1', 'localhost', '::1'].includes(env.DB_HOST) && env.DB_HOST === env.DB_TEST_HOST, 'Use matching local disposable database hosts.');
   requireValue(/^\d+$/.test(env.DB_PORT || '') && Number(env.DB_PORT) > 0 && Number(env.DB_PORT) < 65536 && env.DB_PORT === env.DB_TEST_PORT, 'Use matching explicit database ports.');
   requireValue(env.DB_USERNAME && env.DB_USERNAME === env.DB_TEST_USERNAME && (env.DB_PASSWORD || '') === (env.DB_TEST_PASSWORD || ''), 'Use matching private database credentials.');
-  const databasePattern = phase === 'sql' ? /^p2_test_[a-zA-Z0-9_]+$/ : /^bc_dba_p1_[a-zA-Z0-9_]+$/;
+  const databasePattern = phase === 'sql' ? /^p2_test_[a-zA-Z0-9_]+$/ : phase === 'civic' ? /^bc_dba_p1_civic_[a-zA-Z0-9_]+$/ : /^bc_dba_p1_[a-zA-Z0-9_]+$/;
   requireValue(databasePattern.test(env.DB_DATABASE || '') && env.DB_DATABASE === env.DB_TEST_DATABASE, 'Use matching freshly prepared disposable schema names for this phase.');
   if (phase === 'sql') return [...plan, step('php', 'backend/tests/P2/sql.php'), step('php', 'backend/tests/Review/p2-lock-order.php')];
   requireValue(isAbsolute(env.P1_BROWSER_MODULE || ''), 'Use the private locked Playwright runtime.');
