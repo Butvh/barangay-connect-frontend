@@ -37,11 +37,21 @@ async function login(key) {
   await page.waitForURL('**/' + (account.role === 'resident' ? 'resident-dashboard.html' : 'official-dashboard.html'));
   return { page, context, account };
 }
-async function responsive(page, name) {
+async function responsive(page, name, searchId) {
   for (const width of [1440, 768, 390]) {
     await page.setViewportSize({ width, height: width === 390 ? 844 : 1080 });
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2), `${name} overflows at ${width}px`);
+    if (width === 390 && searchId) {
+      const fits = await page.locator(searchId).evaluate(async input => {
+        await document.fonts.ready;
+        const style = getComputedStyle(input);
+        const measure = document.createElement('canvas').getContext('2d');
+        measure.font = style.fontWeight + ' ' + style.fontSize + ' ' + style.fontFamily;
+        return measure.measureText(input.placeholder).width <= input.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+      });
+      assert.ok(fits, `${name} search hint clips at ${width}px`);
+    }
     const path = `${name}-${width}.png`; await page.screenshot({ path: resolve(evidence, path), fullPage: true }); report.screenshots.push(path);
   }
 }
@@ -72,7 +82,10 @@ try {
     const form = captain.page.getByRole('dialog'); await form.locator('input[type=file]').waitFor();
     assert.ok(await form.getByText(/uploaded privately/).count() > 0);
     await captain.page.keyboard.press('Escape'); await form.waitFor({ state: 'detached' });
-    await responsive(captain.page, 'personnel');
+    await responsive(captain.page, 'personnel', '#personnel-search');
+    await secretary.page.goto(origin + '/frontend/official-verifications.html');
+    await secretary.page.locator('.official-verification-records:not([aria-busy="true"])').waitFor();
+    await responsive(secretary.page, 'verification-queue', '#verification-search');
     assert.equal((await secretary.context.request.get(origin + '/api/v1/personnel')).status(), 403);
   });
   await check('Facility directory and original create validation use the shared administrative factory', async () => {
