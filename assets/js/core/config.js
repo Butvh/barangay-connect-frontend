@@ -1,5 +1,16 @@
-/** Browser-only demo configuration. No real credentials or personal data. */
-export const DEMO_MODE = true;
+import { Runtime } from './runtime-config.js';
+
+if (!['demo', 'backend'].includes(Runtime.mode)) throw new Error('Unknown runtime mode.');
+export const DEMO_MODE = Runtime.mode === 'demo';
+let serverEpoch = null, serverReceived = null;
+export function setServerTime(value) {
+  const epoch = Date.parse(value);
+  if (Number.isFinite(epoch)) { serverEpoch = epoch; serverReceived = globalThis.performance?.now?.() ?? Date.now(); }
+}
+export function serverNow() {
+  if (serverEpoch === null) throw new ApiError('NOT_AVAILABLE', 'The server clock is not available.');
+  return serverEpoch + (globalThis.performance?.now?.() ?? Date.now()) - serverReceived;
+}
 export const Config = Object.freeze({
   DEMO_MODE,
   schema_version: 1,

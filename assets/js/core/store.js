@@ -1,5 +1,5 @@
-import { Config, ApiError, copy, zonedISO } from './config.js';
-import { createSeed } from '../data/seed.js';
+import { Config, ApiError, copy, zonedISO, serverNow } from './config.js';
+const { createSeed } = Config.DEMO_MODE ? await import('../data/seed.js') : { createSeed: null };
 
 const ENTITIES = Object.freeze(['alerts', 'verification', 'announcements', 'feedback', 'notifications', 'users', 'facilities']);
 export function memoryStorage() {
@@ -32,7 +32,7 @@ export function createStore({ storage = browserStorage(), eventTarget = globalTh
   }
   function currentTime() {
     if (clock) return clock();
-    if (!Config.DEMO_MODE) return zonedISO(Date.now());
+    if (!Config.DEMO_MODE) return zonedISO(serverNow());
     const db = read();
     // One reference epoch shared by every tab, even when tabs open minutes apart.
     return zonedISO(Date.parse(Config.demo_time) + Date.now() - (db.demo_started_at || Date.now()));
@@ -71,5 +71,9 @@ export function createStore({ storage = browserStorage(), eventTarget = globalTh
   }
   return Object.freeze({ read, transact, subscribe, reset, now: currentTime, destroy: () => { eventTarget?.removeEventListener('storage', onStorage); subscribers.forEach(set => set.clear()); }, key });
 }
-export const Store = createStore();
+const unavailable = () => { throw new ApiError('NOT_AVAILABLE', 'Demo storage is disabled in backend mode.'); };
+export const Store = Config.DEMO_MODE ? createStore() : Object.freeze({
+  read: unavailable, transact: unavailable, reset: unavailable, subscribe: unavailable,
+  now: () => zonedISO(serverNow()), destroy() {},
+});
 export default Store;

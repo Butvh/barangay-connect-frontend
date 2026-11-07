@@ -1,5 +1,12 @@
 import { UI } from '../core/ui.js';
 import { Fmt } from '../core/format.js';
+import { privateDocumentsEnabled, privateDocumentLabel } from '../core/private-documents.js';
+
+export function verificationDocuments(row) {
+  if (!privateDocumentsEnabled) return null;
+  const e = UI.escape;
+  return `<header class="spread"><div class="official-section"><h2>${e(row.document_type)}</h2><small>Private supporting documents</small></div></header><div class="official-document-preview">${row.documents?.length ? row.documents.map(file => `<p>${privateDocumentLabel(file)} · ${e(file.kind === 'valid_id' ? 'Valid ID' : 'Proof of residence')}</p>`).join('') : '<p>No private document is available for this recorded submission.</p>'}</div><hr class="divider"><p class="caption">Downloads require your current verification access.</p>`;
+}
 
 // The same saved document/review history is visible to its resident and officials.
 export function verificationHistory(row) {

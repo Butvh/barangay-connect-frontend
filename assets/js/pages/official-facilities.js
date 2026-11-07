@@ -1,9 +1,17 @@
-import { Auth, Api, UI, Icons, e, facilityType, facilityDetail, facts, dialog, errorView, live } from './official-shared.js';
+import { Auth, Api, UI, Icons, Fmt, e, facilityType, facilityDetail, facts, dialog, errorView, live } from './official-shared.js';
 import { Shell } from '../core/shell-official.js';
 import { facilityActive, facilityLocated } from '../core/facilities.js';
 import { facilityForm, confirmFacilityStatus } from './facility-form.js';
 
 const statusBadge=f=>`<span class="facility-badge ${facilityActive(f)?'active':'inactive'}"><i aria-hidden="true"></i>${facilityActive(f)?'Active':'Inactive'}</span>`;
+function historyContent(f){
+  if(!f.can_manage)return '';
+  const rows=Array.isArray(f.history)?f.history:[];
+  return '<section class="stack-sm"><h3>Facility history</h3>'+(rows.length?rows.map(row=>{
+    const snapshot=row.snapshot;
+    return `<details><summary>${e(row.action)} · ${e(row.at?Fmt.dateTime(row.at):'Time not recorded')}</summary><p>Recorded by ${e(row.by_name||'Not recorded')}</p>${snapshot?facts([['Name',snapshot.name],['Type',facilityType(snapshot)],['Address',snapshot.address],['Status',snapshot.status],['Capacity',snapshot.capacity??'Not provided'],['Contact',snapshot.contact||'Not provided'],['Notes',snapshot.notes||'Not provided'],['Location pin',facilityLocated(snapshot)?`${snapshot.map_x}%, ${snapshot.map_y}%`:'Not recorded']]):'<p>No display snapshot was recorded for this change.</p>'}</details>`;
+  }).join(''):'<p>No facility change history is recorded.</p>')+'</section>';
+}
 let user;
 try { Auth.requireRole(['captain','secretary','responder','rescuer']); user=Auth.current(); }
 catch(error){if(!['AUTH','FORBIDDEN'].includes(error.code))document.querySelector('#app').innerHTML=UI.empty({title:'Unable to open facilities',text:error.message});}
@@ -17,7 +25,7 @@ if(user){
     const el=dialog('Facility details','<div class="stack" data-facility-detail></div><button type="button" class="btn btn-primary full" data-done>Done</button>',{sheet:false});
     el.classList.add('facility-detail-dialog');
     const refresh=()=>{const current=rows.find(row=>row.id===f.id),body=el.querySelector('[data-facility-detail]');if(!current){body.textContent='This facility is no longer in your directory.';return;}
-      body.innerHTML=`<div class="row"><span class="icon-tile">${Icons.svg(current.type==='Hospital'?'hospital':'school')}</span><h3>${e(current.name)}</h3></div>${statusBadge(current)}${!facilityActive(current)?'<p class="banner">Inactive — unavailable for new rescue assignments. Historical records are retained.</p>':''}${facts([['Type',facilityType(current)],['Address',current.address],...(current.type==='EvacuationCenter'?[['Capacity',`${current.capacity??'Not provided'} people`]]:[]),['Contact',current.contact||'Not provided']])}${current.notes?`<p class="facility-notes-copy">${e(current.notes)}</p>`:''}${facilityLocated(current)?`<a class="btn" href="official-map.html?facility=${current.id}">View on map</a>`:'<p class="caption">No map pin selected.</p>'}`;
+      body.innerHTML=`<div class="row"><span class="icon-tile">${Icons.svg(current.type==='Hospital'?'hospital':'school')}</span><h3>${e(current.name)}</h3></div>${statusBadge(current)}${!facilityActive(current)?'<p class="banner">Inactive — unavailable for new rescue assignments. Historical records are retained.</p>':''}${facts([['Type',facilityType(current)],['Address',current.address],...(current.type==='EvacuationCenter'?[['Capacity',`${current.capacity??'Not provided'} people`]]:[]),['Contact',current.contact||'Not provided']])}${current.notes?`<p class="facility-notes-copy">${e(current.notes)}</p>`:''}${facilityLocated(current)?`<a class="btn" href="official-map.html?facility=${current.id}">View on map</a>`:'<p class="caption">No map pin selected.</p>'}${historyContent(current)}`;
     };
     details.add(refresh);el.addEventListener('close',()=>details.delete(refresh),{once:true});el.querySelector('[data-done]').addEventListener('click',()=>UI.closeDialog(el));refresh();
   }

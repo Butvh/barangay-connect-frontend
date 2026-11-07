@@ -1,4 +1,6 @@
-import { Config, ApiError, copy, delay } from './config.js';
+import { Config, ApiError, copy, delay, setServerTime } from './config.js';
+import { createHttp } from '../adapters/http.js';
+import { createBackendAuth } from '../adapters/session.js';
 import { Store, memoryStorage } from './store.js';
 import { roleOf } from './permissions.js';
 
@@ -32,5 +34,22 @@ export function createAuth({ store = Store, session = tabStorage(), wait = delay
   }
   return Object.freeze({ current, login, logout, requireRole, roleOf, homeFor });
 }
-export const Auth = createAuth();
+export const Http = Config.DEMO_MODE ? null : createHttp({ onServerTime: setServerTime });
+export const Auth = Config.DEMO_MODE ? createAuth() : createBackendAuth({ http: Http });
+// Every importing page waits for /me before a synchronous role guard can run.
+if (!Config.DEMO_MODE) await Auth.hydrateSession();
+if (!Config.DEMO_MODE) {
+  let previous = Auth.current();
+  Auth.onChange(({ reason } = {}) => {
+    const currentUser = Auth.current();
+    const switched = previous && currentUser && (previous.id !== currentUser.id || previous.barangay_id !== currentUser.barangay_id || roleOf(previous) !== roleOf(currentUser));
+    if (previous && (!currentUser || switched) && !Auth.error()) {
+      const host = globalThis.document?.querySelector('#app');
+      if (host) host.textContent = switched ? 'Your account changed. Opening your current workspace.' : 'Your session ended. Sign in to continue.';
+      // Explicit sign-in/out forms own their confirmed destination. Background revocation/account switches redirect here.
+      if (!['signed_in', 'signed_out'].includes(reason)) globalThis.location?.replace?.(switched ? Auth.homeFor(currentUser) : roleOf(previous) === 'resident' ? 'resident-login.html' : 'login.html');
+    }
+    previous = currentUser;
+  });
+}
 export default Auth;

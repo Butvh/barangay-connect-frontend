@@ -3,6 +3,7 @@ import { Icons } from '../core/icons.js';
 import { Fmt } from '../core/format.js';
 import { roleLabel, sourceLabel } from './captain-personnel-model.js';
 
+import { privateDocumentsEnabled, privateDocumentLabel } from '../core/private-documents.js';
 const e = UI.escape;
 // These two local line icons follow the existing SVG icon style.
 function icon(name, size = 20) {
@@ -32,7 +33,7 @@ export function personnelDetails(row, barangay) {
     ${section('Personal information', 'Basic details about this personnel.', 'user', columns([['Full name', row.full_name], ['Home address', row.address]], [['Barangay', barangayName]]))}
     ${section('Contact information', 'Contact details for communication and emergencies.', 'mail', columns([['Email', row.email], ['Contact number', row.contact_number]], [['Emergency contact', row.emergency_contact]]))}
     ${section('Role details', 'Current role assignment and status.', 'briefcase', columns([['Assigned role', roleLabel(row.role)], ['Source', row.legacy ? null : source], ['Status', status(row), true]], [['Appointment date', row.appointed_at ? Fmt.date(row.appointed_at) : null], ['Assigned by', appointment?.by_name], ...(row.assignment_limit ? [['Active assignments', `${row.assignment_workload} of ${row.assignment_limit}`]] : [])]) + busy)}
-    ${row.requirements.length || row.notes ? section('Requirements and notes', 'Recorded supporting documents and personnel notes.', 'file-text', `${row.requirements.length ? `<ul class="cp-file-list">${row.requirements.map(file => `<li>${e(file.name)} · ${Math.ceil(file.size / 1024)} KB</li>`).join('')}</ul><p class="cp-form-help">File details are recorded; file contents are not stored in this demo.</p>` : ''}${row.notes ? `<p class="cp-long-copy">${e(row.notes)}</p>` : ''}`) : ''}
+    ${row.requirements.length || row.notes ? section('Requirements and notes', 'Recorded supporting documents and personnel notes.', 'file-text', `${row.requirements.length ? `<ul class="cp-file-list">${row.requirements.map(file => `<li>${privateDocumentLabel(file, true)} · ${Math.ceil(file.size / 1024)} KB</li>`).join('')}</ul><p class="cp-form-help">${privateDocumentsEnabled ? 'Supporting documents require current Captain access.' : 'File details are recorded; file contents are not stored in this demo.'}</p>` : ''}${row.notes ? `<p class="cp-long-copy">${e(row.notes)}</p>` : ''}`) : ''}
     ${section('Appointment history', 'Record of role assignments and changes.', 'calendar', history(row))}
   </div><footer class="cp-dialog-footer cp-details-footer"><button type="button" class="btn" data-done>Close</button>${row.role ? '<button type="button" class="btn" data-detail-reassign>Reassign role</button><button type="button" class="btn cp-danger-outline" data-detail-remove>Remove from role</button>' : ''}</footer>`;
 }

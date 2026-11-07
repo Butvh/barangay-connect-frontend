@@ -1,0 +1,23 @@
+# Backend presentation feature matrix â€” November 4, 2026
+
+> **November 5 update:** [Current exact-source acceptance and remaining gates](NOV5-INTEGRATION-STATUS.md) supersedes older completion/blocker statements below. Published P2 administrative support and DBA facility history are now integrated. Earlier measurements retain their original source pins.
+
+Scope: actual P1/current owner source union in the isolated disposable profile. Frontend demo availability is not backend completion. The current integration-lock.json and PR49 CI evidence define tested pins. No public production path is enabled.
+
+| Feature | Status and presentation boundary |
+| --- | --- |
+| Login, current identity, logout | Implemented in isolated profile: actual cookie session/CSRF/current role/scope/generation, revoked/removed access and no browser identity trust. Production identity remains disabled. |
+| Profile/password/account registration/household | Mandatory, in progress: actual P1 profile/password/registration/household services and original-form adapters now exist behind the disposable administration selection. Positive writes are blocked by the actual P2 writer's unsupported P1 event families; no durable-save completion claim. |
+| Recovery mail | Mandatory, in progress: actual neutral challenges, keyed digests, encrypted queue jobs, five committed attempts, cooldown and one-use authorization are implemented. The independent correct-code race and actual encrypted job to private loopback SMTP sink pass; final reset source events still require P2. Only fictional mailboxes are supported; no real-mail delivery claim. |
+| Verification | Mandatory, in progress: real private JPEG/PNG/PDF documents, queue/detail, correction/resubmission/reapplication, review/expiry, frozen retries and association-authorized downloads now have P1 services/routes/adapters. Positive lifecycle acceptance remains blocked by P2 event support. Missing legacy evidence is not invented. |
+| Captain personnel | Mandatory, in progress: Captain-only directory, external staffing, fixed Tanod appointment/reassignment/removal, inactive capacity counting, busy checks, private requirements, history and generation revocation have P1 services/adapters. Actual positive mutation acceptance is blocked by P2. No Tanod CRUD is added. |
+| Facilities | Mandatory, in progress: scoped create/edit/deactivate/reactivate and revision handling have P1 services/adapters. Positive source events need P2. DBA additive160/300/50 field widening and full history persistence remain outstanding; longer unsupported fields fail closed instead of truncating. |
+| SOS/manual response/rescue/resolution | Implemented isolated core: real MySQL, original UI, frozen intents/revisions, manual assignment, both branches, explicit resolution/history/capacity/privacy; current-pin original browser gate required. |
+| Announcements/feedback/reports | P2 services/SQL and adapters exist. Core browser suite is not exhaustive publication/feedback/report UI acceptance. Captain reports must use persisted fixtures; do not show invented historical aggregates. |
+| In-app notifications | Actual typed outbox/writer/handler/recipient API with independent receipts, rollback/replay/revocation. Automated fixture dispatches in-app-only records; no autonomous production worker. |
+| Private incident photos | Actual P1 byte/HTTP/cleanup service and tests now exist against ninth DBA metadata/model/exact P2 policy. Original form integration/positive controls remain unavailable pending P2 caller/replay and reviewed shared binding. See PRIVATE-PHOTO-SERVICE.md. |
+| SMS consent | Actual P1 self GET/PUT/current authority implemented/tested against DBA3e632f3. Reviewed disposable opt-in binding only; original profile UI control integration remains pending. No granted preference is invented. See CURRENT-CONSENT-SERVICE.md. |
+| SMS/Make/carrier delivery | Unavailable positive producer flow: consent persistence, actual P1 current authority and DBA current-worker checks exist; P2 producers still stay in-app-only. Unsupported-intent exit2 is denial evidence. Needs actual P2 positive producer and joint current-worker fake-transport acceptance; real send/Make requires separate explicit authorization. |
+| Public hosting/release | Unavailable. Static Pages is not Laravel; loopback profile is not production enablement or deployment. |
+
+The user confirmed full administration is mandatory. Do not call the system complete while these required acceptance gates are blocked. Preserve the passing2e8161e core checkpoint; do not substitute frontend storage or adapter doubles. See ADMINISTRATION-ACCEPTANCE.md for exact handoffs and results. Real SMS/Make remains separately unauthorized and disabled.

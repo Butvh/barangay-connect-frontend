@@ -2,6 +2,8 @@
 
 Fictional barangay disaster-response demo using HTML5, plain CSS and vanilla JavaScript ES modules. Assets work offline, with no runtime packages, CDN or build step.
 
+Backend integration now has an initial P1 Laravel scaffold under `backend/`, separate from the public fictional demo. See [foundation setup and ownership](docs/backend/FOUNDATION.md) and [facade/API matrix](docs/backend/API-MATRIX.md). Identity is intentionally disabled until the DBA model/schema slice is reviewed; this is not a completed persistent backend.
+
 ## Run locally
 
 Clone into `C:\xampp\htdocs\barangay-connect`, start Apache, and open [Resident sign in](http://localhost/barangay-connect/resident-login.html) or [Official sign in](http://localhost/barangay-connect/login.html). Use HTTP rather than `file://`. Flat pages and relative paths also support GitHub Pages.
