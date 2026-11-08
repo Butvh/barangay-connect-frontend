@@ -1,6 +1,6 @@
 # Integrated system audit — 8 November 2026
 
-Status: validation in progress. This branch is a review candidate, not a release or permission to merge main. Exact results are recorded below as each gate finishes. The retained recording database has not been migrated, reset or used as an audit fixture.
+Status: required Linux CI, the complete local backend suite and all local browser gates passed for the reviewed runtime. This branch is a review candidate, not a release or permission to merge main. The retained recording database has not been migrated, reset or used as an audit fixture.
 
 ## Source and dependency review
 
@@ -30,6 +30,40 @@ The baseline is retained in `owner-source-baseline.json`. `integration-audit-pat
 
 The screenshot's optional contact value `dsa` is not the actual map rejection. The current owner contract accepts an optional string up to 50 characters; there is no ratified phone-format rule here. Blank optional contact is accepted. Do not quietly change that contract or remove map/capacity validation to make a save succeed.
 
+## Additional review findings
+
+- **Medium, integration tooling, fixed:** the original rehearsal admission code hashed raw Windows CRLF while the integrated manifest hashes canonical UTF-8/LF. This refused equivalent admitted source. Integrated admission now uses the same normalization; legacy owner manifests keep their existing raw-byte contract. The actual CLI regression failed before the correction and passes afterward.
+- **Low, diagnostics, fixed:** after-validation-hook errors exist in the validator error bag without a failed-rule entry. Iterating only failed rules omitted their field hints. Iterate error keys and derive only fixed safe messages. The regression observed a missing `fields.input` before the fix and the expected generic field hint afterward; authentication remains denied in both cases.
+- **Low, local worker bound, fixed:** watch duration was checked only between batches. It is now checked between dispatches too. An already running dispatch may finish after the cooperative deadline; this is not a hard process timeout.
+- **Medium, missing implementation, remains gated:** general feedback submission/read/rating exists, but its review/archive commands are not supplied by the current backend. Complaint/suggestion assignment/resolution must not be reused as a substitute. P2 owns a future reviewed service/API contract and P1 owns shared registration; keep unavailable actions disabled until then.
+- **Release dependency, unresolved:** the actual retained recording archive and independent different-target restore remain pending DBA/custodian handoff. Isolated database backup tests do not certify this dataset.
+
+## Security and data-source review scope
+
+| Boundary | Reviewed implementation and acceptance coverage | Practical limit |
+|---|---|---|
+| Authentication / account changes | Current identity middleware, effective role/scope and security generations; generic portal failures; login/recovery/password rate limits; session/CSRF feature and browser tests. | This is the isolated testing profile, not production deployment acceptance. |
+| Private records / uploads | Scope/ownership and current assignment checks; staged private photo normalization/download; revoked role, unrelated resident, transfer/cancellation and historical-gallery regressions. | Verification document demo previews still follow their existing documented storage contract. Never publish private runtime objects. |
+| Injection / mass assignment | Parameter-bound relational queries, explicit request/service field allowlists, escaped UI rendering, and hostile/extra-field tests in the retained suites. | Test coverage is evidence for exercised boundaries, not a guarantee that no vulnerability exists. |
+| Transactions / concurrency | Shared MySQL connection, original revision/idempotency and rollback assertions, real independent-process assignment races, unchanged DBA late-user-lock probe. | No whole-barangay or notification-audience locking workaround. |
+| Secrets / public root | Frontend/backend artifact checks exclude `.env`, vendor, storage, private documents and demo seed from backend artifacts; Composer audit uses the locked dependency set. | The local root test account is limited to loopback disposable testing. A production least-privilege database account still needs operator configuration. |
+| Notifications / external providers | Existing typed outbox, receipts, recipient/source revalidation, consent/purpose and fake transport/replay tests. The local command processes only in-app events. | Real SMS/mail/Make delivery and production scheduling remain disabled and unverified. |
+
+The public GitHub Pages build deliberately uses `Runtime.mode=demo`, browser persistence and fictional seed data. Backend staging writes a separate same-origin artifact with `mode=backend`, removes the seed module, and enables only explicitly reviewed test factories. Laravel/MySQL supply those original pages' accounts, operational records, directory, civic data and reports. No API failure is treated as permission to load demo records. Private staged forms are the integration target; the Pages URL cannot run Laravel.
+
+## Team action order and completion criteria
+
+| Order / owner | Priority and prerequisite | Deliverable and completion criterion |
+|---|---|---|
+| 1 — P1 | High; frozen candidate and audit patch declaration available. Can run alongside DBA/P2 review. | Review explicit portal request compatibility, error allowlist, fixture-only map coverage and integrated staging. Reproduce original identity/administrative/recovery/photo browser gates against the exact candidate. Approve or report a concrete failing case without bypassing gates. |
+| 1 — P2 | High; same candidate and fresh disposable schemas. Can run alongside P1/DBA. | Reproduce both SOS branches, manual dispatch, current assessment, rescuer capacity1/responder capacity2, release/retry/stale revision, privacy and explicit resolution. Confirm notification receipts and original recipient page. Record exact source and results. |
+| 1 — DBA | High; same candidate and local isolated MySQL. Can run alongside P1/P2. | Independently accept the existing migrations/constraints, new capacity-race evidence, lock protocol and bounded in-app worker. Review real map coverage as data stewardship; do not add fabricated coordinates or reset retained data. |
+| 2 — DBA + recording custodian | High; authorized private source/key/config/object handoff and coordinated capture. | Consistent encrypted actual recording backup, separately held restoration material, matching hashes, restore to a different verified empty target, FK/object/gallery/privacy verification. No restored outbox delivery. |
+| 3 — P1/shared registrar + P2 | Medium; agreed general-feedback review/archive contract and DBA schema decision if required. Separate follow-up. | Implement missing commands through existing transport/intents with explicit authorization, revisions, audit and tests; enable UI only after acceptance. Do not claim current completion. |
+| 4 — team | Release gate; current combined checks plus independent owner approvals and backup acceptance. | Review the dedicated integration PR and its exact commit, then decide merge order. Keep main and owner PRs unchanged until those gates are met. |
+
+Provider credentials, real SMS/Make activation and production deployment require their own later acceptance; they are not prerequisites to exercising the fake-delivery local backend.
+
 ## Boundaries preserved
 
 - MySQL transactions retain actor/security-generation checks, ordered person/incident/facility eligibility locks, optimistic revisions, one immutable submission key/body and atomic audit/outbox writes.
@@ -54,18 +88,52 @@ Use PHP/Composer from the locked backend requirements, MySQL 8.4, Node and the l
 
 Evidence root on this device: `C:/Users/Lanz/.codex/visualizations/2026/10/04/01a10651-3f6f-7cc0-ab32-0d0d48d30abc/backend-audit-20261108`.
 
+Sanitized counts, exact runtime/owner revisions, CI tree equivalence, browser report hashes and raw evidence digests are retained in `2026-11-08-system-audit-evidence.json`. It includes no credentials, SQL contents, private object bytes or provider secrets. The full evidence remains private on this device.
+
 - Original frontend baseline: passed. Original combined PHP baseline was interrupted after 189/384, so is **not** a passing result.
 - Reproduced four PHP portal/field-error failures before fixes; valid pinned facility case already passed.
 - New map API regression failed because a resident received an inactive facility. New in-app command regression failed because the command did not exist.
 - Focused corrected session/facility/worker run: **35 tests / 285 assertions, no failures**. Map test added afterward; final complete run includes it.
 - Portable P2 contracts: **52 passed**. Shared-transport/original-form P2 JavaScript: **43 passed**.
 - Original frontend suite after initial fixes: passed; the new 7-case audit regression is now part of the standard runner and passes independently.
-- Full combined PHP, all original browser workflows, SQL races, lock review, syntax/style, dependency and artifact checks: **pending final results**.
+- Final reviewed runtime: `80b64ac28c3fcddb304e0e60e1d016338dc45d71`. Its clean export contains **867 fingerprints / 279 upstream owner files / 27 explicit audit patches**. Later documentation-only changes update this report, the implementation checklist and the login contract; their final provenance check is recorded separately.
+- After-hook validation regression: **RED** (missing `fields.input`, 1 test / 4 assertions) on the prior implementation, then **GREEN: 26 tests / 156 assertions** for the complete audit/session boundary selection. The earlier connection-refused attempt is not the RED evidence.
+- Actual MySQL P2 SQL/controller/race runner: **53 logged passes**, including the new independent-process rescuer capacity1 race, completion release and reuse without automatic resolution. The unchanged DBA actual-service probe reports **`late_user_ids=[]`, both workers committed, `lock_order_accepted=true`**.
+- Final original frontend runner plus new audit7: passed. Exact CI P2 adapter list: **43 passed**, portable P2: **52 passed**, CLI orchestration: **11 passed**, artifact/source-boundary tests: **13 passed**. Original live public-root/session/CSRF checks: **3 passed**. Static check and complete Pint: passed. Strict Composer validation/platform checks passed; locked audit found no advisories.
+- Actual source/fake-delivery acceptance: shared SQL/receipt contract **9 PASS lines**; granted/missing/revoked/wrong-purpose producer probes all passed, with **0 real provider calls**. No phone delivery is claimed.
+- Frozen-candidate browsers: **52 scenarios / 57 screenshots**, no failed report. Original identity5, operations10, administration readiness5, account/verification/consent5, recovery/expiry2, personnel/facility/reporting7, photos3, opening/session1 and civic11; new audit3. Every phase used its own fresh schema. The civic runner used its required `bc_dba_p1_civic_*` prefix.
+- Full five-suite combined PHPUnit on Windows: **392 tests / 2,194 assertions / 0 failures / 1 OS-limited symlink skip**, completed uninterrupted in22m55.678s. Linux exercises that fixture without skips. The earlier completed 391-test run failed only the new map assertion's incorrect assumption that no other suite retains shared facilities. The assertion now scopes its count to its own barangay while still rejecting any inactive resident result. Earlier interrupted runs are not passes.
+
+Required Linux CI for runtime `80b64ac`: [run42455966616](https://github.com/Butvh/barangay-connect-frontend/actions/runs/42455966616) passed `check`, `backend` and `combined`; deployment was skipped. The complete combined suite passed **392 tests / 2,195 assertions with no skips**. The synthetic checkout `bf948a2d28917fec8ee46b5ab9d8c66cf60c4d77` and direct runtime commit have the same Git tree `8489e200621c8fcf0d116ead5e11f6dc6e183a8e`. Linux also ran the original 49 browser scenarios, actual SQL/races, fake producers, source verification, artifact/format and dependency gates. The additional audit3 browser scenarios were executed locally; they are not claimed as a separate CI step.
+
+Representative commands (run from the clean candidate, with the private disposable profile described above):
+
+```text
+node scripts/prepare-integration.mjs
+node scripts/verify-integration.mjs
+node scripts/check.mjs
+node scripts/run-tests.mjs
+node --test backend/tests/P2/rehearsal.test.mjs
+node --test tests/backend-artifact.mjs tests/frontend-artifact.mjs tests/integration-snapshot.mjs
+php backend/vendor/phpunit/phpunit/phpunit -c backend/phpunit.combined.xml --log-junit <private-evidence>/combined-junit.xml
+php backend/tests/P2/run.php
+php backend/tests/P2/sql.php
+php backend/tests/Review/p2-lock-order.php
+php backend/tests/Compatibility/check-shared-contracts.php
+php backend/tests/Compatibility/check-produced-delivery.php --fixture-report=<private-fixture-report>
+node tests/browser/integration-audit.mjs
+```
+
+The original ten-file P2 Node list and original nine browser entry points remain in `.github/workflows/pages.yml`; the additional audit browser is `tests/browser/integration-audit.mjs`. Node24 on this device omits the obsolete `--experimental-default-type=module` flag; CI retains its pinned Node22 flags. No assertions or required suites were removed to accommodate this device. Run Pint/Composer from `backend` using the locked runtime.
 
 Setup diagnostics are retained, not hidden as product regressions: an interrupted MySQL process required loopback restart/recovery; early connection-timeout runs and a globally enabled identity environment were corrected before the focused pass. The P2 HTTP fixture now declares each fictional role's portal intent; its first run exposed that missing test-caller field. No original assertion or failure gate was removed.
+
+A broad `p2-*.mjs` glob also invoked the standalone HTTP harness without its required server/fixture arguments; it was not a valid unit-test command. The exact original ten-file CI list subsequently passed43. A redundant Unit/Feature-only PHP run was stopped in favor of the complete five-suite run. Neither diagnostic is recorded as a passing full suite. The Windows symlink fixture explicitly requires Linux CI when the OS cannot create symlinks.
 
 ## Release and owner handoff
 
 P1 reviews portal validation/shared frontend contracts and reproducible integrated staging. P2 reviews operational projection/privacy and all original workflow/race evidence. DBA reviews unchanged schema/guards plus the notification worker boundary, current candidate lock evidence and backup/restore acceptance. Review the exact candidate, not an earlier PR head.
 
 Final acceptance remains dependent on current required checks and the team's independent DBA review/backup custodianship. The earlier recording-backup handoff is not certified by this audit. If those are incomplete, publish the candidate and evidence but leave all owner PRs and main unmerged. Real external message delivery remains untested and disabled; neither isolated tests nor a video rehearsal establish production readiness.
+
+Delivery: [draft integration PR51](https://github.com/Butvh/barangay-connect-frontend/pull/51), branch `codex/backend-integration-audit-20261108`. P1/DBA/P2 owner heads were rechecked during final validation and still matched the pinned revisions. The fresh read-only code reviewer found no unresolved Critical/Important code finding after the three review corrections; this does not replace independent team acceptance. No upstream PR was merged, retargeted or force-pushed. The worktree, private evidence, historical failures and retained datasets remain available.

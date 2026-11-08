@@ -160,5 +160,11 @@
     "before": "4167d8e14fb3864d52c0d702ed7244beba5257f7cbcc3af530d54e6154b07233",
     "after": "1bb7540b4b3cabecfbb1f6f6b946f76818ffb58497521a2cf1d4cef7c1554551",
     "reason": "Actual independent-process rescuer capacity and completion-release regression"
+  },
+  "docs/backend/FOUNDATION.md": {
+    "owner": "p1",
+    "before": "8d2954566f7b3dbfa1c4fe606d5529c944085f4b64dd9b57571be0e62a977c72",
+    "after": "e898a855715bb822bd7fe6a2d168275cbacb219be0858cca6d1c3e6a5e5c8ea9",
+    "reason": "Document the required explicit portal login contract and server-side rejection"
   }
 }

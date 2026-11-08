@@ -42,7 +42,7 @@ Implemented routes, all under Laravel's **web/session/request-forgery** middlewa
 | Route | Result / protection |
 | --- | --- |
 | `GET /api/v1/auth/csrf` | `{data:{csrf_token},meta:{server_time}}`; private/no-store; throttled. |
-| `POST /api/v1/auth/login` | Only email/password; email normalized, password bytes unchanged; Laravel guard, no remember-me; session ID/token rotation; safe user Resource; IP + account throttles. Disabled until DBA integration. |
+| `POST /api/v1/auth/login` | Required email/password and explicit `portal` (`resident` or `official`); email normalized, password bytes unchanged. Laravel verifies the current effective role against that portal; a mismatch invalidates the session and returns generic 401. Missing/invalid portal is 422. No remember-me; session ID/token rotation; safe user Resource; IP + account throttles. Default enablement remains gated; combined disposable acceptance is separate. |
 | `GET /api/v1/me` | Hydrated safe user DTO plus UTC server time. Reread identity through the guard; compare effective role and `auth_version` against the session. |
 | `POST /api/v1/auth/logout` | Invalidate session and rotate CSRF; `{data:{signed_out:true}}` only on completion. |
 

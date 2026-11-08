@@ -34,27 +34,28 @@
 - [x] Inspect each PR metadata, changed filenames, commit history, dependencies and current pins.
 - [x] Fetch owners and create the dedicated branch in the existing clean isolated worktree.
 - [x] Compose a clean independent baseline with 855 source fingerprints using existing tooling.
-- [ ] Preserve baseline manifest and run baseline static, contract and actual MySQL checks.
-- [ ] Integrate exact sources and document the ten common-base overlays and runtime gates.
+- [x] Preserve baseline manifest and run baseline static/contract checks; record interrupted SQL/PHP baselines without claiming they passed.
+- [x] Integrate exact sources and document the ten common-base overlays and runtime gates.
 
 ### 2 Reproduce visible defects and security boundary
-- [ ] Add failing tests for authored encoding, field-error visibility, facility/map projection, wrong-portal session rejection and unprocessed in-app events.
-- [ ] Record each root cause and distinguish invalid input from application defects.
-- [ ] Confirm original forms on desktop and mobile with safe fictional accounts.
+- [x] Add failing tests for authored encoding, field-error visibility, facility/map projection, wrong-portal session rejection and unprocessed in-app events.
+- [x] Record each root cause and distinguish invalid input from application defects.
+- [x] Confirm original forms on desktop and mobile with safe fictional accounts.
 
 ### 3 Focused fixes
-- [ ] Repair authored text and add a guard against recurrence.
-- [ ] Make facility field validation and errors consistent, preserving scope, revisions and historical destinations.
-- [ ] Correct facility and incident map projection only where reproduction proves a defect.
-- [ ] Add explicit portal intent to the shared login request and enforce allowed effective roles server-side.
-- [ ] Provide bounded in-app processing and its operational setup without activating external delivery.
+- [x] Repair authored text and add a guard against recurrence.
+- [x] Make facility field validation and errors consistent, preserving scope, revisions and historical destinations.
+- [x] Correct facility and incident map projection only where reproduction proves a defect; retain the real coverage/data limitation.
+- [x] Add explicit portal intent to the shared login request and enforce allowed effective roles server-side.
+- [x] Provide bounded in-app processing and its operational setup without activating external delivery.
 
 ### 4 Combined regression and audit
-- [ ] Run original PHP, P2 contract/SQL/concurrency, frontend and browser suites on disposable schemas.
-- [ ] Test both emergency branches, explicit resolution, capacity release, unauthorized/cross-barangay reads, documents, notifications, civic and personnel flows.
-- [ ] Run format, syntax, dependency and artifact/security checks; report real failures and unverified limits.
+- [x] Run original PHP, P2 contract/SQL/concurrency, frontend and browser suites on disposable schemas; required Linux CI also passed.
+- [x] Test both emergency branches, explicit resolution, capacity release, unauthorized/cross-barangay reads, documents, notifications, civic and personnel flows.
+- [x] Run format, syntax, dependency and artifact/security checks; report real failures and unverified limits.
+- [x] Obtain fresh read-only code review, address its three findings, and verify actual independent-process rescuer capacity1 plus completion release.
 
 ### 5 Reviewable delivery
-- [ ] Publish severity-ranked findings, ownership/dependencies, exact commands/results and reproducible local startup instructions.
-- [ ] Commit the integration and focused patches with source provenance. Request required owner reviews through the authorized PR workflow when ready.
-- [ ] Keep merging pending if any technical or review/backup acceptance gate is incomplete.
+- [x] Publish severity-ranked findings, ownership/dependencies, exact commands/results and reproducible local startup instructions.
+- [x] Commit the integration and focused patches with source provenance; open draft PR51 for required owner review. Final evidence documentation is a separate runtime-unchanged commit.
+- [x] Keep merging pending because independent team review and the actual retained-backup acceptance are incomplete.
