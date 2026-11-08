@@ -7,7 +7,7 @@ import { resolve, dirname, isAbsolute } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { stageBackendFrontend } from '../../scripts/stage-backend-frontend.mjs';
 
-export async function workflowRuntime(name, { photoTest = false, consentTest = true, localMailPort = null } = {}) {
+export async function workflowRuntime(name, { photoTest = false, consentTest = true, localMailPort = null, generalFeedbackTest = false } = {}) {
   const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
   if (!/^[a-z-]+$/.test(name) || !isAbsolute(process.env.P1_BROWSER_MODULE || '')) throw new Error('Use a named private workflow and locked browser runtime.');
   const { chromium } = await import(pathToFileURL(process.env.P1_BROWSER_MODULE).href);
@@ -18,7 +18,7 @@ export async function workflowRuntime(name, { photoTest = false, consentTest = t
     SMS_ENABLED: 'false', MAKE_ENABLED: 'false', OUTBOX_DISPATCH_ENABLED: 'false' };
   const cli = (...args) => execFileSync(php, args, { cwd: root, env, windowsHide: true }).toString();
   const records = JSON.parse(cli('backend/tests/Support/browser-operational-fixture.php'));
-  await stageBackendFrontend({ root, operationalTest: true, administrationTest: true, photoTest, consentTest });
+  await stageBackendFrontend({ root, operationalTest: true, administrationTest: true, photoTest, consentTest, generalFeedbackTest });
   const socket = createServer(); socket.listen(0, '127.0.0.1'); await once(socket, 'listening');
   const port = socket.address().port; await new Promise(resolve => socket.close(resolve));
   const origin = `http://127.0.0.1:${port}`;

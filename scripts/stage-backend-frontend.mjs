@@ -2,15 +2,26 @@ import { lstat, realpath, mkdir, rm, copyFile, writeFile, readFile } from 'node:
 import { dirname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildFrontendArtifact } from './stage-frontend.mjs';
+import { verifyIntegratedCandidate } from './integrated-candidate.mjs';
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-export async function stageBackendFrontend({ root = projectRoot, operationalTest = false, administrationTest = false, photoTest = false, consentTest = false } = {}) {
+export async function stageBackendFrontend({ root = projectRoot, operationalTest = false, administrationTest = false, photoTest = false, consentTest = false, generalFeedbackTest = false } = {}) {
   root = await realpath(root);
   if ((administrationTest || photoTest || consentTest) && !operationalTest) throw new Error('Optional staging requires the isolated operational test composition.');
+  if (generalFeedbackTest && (!operationalTest || !administrationTest)) throw new Error('General Feedback staging requires the isolated operational and administration composition.');
   if (operationalTest) {
     if (process.env.DB_TEST_DISPOSABLE !== '1' || process.env.P1_COMBINED_TESTS !== '1' || !/^bc_dba_p1_[a-z0-9_]+$/i.test(process.env.DB_DATABASE || '') || process.env.DB_DATABASE !== process.env.DB_TEST_DATABASE) throw new Error('Operational staging requires the confirmed disposable combined build.');
     const manifest = JSON.parse(await readFile(resolve(root, 'integration-manifest.json'), 'utf8'));
     if (manifest.dirty || manifest.p2 !== '429490a8da8a0b25d6ee95f018833a1646c1def9') throw new Error('Use the clean reviewed operational composition.');
+    if (generalFeedbackTest) {
+      if (manifest.kind !== 'integrated-audit-candidate-v1') throw new Error('General Feedback requires an admitted integrated candidate.');
+      await verifyIntegratedCandidate(root, manifest);
+      const admission = JSON.parse(await readFile(resolve(root, 'docs/backend/pr51-general-feedback-admission.json'), 'utf8'));
+      if (admission.kind !== 'pr51-general-feedback-admission-v1' || ![admission.schemaCommit, admission.domainCommit].every(sha => /^[a-f0-9]{40}$/.test(sha || ''))) throw new Error('Missing reviewed schema/domain handoff.');
+      const required = ['backend/app/Models/CommunityFeedback.php', 'backend/app/Services/Civic/CivicService.php', 'backend/app/Services/P2/Persistence/RelationalStore.php', 'backend/routes/communications.php', 'assets/js/adapters/communications.js', 'assets/js/pages/official-feedback.js', 'assets/js/pages/official-feedback-model.js'];
+      if (!required.every(name => Object.hasOwn(admission.requiredSources || {}, name)) || !Object.keys(admission.requiredSources || {}).some(name => /^backend\/database\/migrations\/[^/]+general_feedback[^/]+\.php$/.test(name))) throw new Error('Incomplete General Feedback dependency admission.');
+      for (const [name, expected] of Object.entries(admission.requiredSources)) if (!/^[a-f0-9]{64}$/.test(expected) || manifest.hashes[name] !== expected) throw new Error('General Feedback dependency changed: ' + name);
+    }
     for (const name of ['operations', 'communications', 'reports', 'p2-domains', 'p2-form-intent']) {
       const ownerFile = await lstat(resolve(root, `assets/js/adapters/${name}.js`));
       if (!ownerFile.isFile() || ownerFile.isSymbolicLink()) throw new Error('Missing reviewed operational adapter.');
@@ -33,7 +44,7 @@ export async function stageBackendFrontend({ root = projectRoot, operationalTest
     await mkdir(dirname(destination), { recursive: true });
     await copyFile(resolve(artifact.directory, name), destination);
   }
-  await writeFile(resolve(target, 'assets/js/core/runtime-config.js'), "export const Runtime = Object.freeze({ mode: 'backend', operationalTest: " + Boolean(operationalTest) + ", administrationTest: " + Boolean(administrationTest) + ", photoTest: " + Boolean(photoTest) + ", consentTest: " + Boolean(consentTest) + " });\n");
+  await writeFile(resolve(target, 'assets/js/core/runtime-config.js'), "export const Runtime = Object.freeze({ mode: 'backend', operationalTest: " + Boolean(operationalTest) + ", administrationTest: " + Boolean(administrationTest) + ", photoTest: " + Boolean(photoTest) + ", consentTest: " + Boolean(consentTest) + ", generalFeedbackTest: " + Boolean(generalFeedbackTest) + " });\n");
   return { directory: target, files };
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

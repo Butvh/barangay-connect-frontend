@@ -55,6 +55,29 @@ try {
     assert.equal(response.status(), 200);
     const row = (await response.json()).data.find(value => value.name === 'Fictional PR51 ' + role + ' hospital');
     assert.ok(row); assert.equal(row.map_scope, 'sampaguita'); assert.ok(row.map_x >= 0 && row.map_y <= 100);
+    await page.locator(`[data-menu="${row.id}"]`).click(); await page.locator('[data-edit]').click();
+    const edit = page.getByRole('dialog', { name: 'Edit facility', exact: true });
+    await edit.locator('[name=address]').fill('Verified fictional PR51 street');
+    await edit.locator('[data-pin]').click();
+    const edgePicker = page.getByRole('dialog', { name: 'Select facility location', exact: true });
+    await edgePicker.locator('[data-marker="draft-facility"]').focus();
+    for (let step = 0; step < 20; step++) await page.keyboard.press('Shift+ArrowLeft');
+    for (let step = 0; step < 20; step++) await page.keyboard.press('Shift+ArrowDown');
+    await edgePicker.getByRole('button', { name: 'Confirm location', exact: true }).click();
+    assert.match(await edit.locator('[data-pin-label]').innerText(), /0\.00%, 100\.00%/);
+    await edit.locator('[type=submit]').click(); await edit.waitFor({ state: 'detached' });
+    for (const status of ['Inactive', 'Active']) {
+      await page.locator(`[data-menu="${row.id}"]`).click(); await page.locator('[data-status]').click();
+      const title = status === 'Inactive' ? 'Deactivate facility?' : 'Reactivate facility?';
+      const confirmation = page.getByRole('dialog', { name: title, exact: true });
+      await confirmation.getByRole('button', { name: status === 'Inactive' ? 'Deactivate facility' : 'Reactivate facility', exact: true }).click();
+      await page.locator(`[data-facility-card="${row.id}"]`).getByText(status, { exact: true }).waitFor();
+    }
+    const finalResponse = await who.context.request.get(origin + '/api/v1/facilities/' + row.id);
+    assert.equal(finalResponse.status(), 200);
+    const final = (await finalResponse.json()).data;
+    assert.deepEqual([final.map_x, final.map_y, final.map_scope, final.revision], [0, 100, 'sampaguita', 3]);
+    assert.deepEqual(final.history.map(entry => entry.action), ['Created', 'Edited', 'Deactivated', 'Reactivated']);
     await page.goto(origin + '/frontend/official-map.html?facility=' + row.id);
     await page.locator('[data-marker="facility-' + row.id + '"]').waitFor();
     for (const width of [1920, 768, 390]) {

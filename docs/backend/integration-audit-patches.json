@@ -261,5 +261,20 @@
     "before": "f6ca01d4cfc686492ec02d9c37909ffd887456910ee25668574c0101c12b212b",
     "after": "76cb2cc5b5657d81940fecdeba97dc4867a9c5abff378c9375402a4bf589759b",
     "reason": "PR51: Admit one additional explicitly named fresh map-browser schema; keep refusal of preexisting targets."
+  },
+  "assets/js/pages/resident-components.js": {
+    "before": "e9a2d963c21f0f12fdf7ca3f21e0680a0431407c64920714801c732f22aed999",
+    "after": "6a3efc624edd6b5a536d9cdf0ff85b6c8cca996b491636824569278495905920",
+    "reason": "PR51: Declare the existing illustrated artwork explicitly in the standalone fictional component example."
+  },
+  "scripts/stage-backend-frontend.mjs": {
+    "before": "98ec13105031e902f73fbb5337d43df1590163d6440e604840f6b85ed3e34d93",
+    "after": "bf09401fc134c94aafd5d84a9600c868b0a34929de5bf0981b19b932074530b7",
+    "reason": "PR51: Gate opt-in lifecycle staging on exact reviewed schema/domain admission while preserving private-root and artifact isolation checks."
+  },
+  "tests/browser/workflow-runtime.mjs": {
+    "before": "7821ea60ef7e489157b0e917e4aa4190052abb1d61f6d5a9f7cac53e4879f51c",
+    "after": "f5f94f91a862efe8f0599ab49e00abb8e8b3d005a7f5d0ac2f2910d578df1ad8",
+    "reason": "PR51: Thread explicit isolated lifecycle test option into original runtime without changing any original assertion."
   }
 }
