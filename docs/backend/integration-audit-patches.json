@@ -93,7 +93,7 @@
   },
   "scripts/run-tests.mjs": {
     "before": "f41c408fbbedc16f90c1abbb44117029f12ac12fbcabb706a1b6e8acf0eaaa96",
-    "after": "7123b3d3718a5049b91e5d2fd4cd63a85f05c0edbd64bc0349c5b9950a086862",
+    "after": "ef4253c049a59756d14488f3ca62fa3312ac6f57eb69cdb4b703c0162e34523f",
     "reason": "Run audit regressions in the original frontend gate PR51: Append map-scope regressions without removing original suites or assertions."
   },
   "scripts/verify-integration.mjs": {
