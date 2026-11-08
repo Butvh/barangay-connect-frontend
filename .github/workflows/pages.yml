@@ -138,12 +138,14 @@ jobs:
       - name: Pinned P2 contract suite
         if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
         working-directory: ${{ env.SNAPSHOT_DIR }}
-        run: php backend/tests/P2/run.php
+        run: |
+          php backend/tests/P2/run.php
+          php backend/tests/P2/general-feedback.php
       - name: P2 adapters through shared transport and original frontend gates
         if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
         working-directory: ${{ env.SNAPSHOT_DIR }}
         run: |
-          node --experimental-vm-modules --experimental-default-type=module --test tests/p2-adapters.mjs tests/p2-foundation-adapters.mjs tests/p2-form-intents.mjs tests/p2-report-forms.mjs tests/p2-official-forms.mjs tests/p2-location-forms.mjs tests/p2-photo-upload.mjs tests/p2-photo-form.mjs tests/p2-resident-photos.mjs tests/p2-communications-forms.mjs
+          node --experimental-vm-modules --experimental-default-type=module --test tests/p2-adapters.mjs tests/p2-foundation-adapters.mjs tests/p2-form-intents.mjs tests/p2-report-forms.mjs tests/p2-official-forms.mjs tests/p2-location-forms.mjs tests/p2-photo-upload.mjs tests/p2-photo-form.mjs tests/p2-resident-photos.mjs tests/p2-communications-forms.mjs tests/general-feedback.mjs
           node --test backend/tests/P2/rehearsal.test.mjs
           node scripts/run-tests.mjs
           node --experimental-default-type=module tests/operational-registration.mjs

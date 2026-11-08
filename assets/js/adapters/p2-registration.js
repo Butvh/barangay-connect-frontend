@@ -20,7 +20,8 @@ export function createP2DomainFactories({ createOperations, createCommunications
     if (group !== 'feedback') return source;
     const lifecycleAdapter = ['review', 'archive'].every(name => typeof source[name] === 'function');
     if (generalFeedbackTest && !lifecycleAdapter) throw new TypeError('Reviewed General Feedback command adapters are required.');
-    return { ...source, generalLifecycleAvailable: generalFeedbackTest === true, list(filters = {}) {
+    const { review, archive, ...ordinary } = source;
+    return { ...ordinary, ...(generalFeedbackTest ? { review, archive } : {}), generalLifecycleAvailable: generalFeedbackTest === true, list(filters = {}) {
       const actor = auth?.current(), role = auth?.roleOf?.(actor) || actor?.role;
       // Summary population stays complete; P2 owns active-queue presentation.
       return source.list(lifecycleAdapter && ['captain', 'secretary'].includes(role) ? { archive: 'all', ...filters } : filters);

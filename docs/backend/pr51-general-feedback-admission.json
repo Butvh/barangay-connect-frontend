@@ -1,0 +1,20 @@
+{
+  "kind": "pr51-general-feedback-admission-v1",
+  "scope": "Explicit isolated generalFeedbackTest acceptance profile only; ordinary/demo/production unavailable.",
+  "contract": "542876273b513fb7a7c23ccb9e22af27407d4043",
+  "schemaCommit": "bad5d430ee4ed1efee3809028a6870e4555ab01e",
+  "domainCommit": "c919306396828e787caecc66a7fdfaf026a66e57",
+  "domainEvidence": "8d68c9718deca121188885723ebb21a28f4097bb",
+  "p1Role": "a7473a7c1386dafeac8342e5d53536cd7a58d2a4",
+  "requiredSources": {
+    "backend/app/Models/CommunityFeedback.php": "3d2c543f6f5e376ceeff4ecbb4ddb87f5c2d29e31c1926a746516945a1905fb4",
+    "backend/database/migrations/2026_11_08_000100_add_general_feedback_lifecycle.php": "4ed9c0650ecffb9f984753584595bdf33df83753cc43a77a0a6d81798695fe82",
+    "backend/app/Services/Civic/CivicService.php": "a4b900561469800dc52c1fc5e4ec9258fb098fd5a0c916f241c68e2e9fc2b571",
+    "backend/app/Http/Controllers/P2/CivicController.php": "38f05d932bd9b0ddf30ee73381a93eca0211d69cddcc5b066dcf5152cda16aea",
+    "backend/app/Services/P2/Persistence/RelationalStore.php": "bc86552cd229b8a4c3f3295a9f8ac47444aa4cfa25c6d4fc098dac69bdbc1791",
+    "backend/routes/communications.php": "ccbb718868cbbf6025ed602e8e0809410886c2e063507f97ab4605c68aaa3425",
+    "assets/js/adapters/communications.js": "47544aabba8a2f45921443198f569038151e7678d60d80bba29531ee02b04edc",
+    "assets/js/pages/official-feedback.js": "a8a1ead6a59c1d6a868b4b2888b9c57fb55200c35ccbc30e27c56b4fcb7dadfa",
+    "assets/js/pages/official-feedback-model.js": "f7e1ec1c5008d9d7d22d4a54cfd9e3a219fb56c03605c44aab30d0bbf99d052d"
+  }
+}

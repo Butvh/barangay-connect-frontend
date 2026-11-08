@@ -179,8 +179,8 @@
   },
   ".github/workflows/pages.yml": {
     "before": "e3e48258445fa3e66920af1bf1ff26814ae968ac62c3bd3d86fd1c64e9d7cebc",
-    "after": "ba13b91eecf5c5f91ceb06a2f8fdbfead8e712ee4eb59e4ab2fc52aa310d36f4",
-    "reason": "PR51: Add isolated PR51 map browser regression and evidence upload; retain every original CI gate. PR51: Add isolated PR51 map browser regression and evidence upload; retain every original CI gate."
+    "after": "41917c4363a31c7fea08a61286802743812ae3161eb30900db1b20b8fa8bcc47",
+    "reason": "PR51: Add isolated PR51 map browser regression and evidence upload; retain every original CI gate. PR51: Add isolated PR51 map browser regression and evidence upload; retain every original CI gate. PR51 integration: P1: append portable General Feedback and Node regressions, retaining every original combined gate."
   },
   "UX-CONTRACT.md": {
     "before": "5bfedf961acaa11b35fb36a9cd5d06be0bca1222d985b9a8675c327cbbc9ba6a",
@@ -204,8 +204,8 @@
   },
   "assets/js/adapters/p2-registration.js": {
     "before": "4f329bbf9d980bca7aa0436df59345150ed4c3127bfab17fb483b9bb8097aafe",
-    "after": "34f1e91e1fb11ac26716dbda0208c87058c00f0475fbfc3fbde9fbad67941c45",
-    "reason": "PR51: Keep official historical feedback metrics complete and default lifecycle capability closed. PR51: Keep official historical feedback metrics complete and default lifecycle capability closed."
+    "after": "bbbfd9c41e8db8291961a100313794f4650887752493f712e709ebc3633287c2",
+    "reason": "PR51: Keep official historical feedback metrics complete and default lifecycle capability closed. PR51: Keep official historical feedback metrics complete and default lifecycle capability closed. PR51 integration: P1: expose lifecycle command transport only in the explicitly admitted isolated profile; preserve complete official reads."
   },
   "assets/js/core/facilities.js": {
     "before": "3914fd403b1da32e192aaf8edf881c081870e56c7d82904b5417cb794b6d91c8",
@@ -306,5 +306,55 @@
     "before": "635cbaecbcfb1109a28b65de0d93acbd54f1a71ff9f4555df041bd151dd12a80",
     "after": "957e4d30fbc6fbe6035502f341cb0ec0ec70d51e6a7e691bf868b916c7f3ff87",
     "reason": "PR51: Support barangay reference invalidation and read-only compatibility for explicit legacy fictional demo artwork metadata; never reset data or invoke it in backend mode."
+  },
+  "assets/js/pages/official-feedback-model.js": {
+    "before": "1c9fd0dac1467e6ee719fd25d812a6f7998055590cbf00b4573d6d6b0ec1660d",
+    "after": "f7e1ec1c5008d9d7d22d4a54cfd9e3a219fb56c03605c44aab30d0bbf99d052d",
+    "reason": "PR51 integration: P2 c919306: active general queue and historical metrics use submitted time."
+  },
+  "assets/js/adapters/communications.js": {
+    "before": "cab35eb907928b3f3fbfa2454f329d77b66b1f41fdbaecee3a8fd055994c59c9",
+    "after": "47544aabba8a2f45921443198f569038151e7678d60d80bba29531ee02b04edc",
+    "reason": "PR51 integration: P2 c919306: original-intent review/archive transport; no domain substitution."
+  },
+  "assets/js/pages/official-feedback.js": {
+    "before": "9703d1ff110af37709f4957a81c38700612331773949d8a8da3693c3cdc0b6a4",
+    "after": "a8a1ead6a59c1d6a868b4b2888b9c57fb55200c35ccbc30e27c56b4fcb7dadfa",
+    "reason": "PR51 integration: P2 c919306: gated original confirmations, retained retry identity and archive selection/history behavior."
+  },
+  "backend/app/Http/Controllers/P2/CivicController.php": {
+    "before": "fa8172d44488ed8b6e19696ec3444d674d22e788e861daa3027831210eee0f0a",
+    "after": "38f05d932bd9b0ddf30ee73381a93eca0211d69cddcc5b066dcf5152cda16aea",
+    "reason": "PR51 integration: P2 c919306: reviewed scoped lifecycle routes and archive read selector."
+  },
+  "backend/app/Services/Civic/CivicService.php": {
+    "before": "3a7714bd05af8e55799b10b42541d140820b01983619db4e86534609f61b89bc",
+    "after": "a4b900561469800dc52c1fc5e4ec9258fb098fd5a0c916f241c68e2e9fc2b571",
+    "reason": "PR51 integration: P2 c919306: authorized person-before-source review/archive, atomic audit/receipt, no lifecycle outbox."
+  },
+  "backend/app/Services/P2/Persistence/RelationalStore.php": {
+    "before": "79e1158229d0b9749cd2afd0357c37b25ba144c7e0fc150ed67db47f9fb5e96b",
+    "after": "bc86552cd229b8a4c3f3295a9f8ac47444aa4cfa25c6d4fc098dac69bdbc1791",
+    "reason": "PR51 integration: P2 c919306: admit the DBA-reviewed lifecycle fields in the relational DTO."
+  },
+  "backend/routes/communications.php": {
+    "before": "8b1be3804e14e06401e2d0710b00458fd0ca4bb4e7f97cdb4be23143a623399b",
+    "after": "ccbb718868cbbf6025ed602e8e0809410886c2e063507f97ab4605c68aaa3425",
+    "reason": "PR51 integration: P2 c919306: append reviewed lifecycle endpoints under original middleware."
+  },
+  "backend/tests/P2/browser-civic.mjs": {
+    "before": "005d5734a90622cbb321e830987681a3afdcd77745ea9e77f6e5ebd8d2d12920",
+    "after": "23204cd1a74cdf330ffd53c9f2bed2f58fe1c5418a227b636ab955d2fc134181",
+    "reason": "PR51 integration: P2 c919306: expand original civic workflow assertions and explicitly request admitted lifecycle staging."
+  },
+  "backend/tests/P2/civic-fixture.php": {
+    "before": "d99498fe05403e53e9bc45d30cb8b0d020ab36670c22968c9e6b2b3d5a0af871",
+    "after": "6b00ca185cd6dbdfc1f2c022c1c33bbde1133c52d42f79a84f7d9e0103f69fb0",
+    "reason": "PR51 integration: P2 c919306: expose lifecycle metadata only in the existing guarded disposable browser fixture."
+  },
+  "tests/p2-communications-forms.mjs": {
+    "before": "923e506a1a9768b339849df1ca0a020c737f6d53d1f14d4a446778870fb2fa91",
+    "after": "de3a07eac35185c8c20250fb660d627f8de1f419b1d7db028c5a33d772e2bc12",
+    "reason": "PR51 integration: P2 c919306: retain original assertions and add actual-page intent/cancellation regressions."
   }
 }
