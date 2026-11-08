@@ -56,7 +56,10 @@ class IncidentPhotoProposalTest extends MysqlDbaTestCase
         $this->proposal->up();
         $this->assertSame(3, DB::table('emergency_alerts')->count());
         $this->assertSame(3, DB::table('users')->count());
-        $this->assertCount(13, glob(__DIR__.'/../../database/migrations/*.php'));
+        $migrations = glob(__DIR__.'/../../database/migrations/*.php');
+        $lifecycle = __DIR__.'/../../database/migrations/2026_11_08_000100_add_general_feedback_lifecycle.php';
+        $this->assertContains($lifecycle, $migrations);
+        $this->assertCount(13, array_values(array_diff($migrations, [$lifecycle])));
         $this->assertSame('InnoDB', DB::selectOne("SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='incident_photos'")->ENGINE);
         $this->assertSame(1, DB::selectOne("SELECT COUNT(*) AS n FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='incident_photos' AND INDEX_NAME='photo_expiry_scan' AND SEQ_IN_INDEX=1")->n);
     }
