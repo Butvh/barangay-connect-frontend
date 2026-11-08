@@ -1,7 +1,7 @@
 import { facilityActive, facilityLocated } from '../core/facilities.js';
 import { Auth, Api, UI, Icons, Fmt, e, roleLabel, typeIcon, alertName, victims, facts, facilityType, facilityDetail, dialog, live, destination } from './official-shared.js';
 import { Shell } from '../core/shell-official.js';
-import { BCMap } from '../core/map.js';
+import { BCMap, currentMapScope } from '../core/scoped-map.js';
 import { ALERT_STATUSES, ALERT_TYPES, canTransition } from '../core/alertMachine.js';
 import { resolveAlert } from './official-alert-actions.js';
 import { assignAlert } from './official-assignment.js';
@@ -95,15 +95,15 @@ if (user) {
   async function load() {
     const request = ++version;
     try {
-      const [alerts, facilities, complaints] = await Promise.all([Api.alerts.list(), Api.facilities.list(), ['secretary', 'captain'].includes(role) ? Api.feedback.list({ type: 'complaint' }) : Promise.resolve([])]);
+      const [alerts, facilities, complaints, mapContext] = await Promise.all([Api.alerts.list(), Api.facilities.list(), ['secretary', 'captain'].includes(role) ? Api.feedback.list({ type: 'complaint' }) : Promise.resolve([]), currentMapScope()]);
       const people = await Promise.all([...new Set(complaints.map(c => c.resident_id))].map(id => Api.users.get(id)));
       if (request !== version) return;
-      data = { alerts, facilities, complaints, households: [...alerts.map(a => a.household), ...people.map(p => p.household)].filter(Boolean) }; loaded = true; error.hidden = true; update();
+      data = { alerts, facilities, complaints, mapContext, households: [...alerts.map(a => a.household), ...people.map(p => p.household)].filter(Boolean) }; loaded = true; error.hidden = true; update();
       main.querySelectorAll('[data-open-facilities]').forEach(button => { button.disabled = false; button.removeAttribute('title'); });
     } catch (err) { if (request !== version) return; error.querySelector('.grow').textContent = loaded ? `The map could not refresh. Displayed records may be out of date. ${err.message}` : `Unable to load map monitoring. ${err.message}`; error.hidden = false; if (!loaded) { canvas.innerHTML = UI.empty({ icon: 'map', title: 'Map unavailable', text: 'Use Try again to reload the map.' }); summary.innerHTML = '<h2>Alert summary</h2><p>Map data is unavailable.</p>'; } }
     finally { if (request === version) canvas.removeAttribute('aria-busy'); }
   }
   main.querySelector('[data-retry]').addEventListener('click', load);
-  live(['facilities','alerts', 'feedback', 'users'], load)();
+  live(['facilities','alerts', 'feedback', 'users', 'barangays'], load)();
   window.addEventListener('pagehide', event => { if (!event.persisted) { version++; mapView?.destroy(); } }, { once: true });
 }

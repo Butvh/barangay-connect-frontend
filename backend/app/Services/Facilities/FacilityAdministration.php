@@ -7,6 +7,7 @@ use App\Services\Administration\AdministrativeContext;
 use App\Services\Administration\CommandReceipt;
 use App\Services\Identity\EffectiveIdentity;
 use App\Support\ApiProblem;
+use App\Support\MapCoverage;
 
 final class FacilityAdministration
 {
@@ -96,7 +97,9 @@ final class FacilityAdministration
             throw new ApiProblem('VALIDATION', 422, 'Choose a complete map location.', ['map_x' => 'Select both map coordinates.']);
         }
         $scope = $this->context->db()->table('barangays')->where('id', $actor->barangayId)->value('map_scope');
-        if (($fields['map_x'] ?? null) !== null && ! $scope) {
+        $unchangedPin = $old && ($fields['map_x'] ?? null) !== null && $old->map_x !== null && $old->map_y !== null
+            && (float) $fields['map_x'] === (float) $old->map_x && (float) $fields['map_y'] === (float) $old->map_y;
+        if (($fields['map_x'] ?? null) !== null && ! $unchangedPin && ! MapCoverage::supported($scope)) {
             throw new ApiProblem('VALIDATION', 422, 'Map coverage is not available for this barangay.', ['map_x' => 'Map coverage is not available for this barangay.']);
         }
 
@@ -104,7 +107,7 @@ final class FacilityAdministration
             'address' => trim($fields['address']), 'capacity' => ($fields['capacity'] ?? null) === null ? null : (int) $fields['capacity'],
             'contact' => $fields['contact'] ?? null, 'notes' => $fields['notes'] ?? null, 'active' => ($fields['status'] ?? 'Active') === 'Active',
             'map_x' => $fields['map_x'] ?? null, 'map_y' => $fields['map_y'] ?? null,
-            'map_scope' => ($fields['map_x'] ?? null) === null ? null : $scope];
+            'map_scope' => ($fields['map_x'] ?? null) === null ? null : ($unchangedPin ? $old->map_scope : $scope)];
     }
 
     public function save(EffectiveIdentity $actor, ?int $id, array $input, ?string $key = null): array

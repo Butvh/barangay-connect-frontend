@@ -12,7 +12,7 @@ const methods = {
   notificationPreferences: ['get', 'set'],
   alerts: ['list', 'get', 'create', 'addDetails', 'assignmentOptions', 'acknowledge', 'assign', 'reassign', 'cancelAssignment', 'logResponse', 'logRescue', 'resolve'],
   announcements: ['list', 'get', 'create', 'update', 'archive', 'retract', 'expireOverdue'],
-  feedback: ['list', 'get', 'create', 'assignmentOptions', 'assignTanod', 'resolve'],
+  feedback: ['list', 'get', 'create', 'assignmentOptions', 'assignTanod', 'resolve', 'review', 'archive'],
   notifications: ['list', 'get', 'markRead', 'markUnread', 'dismiss', 'markAllRead', 'clearRead'],
   dashboard: ['officialStats'], map: ['get'], reports: ['snapshot', 'summary', 'incidents', 'incident', 'activity', 'performance', 'exportPath'],
 };
@@ -26,7 +26,7 @@ export function createBackendApi({ http, auth, factories = domainFactories, sour
   };
   for (const [group, names] of Object.entries(methods)) {
     const implementation = factories[group]?.({ http, auth }) || {};
-    api[group] = Object.freeze(Object.fromEntries([...new Set([...names, ...Object.keys(implementation)])].map(name => [name, implementation[name] || (async () => {
+    api[group] = Object.freeze(Object.fromEntries([...new Set([...names, ...Object.keys(implementation)])].map(name => [name, Object.hasOwn(implementation, name) ? implementation[name] : (async () => {
       throw new ApiError('NOT_AVAILABLE', 'This backend feature is awaiting integration.');
     })])));
   }

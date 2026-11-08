@@ -18,22 +18,19 @@
     "reason": "Repair authored UTF-8 and retain explicit resident registration portal"
   },
   "assets/js/pages/facility-form.js": {
-    "owner": "p1",
     "before": "8368411c99fc22dd19c9360cd35089f8689159906d9cd103622b59ad57f2da11",
-    "after": "0956a741b6853d75ac67a954786372e76c3b4db3735729d06e8293b207440c3a",
-    "reason": "Actionable, allowlisted facility validation and safe field summary"
+    "after": "0572a96d6e0047609135bc43469398ab0b810560b11fc2d1ee9db49013757d49",
+    "reason": "Actionable, allowlisted facility validation and safe field summary PR51: Enable pinning from the current scoped API reference and preserve draft/retry behavior."
   },
   "assets/js/pages/official-map-model.js": {
-    "owner": "p1",
     "before": "a343acbfc02ec7d89bca14a5c9564caeff132e4228c967147f4e5dc3f52de881",
-    "after": "9ee2c399e63219118c0e7369715e3e1f7d2466d051cca6ecb41f8cdaed8f5c60",
-    "reason": "Truthful map pin counts, Captain complaints access and resident facility visibility"
+    "after": "c8b31d0f66f4c54ed0cb3e47a417f4355e8a45da2e6ecef7f75497e43e50c67e",
+    "reason": "Truthful map pin counts, Captain complaints access and resident facility visibility PR51: Filter backend marker/count projection by resolved tenant/artwork without inventing a hall pin."
   },
   "assets/js/pages/official-map.js": {
-    "owner": "p1",
     "before": "7fb349d6e1db40cbc222482172a41453612c418c0e5f67c4a8be5b64e0cb8192",
-    "after": "2dcc750124afeaf63814e19a319c873c6b55af9fba75ae863d49ace5a059906a",
-    "reason": "Truthful map pin counts, Captain complaints access and resident facility visibility"
+    "after": "5446e03b5387ba1ab69eb247899e3c2ba202bb3a5ba8761864868e66abad846b",
+    "reason": "Truthful map pin counts, Captain complaints access and resident facility visibility PR51: Resolve current server scope and refresh map projection on reference invalidation."
   },
   "assets/js/pages/register.js": {
     "owner": "p1",
@@ -54,10 +51,9 @@
     "reason": "Explicit portal intent and server-side effective-role boundary"
   },
   "backend/app/Services/Facilities/FacilityAdministration.php": {
-    "owner": "p1",
     "before": "927e7f67f2c1ec62f000a77e8799fd6d5dff8bedc955d58c02dc2486efbc9954",
-    "after": "6ea99979cd97e45534204518081b12c8cafce5c18652de019b7cb222f973aa09",
-    "reason": "Actionable, allowlisted facility validation and safe field summary"
+    "after": "beaf724c639c8ee58f6b3e1ebb6bf99eb499f09adb24811e27cd2f82ed023c83",
+    "reason": "Actionable, allowlisted facility validation and safe field summary PR51: Reject new/changed unknown-artwork pins and preserve unchanged legacy coordinates/scope/history."
   },
   "backend/app/Support/ApiExceptions.php": {
     "owner": "p1",
@@ -96,10 +92,9 @@
     "reason": "Preserve original composition and add explicit integrated-candidate provenance verification"
   },
   "scripts/run-tests.mjs": {
-    "owner": "p1",
     "before": "f41c408fbbedc16f90c1abbb44117029f12ac12fbcabb706a1b6e8acf0eaaa96",
-    "after": "fa7715593049ca6c4052b030ba0ba82073416f405f2c6c4127579fc6fb23c606",
-    "reason": "Run audit regressions in the original frontend gate"
+    "after": "7123b3d3718a5049b91e5d2fd4cd63a85f05c0edbd64bc0349c5b9950a086862",
+    "reason": "Run audit regressions in the original frontend gate PR51: Append map-scope regressions without removing original suites or assertions."
   },
   "scripts/verify-integration.mjs": {
     "owner": "p1",
@@ -166,5 +161,105 @@
     "before": "8d2954566f7b3dbfa1c4fe606d5529c944085f4b64dd9b57571be0e62a977c72",
     "after": "e898a855715bb822bd7fe6a2d168275cbacb219be0858cca6d1c3e6a5e5c8ea9",
     "reason": "Document the required explicit portal login contract and server-side rejection"
+  },
+  ".github/workflows/pages.yml": {
+    "before": "e3e48258445fa3e66920af1bf1ff26814ae968ac62c3bd3d86fd1c64e9d7cebc",
+    "after": "bcd112d3f5c11b8f9722493ff2f8e08e563387b1c1c05f9f8a3be3586049b54b",
+    "reason": "PR51: Add isolated PR51 map browser regression and evidence upload; retain every original CI gate."
+  },
+  "UX-CONTRACT.md": {
+    "before": "5bfedf961acaa11b35fb36a9cd5d06be0bca1222d985b9a8675c327cbbc9ba6a",
+    "after": "4741e7ebc749e70a4e13ab24b3810faa638eb987f438c42ea652007542dee968",
+    "reason": "PR51: Document the ratified server-declared map scope boundary without changing visual tokens."
+  },
+  "assets/js/adapters/api.js": {
+    "before": "31df146d9cc59cfa9f63b2db216ac975019f1b954fcd85d5a7b9363eea62e7fd",
+    "after": "074d4a1e5af26125f528cb7a5aaa4b005b9a4f24b70d25c52a9733e83611c073",
+    "reason": "PR51: Expose gated lifecycle methods and preserve boolean capability values in shared facade."
+  },
+  "assets/js/adapters/domains.js": {
+    "before": "70a46a42dfb35146e8821534a1d929fa9a91e0c0657638856ebc433647ca01b3",
+    "after": "be6a42c487957609956de2d3ded2df6aac2bb1b441cb9064378e0135e9ee1b11",
+    "reason": "PR51: Select lifecycle capability only through the explicit isolated composition option."
+  },
+  "assets/js/adapters/operational-registration.js": {
+    "before": "1e9c2e4a0c94fb8663ed4c809965b3c26436424193494d64af035f5d032a0d80",
+    "after": "ae06a61018eafee245202803475e55eb3d8735aa48bb7288ae1bf4214dd3b847",
+    "reason": "PR51: Thread the explicit isolated General Feedback capability option through shared composition."
+  },
+  "assets/js/adapters/p2-registration.js": {
+    "before": "4f329bbf9d980bca7aa0436df59345150ed4c3127bfab17fb483b9bb8097aafe",
+    "after": "a7f915ef2401c2fce3a10d63775846a208c0e24201dfd90543dba7d11f0c9efe",
+    "reason": "PR51: Keep official historical feedback metrics complete and default lifecycle capability closed."
+  },
+  "assets/js/core/facilities.js": {
+    "before": "3914fd403b1da32e192aaf8edf881c081870e56c7d82904b5417cb794b6d91c8",
+    "after": "a9c4ce7a0e89456cb9ec7b9f66ac7bfed50be92ebe758b8a0281f7030685f81f",
+    "reason": "PR51: Use explicit demo coverage/owner declarations; preserve scope in immutable destination snapshots."
+  },
+  "assets/js/core/map.js": {
+    "before": "8c6b23dc0ecf1649e89df9b93654869d123feef68cefe50250d307fbe75779d9",
+    "after": "895190065554b3ce4fe147ea56ee92ea1b3f9ebb60c444538cf2b507c2cdf31c",
+    "reason": "PR51: Require exact declared artwork, retain percentage edge coordinates and reject absent/invalid pins."
+  },
+  "assets/js/data/seed.js": {
+    "before": "597716a1561f87a0b47ec3f6ae9da9697565ce3aba31feb4bdffbc17fbdfd8c5",
+    "after": "b6159ca09d47a41dbf66204ed0f68e5d74ce3ce3cf1769fb77308cfdb9dd719a",
+    "reason": "PR51: Declare map_scope and shared referral manager explicitly in fictional demo fixtures only."
+  },
+  "assets/js/pages/captain-dashboard.js": {
+    "before": "3c60b8b9ff755a10634fc41f1575efe6adf543b5fd0fd24bb895ba2b980a0d2c",
+    "after": "c3f22f75003bb2b0ddd4a462301bf40d4dcacafb9bb2f2baeaf0c7e3b2873f73",
+    "reason": "PR51: Route existing map consumer through the server-scoped shared map boundary; preserve screen behavior and visual style."
+  },
+  "assets/js/pages/facility-location.js": {
+    "before": "d14efdbb10c56246a7397b88d5850b32f999b77b3632fee1c66fa69109598368",
+    "after": "c7bd27d8b5ee5ba07edcb244cc16c0900f67f266c9db8537b22f2322bd782458",
+    "reason": "PR51: Use scoped renderer and coverage readiness, preserving keyboard picking and destination availability."
+  },
+  "assets/js/pages/official-alert.js": {
+    "before": "0b03beb9154897e9b7bc078bd805ee21e1832a6875ae9516f40686a5f5ea931f",
+    "after": "3ad03e39af2f73f9a5f11253703bf4fe14634edeb385fb958dae0aad57ac8bbe",
+    "reason": "PR51: Route existing map consumer through the server-scoped shared map boundary; preserve screen behavior and visual style."
+  },
+  "assets/js/pages/official-operational-dashboard.js": {
+    "before": "9b037fbfcf3593e12f7e0075e747dfb2fc8b0fc599fccb0a71c1be7bb315a06e",
+    "after": "d8c7576be49c0c24f534020c61fd5d6d16a68e99915688f3cc6e199f7f685373",
+    "reason": "PR51: Use scoped map boundary and carry actual facility scope/owner into marker filtering."
+  },
+  "assets/js/pages/resident-map.js": {
+    "before": "5a794e59dc171cc7ff8a8b36c3429521f818391f1c2159e207c7021545abb215",
+    "after": "13b6c65176f38a1d7308abffe90f332e2738e3194e7ed516a83f5d4e1ab6306f",
+    "reason": "PR51: Use actual barangay reference name and coverage invalidation without changing resident workflow."
+  },
+  "assets/js/pages/resident-profile.js": {
+    "before": "e0e8041ce6046a0ff97252b2c628dfa67a805775a49acc16f405fbd6e6806a9f",
+    "after": "d0e0805631500be8c903caadd0d9c53394fd317fe98d9308613da9da7d475acc",
+    "reason": "PR51: Route existing map consumer through the server-scoped shared map boundary; preserve screen behavior and visual style."
+  },
+  "assets/js/pages/resident-report.js": {
+    "before": "2688937cefc7c8b5d489b339c566a11dc4528765e077ade7c4c47b271ecd7ef5",
+    "after": "016d0d26944776478e6b86a21da4fe94f9d01f8abacf54a28881d6eab2522f20",
+    "reason": "PR51: Remove invented midpoint from missing household coordinates in SOS confirmation map."
+  },
+  "assets/js/pages/resident-shared.js": {
+    "before": "6ffce82b9caa3a6d6dd38bfbd1eeb38313faf2d878e6f0dd485917d3124f97f5",
+    "after": "b3e242689934960addf46c4f5b8562a47c0d601ebfc42e55acbef954c4c2bfa3",
+    "reason": "PR51: Route existing map consumer through the server-scoped shared map boundary; preserve screen behavior and visual style."
+  },
+  "assets/js/pages/secretary-dashboard.js": {
+    "before": "81630ef0ed68a5de9a3356d28c57e19ca44cc383c4e5becb5bafdf0be99c3102",
+    "after": "065ae2d233c4bb4a957f127ff069dca19aa2ad1a071910fffe6c58f515f4e2c3",
+    "reason": "PR51: Route existing map consumer through the server-scoped shared map boundary; preserve screen behavior and visual style."
+  },
+  "backend/app/Http/Controllers/Identity/AdministrationController.php": {
+    "before": "34af513dfa9ff9c78a3e12ce905e0c732bf59f4d4da89f54a3017cf310e19c95",
+    "after": "9296a16273de1c6058ff24a16a90e69da979a1d955a26a0a7477f9e92ee627e5",
+    "reason": "PR51: Publish declared map_scope and compute compatibility availability only for the recognized artwork."
+  },
+  "backend/tests/Support/prepare-browser-database.php": {
+    "before": "f6ca01d4cfc686492ec02d9c37909ffd887456910ee25668574c0101c12b212b",
+    "after": "76cb2cc5b5657d81940fecdeba97dc4867a9c5abff378c9375402a4bf589759b",
+    "reason": "PR51: Admit one additional explicitly named fresh map-browser schema; keep refusal of preexisting targets."
   }
 }

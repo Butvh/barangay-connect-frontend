@@ -1,18 +1,17 @@
 import { ApiError, copy } from './config.js';
 import { assertRole, roleOf } from './permissions.js';
+import { mapScopeFor } from './map-scope.js';
 
 export const FACILITY_TYPES = ['EvacuationCenter', 'Hospital'];
 export const facilityStatus = row => row?.status == null ? 'Active' : row.status === 'Active' ? 'Active' : 'Inactive';
 export const facilityActive = row => Boolean(row) && facilityStatus(row) === 'Active';
 export const facilityLocated = row => Boolean(row) && ['map_x', 'map_y'].every(key => row[key] !== null && row[key] !== undefined && String(row[key]).trim() !== '' && typeof row[key] !== 'boolean' && Number.isFinite(Number(row[key])) && Number(row[key]) >= 0 && Number(row[key]) <= 100);
-// The original shared referral (ID 2) belongs to the Sampaguita demo directory.
-// Preserve its public scope; never infer ownership for other shared records.
-export const facilityOwner = row => row.managed_by_barangay_id ?? row.barangay_id ?? (row.id === 2 ? 1 : null);
+export const facilityOwner = row => row.managed_by_barangay_id ?? row.barangay_id ?? null;
 export const canManageFacility = (user, row) => ['secretary', 'captain'].includes(roleOf(user)) && facilityOwner(row) === user.barangay_id;
 export const facilityVisible = (user, row) => row.barangay_id === null || row.barangay_id === user.barangay_id;
 export function facilitySnapshot(row) {
   if (!row) return null;
-  return { id: row.id, name: row.name, type: row.type, address: row.address, capacity: row.capacity ?? null, contact: row.contact || '', notes: row.notes || '', barangay_id: row.barangay_id, status: facilityStatus(row), map_x: row.map_x ?? null, map_y: row.map_y ?? null };
+  return { id: row.id, name: row.name, type: row.type, address: row.address, capacity: row.capacity ?? null, contact: row.contact || '', notes: row.notes || '', barangay_id: row.barangay_id, managed_by_barangay_id: facilityOwner(row), map_scope: row.map_scope ?? null, status: facilityStatus(row), map_x: row.map_x ?? null, map_y: row.map_y ?? null };
 }
 export function facilityProjection(row, user) {
   const result = { ...facilitySnapshot(row), revision: row.revision || 0, can_manage: canManageFacility(user, row) };
@@ -71,16 +70,19 @@ function retainDestinations(db, row) {
 export function createFacility(db, user, input, at) {
   assertRole(user, ['secretary', 'captain']); checkInput(input, fields);
   const data = details(input);
-  if (data.map_x !== null && user.barangay_id !== 1) invalid('map_x', 'Map coverage is not available for this barangay.');
-  const row = { ...data, id: Math.max(0, ...db.facilities.map(row => row.id)) + 1, barangay_id: user.barangay_id, managed_by_barangay_id: user.barangay_id, revision: 0, created_by: user.id, created_at: at };
+  const context = mapScopeFor(db.barangays.find(row => row.id === user.barangay_id), user.barangay_id);
+  if (data.map_x !== null && !context.supported) invalid('map_x', 'Map coverage is not available for this barangay.');
+  const row = { ...data, map_scope: data.map_x === null ? null : context.map_scope, id: Math.max(0, ...db.facilities.map(row => row.id)) + 1, barangay_id: user.barangay_id, managed_by_barangay_id: user.barangay_id, revision: 0, created_by: user.id, created_at: at };
   history(row, 'Created', user, at); db.facilities.push(row); return facilityProjection(row, user);
 }
 export function updateFacility(db, user, id, input, at) {
   assertRole(user, ['secretary', 'captain']); checkInput(input, [...fields, 'expected_revision']);
   const row = managed(db, user, id, input), data = details(input, row);
-  if (data.map_x !== null && facilityOwner(row) !== 1) invalid('map_x', 'Map coverage is not available for this barangay.');
+  const context = mapScopeFor(db.barangays.find(row => row.id === user.barangay_id), user.barangay_id);
+  const unchangedPin = data.map_x !== null && data.map_x === row.map_x && data.map_y === row.map_y;
+  if (data.map_x !== null && !unchangedPin && !context.supported) invalid('map_x', 'Map coverage is not available for this barangay.');
   retainDestinations(db, row); const previousStatus = facilityStatus(row);
-  Object.assign(row, data, { managed_by_barangay_id: facilityOwner(row), revision: (row.revision || 0) + 1 });
+  Object.assign(row, data, { map_scope: data.map_x === null ? null : unchangedPin ? row.map_scope : context.map_scope, managed_by_barangay_id: facilityOwner(row), revision: (row.revision || 0) + 1 });
   history(row, previousStatus !== data.status ? data.status === 'Active' ? 'Reactivated' : 'Deactivated' : 'Edited', user, at);
   return facilityProjection(row, user);
 }

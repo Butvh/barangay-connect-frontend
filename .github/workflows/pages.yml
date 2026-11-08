@@ -304,6 +304,21 @@ jobs:
           name: p2-civic-browser
           path: ${{ env.SNAPSHOT_DIR }}/tests/browser/evidence/p-two-civic
           if-no-files-found: ignore
+      - name: PR51 declared map scope on actual original pages
+        if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
+        working-directory: ${{ env.SNAPSHOT_DIR }}
+        run: |
+          php backend/tests/Support/prepare-browser-database.php bc_dba_p1_pr51_map_browser
+          export DB_DATABASE=bc_dba_p1_pr51_map_browser DB_TEST_DATABASE=bc_dba_p1_pr51_map_browser
+          php backend/artisan migrate --force --no-interaction
+          P1_BROWSER_MODULE="$RUNNER_TEMP/bc-browser-runtime/node_modules/playwright/index.mjs" node tests/browser/pr51-map-scope.mjs
+      - name: PR51 map scope browser evidence
+        if: ${{ always() && env.SNAPSHOT_DIR != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr51-map-scope-browser
+          path: ${{ env.SNAPSHOT_DIR }}/tests/browser/evidence/pr-one-map-scope
+          if-no-files-found: ignore
       - name: Verify owner source preservation
         if: ${{ always() && env.SNAPSHOT_DIR != '' }}
         working-directory: ${{ env.SNAPSHOT_DIR }}

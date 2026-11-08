@@ -5,7 +5,7 @@ import { Icons } from '../core/icons.js';
 import { Fmt } from '../core/format.js';
 import { openChangePassword } from '../core/change-password.js';
 import { signOutTo } from '../core/sign-out.js';
-import { BCMap } from '../core/map.js';
+import { BCMap } from '../core/scoped-map.js';
 import { Shell } from '../core/shell-resident.js';
 import { mountConsentPreferences } from '../core/notification-preferences.js';
 

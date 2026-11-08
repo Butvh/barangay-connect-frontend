@@ -2,6 +2,7 @@ import { Auth, Api, UI, Icons, e, dialog } from './official-shared.js';
 import { createSubmissionIntent } from '../adapters/submission-intent.js';
 import { facilityActive, facilityLocated } from '../core/facilities.js';
 import { selectFacilityLocation } from './facility-location.js';
+import { currentMapScope } from '../core/scoped-map.js';
 
 export async function confirmFacilityStatus(facility, active) {
   return UI.confirm({title:active?'Reactivate facility?':'Deactivate facility?',text:active?'Restore this facility for new rescue assignments and active facility selection?':'Are you sure you want to deactivate this facility? It will no longer be available for new rescue assignments or active facility selection. Existing records and previous assignments will be retained.',confirmLabel:active?'Reactivate facility':'Deactivate facility',danger:!active});
@@ -21,12 +22,19 @@ export function facilityForm({user, facility=null, onSaved=()=>{}}) {
   const clearField=event=>{const name=event.target.name,hint=form.querySelector(`#facility-${name}-error`);if(hint)hint.hidden=true;event.target.removeAttribute('aria-invalid');};
   form.addEventListener('input',event=>{clearField(event);dirty=true;el.querySelector('[data-notes-count]').textContent=`${form.elements.notes.value.length}/300`;});
   form.addEventListener('change',event=>{clearField(event);dirty=true;updateType();});
-  el.querySelector('[data-pin]').disabled=user.barangay_id!==1;
+  let mapContext = null;
+  const pin = el.querySelector('[data-pin]'); pin.disabled = true;
+  const refreshCoverage = async () => {
+    try { const context = await currentMapScope(); if (!el.open) return; mapContext = context; pin.disabled = busy || !context.supported; pin.title = context.supported ? '' : 'Map coverage is not available for this barangay.'; }
+    catch { if (!el.open) return; mapContext = null; pin.disabled = true; pin.title = 'Map coverage could not load. Close and reopen the form to try again.'; }
+  };
+  const offCoverage = Api.subscribe('barangays', refreshCoverage);
+  refreshCoverage();
   el.querySelector('[data-pin]').addEventListener('click',()=>selectFacilityLocation({user,facilityId:initial.id,type:form.elements.type.value,point,onConfirm:value=>{point=value;dirty=true;updatePoint();}}));
   el.querySelector('[data-clear-pin]').addEventListener('click',()=>{point=null;dirty=true;updatePoint();});
   el.querySelector('[data-cancel]').addEventListener('click',async()=>{if(await requestClose())UI.closeDialog(el);});
   const off=editing?Api.subscribe('facilities',async()=>{try{const current=await Api.facilities.get(initial.id);if(el.open&&!busy&&current.revision!==initial.revision){error.textContent='This facility changed in another view. Your draft is retained. Close and reopen the form to review the latest information.';error.hidden=false;}}catch(err){if(el.open){error.textContent=err.message;error.hidden=false;}}}):()=>{};
-  el.addEventListener('close',()=>{intent.discard();off();},{once:true});
+  el.addEventListener('close',()=>{intent.discard();off();offCoverage();},{once:true});
   form.addEventListener('submit',async event=>{
     event.preventDefault();if(busy)return;
     error.hidden=true;form.querySelectorAll('.error-text').forEach(node=>node.hidden=true);form.querySelectorAll('[aria-invalid]').forEach(node=>node.removeAttribute('aria-invalid'));
@@ -44,7 +52,7 @@ export function facilityForm({user, facility=null, onSaved=()=>{}}) {
       const result=editing?await Api.facilities.update(initial.id,{...payload,expected_revision:initial.revision}):await Api.facilities.create(payload,{intent});
       dirty=false;UI.closeDialog(el);UI.toast(editing?'Facility updated.':'Facility added.');await onSaved(result);
     }catch(err){const fields=err.fields||{};error.textContent=[...new Set(Object.entries(fields).map(([name,message])=>`${name==='map_x'||name==='map_y'?'Map location':name.charAt(0).toUpperCase()+name.slice(1)}: ${message}`))].join(' ')||err.message;error.hidden=false;showErrors(fields);error.focus();}
-    finally{busy=false;form.removeAttribute('aria-busy');el.querySelectorAll('input,select,textarea,button').forEach(node=>node.disabled=false);el.querySelector('[data-pin]').disabled=user.barangay_id!==1;save.textContent=editing?'Save changes':'Add facility';}
+    finally{busy=false;form.removeAttribute('aria-busy');el.querySelectorAll('input,select,textarea,button').forEach(node=>node.disabled=false);pin.disabled=!mapContext?.supported;save.textContent=editing?'Save changes':'Add facility';}
   });
   updateType();updatePoint();return el;
 }

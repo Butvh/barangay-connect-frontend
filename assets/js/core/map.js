@@ -1,10 +1,11 @@
 import { Icons } from './icons.js';
 import { UI } from './ui.js';
 import { clamp, pointFromViewport, centeredTransform } from './map-geometry.js';
+import { recognizedMapScope, mapCoordinates } from './map-scope.js';
 const kindIcon={household:'house',own_household:'house',hall:'building-2',evacuation:'school',hospital:'hospital',alert:'triangle-alert',complaint:'message-square'};
-export const BCMap={mount(container,{barangay_id=1,markers=[],controls=true,interactive=true,onSelect=()=>{},draggableMarkerId=null}={}){
-  if(Number(barangay_id)!==1){container.innerHTML=UI.empty({icon:'map',title:'Map coverage is not available yet',text:'Contact your barangay office for local directions.'});return {setMarkers(){},select(){},centerOn(){},zoomIn(){},zoomOut(){},destroy(){container.replaceChildren();}};}
-  let list=[...markers],selected=list.find(m=>m.selected)?.id,scale=1,dx=0,dy=0,pointer=null,moved=false,destroyed=false;
+export const BCMap={mount(container,{map_scope=null,markers=[],controls=true,interactive=true,onSelect=()=>{},draggableMarkerId=null}={}){
+  if(!recognizedMapScope(map_scope)){container.innerHTML=UI.empty({icon:'map',title:'Map coverage is not available yet',text:'Contact your barangay office for local directions.'});return {setMarkers(){},select(){},centerOn(){},zoomIn(){},zoomOut(){},destroy(){container.replaceChildren();}};}
+  let list=markers.filter(mapCoordinates),selected=list.find(m=>m.selected)?.id,scale=1,dx=0,dy=0,pointer=null,moved=false,destroyed=false;
   container.innerHTML='<div class="bc-map-viewport" role="region" aria-label="Illustrated barangay map. Approximate locations." '+(interactive?'tabindex="0"':'')+'><div class="bc-map-stage"><img class="bc-map-image" src="assets/img/maps/sampaguita.png" alt="Barangay Sampaguita street illustration, community park, civic center and river" draggable="false"><div class="bc-map-markers"></div></div></div>'+(controls?'<div class="bc-map-controls"><button type="button" class="btn map-zoom" data-zoom="-1" aria-label="Zoom out">'+Icons.svg('minus')+'</button><button type="button" class="btn map-zoom" data-zoom="1" aria-label="Zoom in">'+Icons.svg('plus')+'</button><p>Barangay overview · Use + to zoom and drag</p><span class="sr-only" role="status" data-zoom-status></span></div>':'');
   const viewport=container.querySelector('.bc-map-viewport'),stage=container.querySelector('.bc-map-stage'),layer=container.querySelector('.bc-map-markers');
   const abort=new AbortController(),options={signal:abort.signal};
@@ -42,5 +43,5 @@ export const BCMap={mount(container,{barangay_id=1,markers=[],controls=true,inte
     },options);
   }
   const resize=new ResizeObserver(transform);resize.observe(viewport);
-  return {setMarkers(newList){if(destroyed)return;list=[...newList];render();},select(id){if(selected===id)return;selected=id;render();},centerOn(position,zoom=1.5){if(destroyed)return;({scale,dx,dy}=centeredTransform(position,{width:viewport.clientWidth,height:viewport.clientHeight},zoom));transform();},zoomIn(){zoom(.25);},zoomOut(){zoom(-.25);},destroy(){destroyed=true;abort.abort();resize.disconnect();container.replaceChildren();}};
+  return {setMarkers(newList){if(destroyed)return;list=newList.filter(mapCoordinates);render();},select(id){if(selected===id)return;selected=id;render();},centerOn(position,zoom=1.5){if(destroyed||!mapCoordinates(position))return;({scale,dx,dy}=centeredTransform(position,{width:viewport.clientWidth,height:viewport.clientHeight},zoom));transform();},zoomIn(){zoom(.25);},zoomOut(){zoom(-.25);},destroy(){destroyed=true;abort.abort();resize.disconnect();container.replaceChildren();}};
 }};

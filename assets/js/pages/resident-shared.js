@@ -3,7 +3,7 @@ import {Auth,Api} from './resident-runtime.js';
 import {UI} from '../core/ui.js';
 import {Icons} from '../core/icons.js';
 import {Fmt} from '../core/format.js';
-import {BCMap} from '../core/map.js';
+import {BCMap} from '../core/scoped-map.js';
 export {Auth,Api,UI,Icons,Fmt,BCMap};
 export const e=UI.escape,icon=Icons.svg;
 export const link=(href,label,kind='')=>'<a class="btn '+kind+'" href="'+e(href)+'">'+e(label)+'</a>';

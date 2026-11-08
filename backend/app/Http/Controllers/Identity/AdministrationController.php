@@ -11,6 +11,7 @@ use App\Services\Identity\ProfileAdministration;
 use App\Services\Identity\ResidentRegistration;
 use App\Services\Identity\SessionObservation;
 use App\Support\ApiProblem;
+use App\Support\MapCoverage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -38,7 +39,7 @@ final class AdministrationController extends Controller
         $this->service(ResidentRegistration::class);
 
         return $this->response(DB::connection(config('integration.connection'))->table('barangays')->orderBy('id')->get(['id', 'name', 'map_scope'])
-            ->map(fn ($row) => ['id' => (int) $row->id, 'name' => $row->name, 'map_available' => $row->map_scope !== null])->all());
+            ->map(fn ($row) => ['id' => (int) $row->id, 'name' => $row->name, 'map_scope' => $row->map_scope, 'map_available' => MapCoverage::supported($row->map_scope)])->all());
     }
 
     public function register(Request $request)
