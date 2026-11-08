@@ -297,11 +297,6 @@
     "after": "3d182ce7b590dbf5698bffe4843bc8a2ceb413acdea71ee0356a907d13577ce9",
     "reason": "PR51: Hide inactive resident directory detail without changing internal historical destination references or official monitoring. PR51 integration: P1: apply active-only resident facility list and revision projection without changing internal historical references."
   },
-  "backend/app/Services/Identity/SourceReferences.php": {
-    "before": "8b431d7cb51dff74ea0e11186815fbbda8004cbc18dcf8a5552efc39f51dfc92",
-    "after": "2ec589725b6dfcf15da63b0830efe2d971b8cd433bc29df5f94f8afc883045f2",
-    "reason": "PR51: Keep resident selectable reference directory active-only; retain internal scoped single-facility history resolution."
-  },
   "assets/js/core/store.js": {
     "before": "635cbaecbcfb1109a28b65de0d93acbd54f1a71ff9f4555df041bd151dd12a80",
     "after": "957e4d30fbc6fbe6035502f341cb0ec0ec70d51e6a7e691bf868b916c7f3ff87",
