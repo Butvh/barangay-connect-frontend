@@ -288,6 +288,7 @@ caseTest('SQL reports retain Captain-only joins and truthful monthly counts', fu
 });
 require __DIR__.'/http-cases.php';
 require __DIR__.'/sql-races.php';
+require __DIR__.'/sql-audit-capacity.php';
 require __DIR__.'/sql-lock-order.php';
 require __DIR__.'/sql-review.php';
 require __DIR__.'/sql-form-revisions.php';

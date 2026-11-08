@@ -62,7 +62,7 @@
   "backend/app/Support/ApiExceptions.php": {
     "owner": "p1",
     "before": "f900d68704fdb49e69c9046d6aca4b3fbffe529996e66e016d7f4e1b87876f5b",
-    "after": "eb419373a6fbdddcc2b2fffe08355bc3b9c0d730a0a38f55f575a09ca6f77376",
+    "after": "8036b6ea94d594a00841fa1c21a0b79d64b809673c8acacd6e85281094053f9f",
     "reason": "Actionable, allowlisted facility validation and safe field summary"
   },
   "backend/tests/Feature/CombinedIdentityTest.php": {
@@ -140,13 +140,25 @@
   "backend/tests/P2/rehearsal.mjs": {
     "owner": "p2",
     "before": "68648a5307e7d876659dbe7a65534b3c4406d902c382e40c32178e9d13aea83f",
-    "after": "16781f593c5efd46a23b607577ea9c3a328acfa5fdbcd596765c58971c15637e",
+    "after": "f301d5cd8b932cd1724e8790c9d22619781971d759d54c1923dbc2cb72454265",
     "reason": "Retain original source-admission refusal checks and support separately fingerprinted integrated candidate execution"
   },
   "backend/tests/P2/rehearsal.test.mjs": {
     "owner": "p2",
     "before": "c7ee1b58fb22ac94b46d1bac781d419a1910ef7855809050365d6e9cbb3047c7",
-    "after": "3462effe5c5a4b6a23ad902d691c0a1d30f171f1a9e1d7b2ea9717e801d4aba6",
+    "after": "8eabd5b0ce0aa0008a0984f669723ac8f33142578b89a32d38ee494e3adda3ff",
     "reason": "Retain original source-admission refusal checks and support separately fingerprinted integrated candidate execution"
+  },
+  "backend/tests/P2/sql-cases.php": {
+    "owner": "p2",
+    "before": "71944eff61b079b15044ac9b2146eb0ab7a1c36442f9cbc68399c3c451898593",
+    "after": "ddba8a8f5455be824dc57c306eeddd4ad74d21b89cefc195b6ce69a3d4543b37",
+    "reason": "Actual independent-process rescuer capacity and completion-release regression"
+  },
+  "backend/tests/P2/sql-worker.php": {
+    "owner": "p2",
+    "before": "4167d8e14fb3864d52c0d702ed7244beba5257f7cbcc3af530d54e6154b07233",
+    "after": "1bb7540b4b3cabecfbb1f6f6b946f76818ffb58497521a2cf1d4cef7c1554551",
+    "reason": "Actual independent-process rescuer capacity and completion-release regression"
   }
 }

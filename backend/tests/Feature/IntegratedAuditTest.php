@@ -70,6 +70,14 @@ final class IntegratedAuditTest extends TestCase
         $this->assertSame('', $row['contact']);
     }
 
+    public function test_after_validation_errors_keep_a_safe_field_hint_without_authenticating(): void
+    {
+        $resident = $this->sourceUser();
+        $this->postJson('/api/v1/auth/login', ['email' => $resident->email, 'password' => 'IntegrationTest123',
+            'portal' => 'resident', 'is_captain' => true])->assertUnprocessable()->assertJsonPath('fields.input', 'Check this field.');
+        $this->assertGuest();
+    }
+
     public function test_unsupported_map_pin_returns_a_visible_actionable_field_error_without_saving(): void
     {
         $captain = $this->sourceUser('captain');

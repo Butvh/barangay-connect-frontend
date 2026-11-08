@@ -5,6 +5,7 @@ import vm from 'node:vm';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 const { rehearsalPlan } = await import('./rehearsal.mjs').catch(error => {
   if (error.code !== 'ERR_MODULE_NOT_FOUND') throw error;
   return {};
@@ -89,6 +90,27 @@ test('actual CLI refuses an unadmitted copied runner before launching even the s
     assert.equal(result.status, 2);
     assert.match(result.stderr, /runner must be included in the owner-admitted composition/);
     assert.equal(result.stdout, '');
+  } finally {
+    assert.equal(dirname(resolve(directory)), resolve(tmpdir()));
+    assert.ok(directory.split(/[\\/]/).at(-1).startsWith('bc-p2-rehearsal-'));
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('integrated CLI admits the same frozen source with Windows checkout line endings', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'bc-p2-rehearsal-'));
+  try {
+    const ownPath = 'backend/tests/P2/rehearsal.mjs', target = join(directory, ownPath);
+    const source = (await readFile(new URL('./rehearsal.mjs', import.meta.url), 'utf8')).replace(/\r\n/g, '\n');
+    await mkdir(dirname(target), { recursive: true }); await writeFile(target, source.replace(/\n/g, '\r\n'));
+    const candidate = '4'.repeat(40);
+    await writeFile(join(directory, 'integration-manifest.json'), JSON.stringify({ kind: 'integrated-audit-candidate-v1', ...pins,
+      candidate, dirty: false, hashes: { [ownPath]: createHash('sha256').update(source).digest('hex') } }));
+    await mkdir(join(directory, 'scripts'));
+    for (const name of ['verify-integration.mjs', 'check.mjs']) await writeFile(join(directory, 'scripts', name), "console.log('orchestration fixture only');\n");
+    const result = spawnSync(process.execPath, [target, 'preflight'], { encoding: 'utf8', windowsHide: true,
+      env: { ...process.env, ...env, P2_CANDIDATE_P1: candidate, P2_CANDIDATE_DBA: pins.dba, P2_CANDIDATE_P2: pins.p2 } });
+    assert.equal(result.status, 0, result.stderr);
   } finally {
     assert.equal(dirname(resolve(directory)), resolve(tmpdir()));
     assert.ok(directory.split(/[\\/]/).at(-1).startsWith('bc-p2-rehearsal-'));

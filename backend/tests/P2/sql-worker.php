@@ -31,6 +31,7 @@ try {
     $input = isset($argv[4]) ? json_decode($argv[4], true, flags: JSON_THROW_ON_ERROR) : [];
     $result = match ($argv[3] ?? 'create') {
         'assign' => $service->assign($actor, $input['alert_id'], ['personnel_id' => $input['personnel_id'], 'expected_revision' => $input['revision']], true),
+        'assign-rescuer' => $service->assign($actor, $input['alert_id'], ['role' => 'rescuer', 'personnel_id' => $input['personnel_id'], 'expected_revision' => $input['revision']]),
         'response' => $service->response($actor, $input['alert_id'], ['response_type' => 'Assessment', 'response_status' => 'Completed', 'rescue_required' => false], 'race-response'),
         'create' => $service->create($actor, ['alert_type' => 'Other'], 'independent-process-intent'),
         default => throw new LogicException('Unsupported test-worker action.'),

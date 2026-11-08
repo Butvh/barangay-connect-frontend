@@ -40,7 +40,8 @@ async function main() {
   const phase = process.argv[2] || 'preflight';
   const plan = rehearsalPlan(manifest, expected, phase, process.env);
   const ownPath = 'backend/tests/P2/rehearsal.mjs';
-  const digest = createHash('sha256').update(await readFile(resolve(root, ownPath))).digest('hex');
+  const bytes = await readFile(resolve(root, ownPath));
+  const digest = createHash('sha256').update(manifest.kind === 'integrated-audit-candidate-v1' ? bytes.toString('utf8').replace(/\r\n/g, '\n') : bytes).digest('hex');
   requireValue((manifest.kind === 'integrated-audit-candidate-v1' ? manifest.hashes?.[ownPath] : manifest.ownerHashes?.p2?.[ownPath]) === digest, 'This runner must be included in the owner-admitted composition; do not copy it over a frozen manifest.');
   if (!['preflight', 'node'].includes(phase)) {
     requireValue(process.env.APP_BASE_PATH && await realpath(process.env.APP_BASE_PATH) === await realpath(resolve(root, 'backend')), 'APP_BASE_PATH must be this exact candidate backend.');

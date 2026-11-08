@@ -47,7 +47,9 @@ final class ApiExceptions
             $fields = $error->fields;
         } elseif ($error instanceof ValidationException) {
             // Derive fixed explanations from rule names, never interpolate submitted values.
-            foreach ($error->validator->failed() as $key => $rules) {
+            $failed = $error->validator->failed();
+            foreach (array_keys($error->errors()) as $key) {
+                $rules = $failed[$key] ?? [];
                 $fields[$key] = isset($rules['Required']) ? 'This field is required.'
                     : (isset($rules['Integer']) ? 'Enter a whole number.' : 'Check this field.');
             }

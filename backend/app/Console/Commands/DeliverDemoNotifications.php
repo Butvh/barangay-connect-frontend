@@ -34,7 +34,7 @@ final class DeliverDemoNotifications extends Command
         $deadline = microtime(true) + $seconds;
         do {
             $processed = 0;
-            while ($processed < $limit && app(OutboxDispatcher::class)->dispatchOne()) {
+            while ($processed < $limit && microtime(true) < $deadline && app(OutboxDispatcher::class)->dispatchOne()) {
                 $processed++;
             }
             $this->info('Processed '.$processed.' committed events; no external delivery jobs started.');
