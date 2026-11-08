@@ -43,5 +43,5 @@ export const BCMap={mount(container,{map_scope=null,markers=[],controls=true,int
     },options);
   }
   const resize=new ResizeObserver(transform);resize.observe(viewport);
-  return {setMarkers(newList){if(destroyed)return;list=newList.filter(mapCoordinates);render();},select(id){if(selected===id)return;selected=id;render();},centerOn(position,zoom=1.5){if(destroyed||!mapCoordinates(position))return;({scale,dx,dy}=centeredTransform(position,{width:viewport.clientWidth,height:viewport.clientHeight},zoom));transform();},zoomIn(){zoom(.25);},zoomOut(){zoom(-.25);},destroy(){destroyed=true;abort.abort();resize.disconnect();container.replaceChildren();}};
+  return {setMarkers(newList){if(destroyed)return;const focused=layer.contains(document.activeElement)?document.activeElement.closest('[data-marker]')?.dataset.marker:null;list=newList.filter(mapCoordinates);render();if(focused)focusMarker(focused);},select(id){if(selected===id)return;selected=id;render();},centerOn(position,zoom=1.5){if(destroyed||!mapCoordinates(position))return;({scale,dx,dy}=centeredTransform(position,{width:viewport.clientWidth,height:viewport.clientHeight},zoom));transform();},zoomIn(){zoom(.25);},zoomOut(){zoom(-.25);},destroy(){destroyed=true;abort.abort();resize.disconnect();container.replaceChildren();}};
 }};

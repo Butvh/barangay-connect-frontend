@@ -199,8 +199,8 @@
   },
   "assets/js/core/map.js": {
     "before": "8c6b23dc0ecf1649e89df9b93654869d123feef68cefe50250d307fbe75779d9",
-    "after": "895190065554b3ce4fe147ea56ee92ea1b3f9ebb60c444538cf2b507c2cdf31c",
-    "reason": "PR51: Require exact declared artwork, retain percentage edge coordinates and reject absent/invalid pins."
+    "after": "0a57a329681531290bdd215cd0de0ba5bc37af6b42ba621f4f419b6a47a2c1f1",
+    "reason": "PR51: Require exact declared artwork, retain percentage edge coordinates and reject absent/invalid pins. PR51: Require exact declared artwork, retain percentage edge coordinates and reject absent/invalid pins."
   },
   "assets/js/data/seed.js": {
     "before": "597716a1561f87a0b47ec3f6ae9da9697565ce3aba31feb4bdffbc17fbdfd8c5",

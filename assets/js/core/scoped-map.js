@@ -34,6 +34,11 @@ export const BCMap = { mount(container, options = {}) {
     if (destroyed || request !== version) return null;
     // A caller's resource cannot select another tenant's artwork.
     if (options.barangay_id != null && Number(options.barangay_id) !== context.barangay_id) context = mapScopeFor(null, context.barangay_id);
+    const previous = handle.context;
+    if (renderer && previous?.barangay_id === context.barangay_id && previous.map_scope === context.map_scope && previous.supported === context.supported) {
+      handle.context = context;
+      return context; // Unchanged reference polling must preserve keyboard focus, zoom and draft pins.
+    }
     handle.context = context;
     renderer?.destroy();
     renderer = Renderer.mount(container, { ...options, ...context, markers: scopedMarkers(markers, context, { demo: Config.DEMO_MODE }) });
