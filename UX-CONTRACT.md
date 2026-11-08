@@ -19,6 +19,8 @@ Save success requires a committed server result; retain the existing return-to-l
 
 Backend mode never reads demo storage as a fallback. Factories/readers are explicitly selected in an isolated reviewed composition; missing services remain unavailable. Client role checks are presentation safeguards only. Laravel independently resolves authority, scope and source revisions.
 
+Maps use the current server-selected barangay's exact recognized `map_scope`, independent of its ID/name. The shared scoped-map boundary resolves references before mounting the existing renderer, fails closed on missing/unknown coverage or read errors, and filters foreign/wrong-artwork/missing pins. Coordinates remain percentages including 0/100. Shared referral directory entries and historical rescue destinations remain readable without inventing map locations. See `docs/backend/PR51-followup-contract.md` for the agreed ownership and authority boundary.
+
 Passwords/codes/reset authorizations stay in transient controls/closures and private server boundaries. No browser storage, URLs, analytics or event payloads retain them. Private documents use association-authorized same-origin downloads, never public object keys. Existing fake preview copy remains only in demo mode.
 
 Registration creates only a resident and household, signs in through the existing login endpoint, then submits actual documents. Verification correction retains the application, approval is final, and rejected/expired applications may reapply. Captain role changes confirm their consequence; fixed Tanod membership is not CRUD. Facilities use scoped permissions and original revisions, preserving historical rescue snapshots.

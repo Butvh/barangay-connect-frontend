@@ -1,7 +1,8 @@
 import { Config, ApiError, copy, zonedISO, serverNow } from './config.js';
+import { demoMapMetadata } from './demo-map-metadata.js';
 const { createSeed } = Config.DEMO_MODE ? await import('../data/seed.js') : { createSeed: null };
 
-const ENTITIES = Object.freeze(['alerts', 'verification', 'announcements', 'feedback', 'notifications', 'users', 'facilities']);
+const ENTITIES = Object.freeze(['alerts', 'verification', 'announcements', 'feedback', 'notifications', 'users', 'facilities', 'barangays']);
 export function memoryStorage() {
   const values = new Map();
   return { getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, String(value)), removeItem: key => values.delete(key) };
@@ -28,7 +29,7 @@ export function createStore({ storage = browserStorage(), eventTarget = globalTh
     catch { throw new ApiError('VALIDATION', 'Demo storage is unreadable. Use Reset demo data to recover.'); }
     if (!db) { db = createSeed(); db.demo_started_at = Date.now(); persist(db); }
     if (db.version !== Config.schema_version) throw new ApiError('INVALID_STATE', 'This demo data version is unsupported. Reset demo data to continue.');
-    return copy(db);
+    return copy(Config.DEMO_MODE ? demoMapMetadata(db, createSeed()) : db);
   }
   function currentTime() {
     if (clock) return clock();

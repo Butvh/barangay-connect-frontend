@@ -11,7 +11,7 @@ $name = $connection->getDatabaseName();
 $target = $argv[1] ?? '';
 if (! $app->environment('testing') || getenv('DB_TEST_DISPOSABLE') !== '1' || getenv('P1_COMBINED_TESTS') !== '1' ||
     ! str_starts_with($name, 'bc_dba_p1_') || $name !== getenv('DB_TEST_DATABASE') ||
-    ! in_array($target, ['bc_dba_p1_admin_browser', 'bc_dba_p1_photo_browser', 'bc_dba_p1_civic_ci'], true) ||
+    ! in_array($target, ['bc_dba_p1_admin_browser', 'bc_dba_p1_photo_browser', 'bc_dba_p1_civic_ci', 'bc_dba_p1_pr51_map_browser'], true) ||
     ! str_starts_with($connection->selectOne('SELECT VERSION() AS v')->v, '8.4.')) {
     throw new LogicException('Only confirmed ephemeral browser schemas may be prepared.');
 }

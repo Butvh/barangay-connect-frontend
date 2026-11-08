@@ -1,6 +1,6 @@
 import { facilityActive, facilityLocated } from '../core/facilities.js';
 import { UI, Icons, Fmt, e, dialog, victims, typeIcon, alertName, facilityType, facilityDetail } from './official-shared.js';
-import { BCMap } from '../core/map.js';
+import { BCMap } from '../core/scoped-map.js';
 import { canTransition } from '../core/alertMachine.js';
 import { logAlert } from './official-alert-actions.js';
 
@@ -131,7 +131,7 @@ export function renderOperationalDashboard({ main, facilities, user, barangay, r
   }));
   const markers = [
     ...data.active.map(a => ({ id: `alert-${a.id}`, kind: 'alert', status: a.status, x: a.map_x, y: a.map_y, label: `${Fmt.alertId(a.id)} · ${a.location_label}`, selected: a.id === current?.id })),
-    ...availableFacilities.filter(facilityLocated).map(f => ({ id: `facility-${f.id}`, kind: f.type === 'Hospital' ? 'hospital' : 'evacuation', x: f.map_x, y: f.map_y, label: f.name })),
+    ...availableFacilities.filter(facilityLocated).map(f => ({ id: `facility-${f.id}`, kind: f.type === 'Hospital' ? 'hospital' : 'evacuation', x: f.map_x, y: f.map_y, label: f.name, record: f })),
   ];
   const map = BCMap.mount(main.querySelector('#responder-dashboard-map'), { barangay_id: user.barangay_id, markers, controls: true, interactive: true,
     onSelect: marker => { location.assign(marker.id.startsWith('facility-') ? `official-map.html?facility=${marker.id.slice(9)}` : `official-map.html?alert=${marker.id.slice(6)}`); } });

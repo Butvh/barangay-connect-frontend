@@ -48,7 +48,7 @@ final class OperationalReferencesController extends Controller
             return $this->response($this->sources->facilities($actor));
         }
         $row = $this->sources->facility($actor, (int) $id);
-        if (! $row) {
+        if (! $row || ($actor->role === 'resident' && ! $row['is_active'])) {
             throw new ApiProblem('NOT_FOUND', 404, 'This reference is unavailable.');
         }
 

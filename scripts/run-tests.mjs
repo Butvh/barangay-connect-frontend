@@ -38,3 +38,9 @@ for (const file of ['tests/password-recovery.mjs', 'tests/recovery-pages.mjs', '
   if (recovery.error) console.error(recovery.error.message);
   process.exitCode = recovery.status ?? 1;
 }
+for (const file of ['tests/map-scope.mjs', 'tests/pr51-registration.mjs']) {
+  if (process.exitCode) break;
+  const mapScope = spawnSync(process.execPath, [...flags, file], { cwd: root, stdio: 'inherit' });
+  if (mapScope.error) console.error(mapScope.error.message);
+  process.exitCode = mapScope.status ?? 1;
+}

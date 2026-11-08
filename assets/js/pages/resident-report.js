@@ -18,7 +18,7 @@ function sent(a){
     '<div class="actions"><button class="btn btn-primary" id="add-details">Add details</button><button class="btn" id="view-status">View alert status</button></div></section>'+
     '<aside class="card card-plain report-sent-next"><h2>What happens next</h2><div class="row">'+icon('map-pin')+'<p>'+e(address)+'<br>'+e(barangayName)+'</p></div>'+
     '<div class="mini-map" id="sent-map"></div><p>Officials will acknowledge your alert. Follow its status for responder and rescue updates.</p></aside></div>';
-  map=BCMap.mount(main.querySelector('#sent-map'),{barangay_id:user.barangay_id,markers:household?[{id:'home',kind:'own_household',x:household.map_x??50,y:household.map_y??50,label:'My household'}]:[],controls:false,interactive:false});
+  map=BCMap.mount(main.querySelector('#sent-map'),{barangay_id:user.barangay_id,markers:household?[{id:'home',kind:'own_household',x:household.map_x,y:household.map_y,label:'My household'}]:[],controls:false,interactive:false});
   main.querySelector('#add-details').addEventListener('click',()=>{history.replaceState(null,'','resident-report.html?step=details&id='+id);showAlert(true);});
   main.querySelector('#view-status').addEventListener('click',goStatus);
 }

@@ -1,6 +1,6 @@
 import { Auth, Api, Store, UI, Icons, Fmt, e, live, errorView, alertName, victims } from './official-shared.js';
 import { captainDashboard } from './captain-dashboard-model.js';
-import { BCMap } from '../core/map.js';
+import { BCMap } from '../core/scoped-map.js';
 import { composeAnnouncement, readAnnouncement, announcementAuthor } from './official-announcement-actions.js';
 import { nextAnnouncementExpiry } from '../core/announcements.js';
 

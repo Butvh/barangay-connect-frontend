@@ -1,4 +1,6 @@
 import { facilityActive, facilityLocated } from '../core/facilities.js';
+import { scopedMarkers } from '../core/map-scope.js';
+import { Config } from '../core/config.js';
 // Pure map projection. Never invent coordinates for unlocated records.
 export const locationKey = value => String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
 const located = row => row.map_x != null && row.map_y != null && [row.map_x, row.map_y].every(n => Number.isFinite(Number(n)) && Number(n) >= 0 && Number(n) <= 100);
@@ -8,7 +10,7 @@ export function monitoringMarkers(data, filters, role) {
   const households = [...new Map(data.households.filter(located).map(h => [h.id, h])).values()];
   const complaints = ['secretary', 'captain'].includes(role) && filters.complaints ? data.complaints : [];
   const positioned = complaints.map(record => ({ record, household: households.find(h => locationKey(h.address) === locationKey(record.location)) }));
-  return {
+  const projection = {
     alertCount: alerts.length,
     unplacedAlerts: alerts.filter(row => !located(row)).length,
     unplacedFacilities: facilities.filter(row => !facilityLocated(row)).length,
@@ -21,4 +23,11 @@ export function monitoringMarkers(data, filters, role) {
       ...positioned.filter(c => c.household).map(({ record, household }) => ({ id: `complaint-${record.id}`, kind: 'complaint', x: household.map_x, y: household.map_y, label: `Complaint · ${record.category} · ${record.status}`, record })),
     ],
   };
+  if (data.mapContext) {
+    projection.markers = scopedMarkers(projection.markers, data.mapContext, { demo: Config.DEMO_MODE });
+    projection.unplacedAlerts = alerts.length - projection.markers.filter(row => row.kind === 'alert').length;
+    projection.unplacedFacilities = facilities.length - projection.markers.filter(row => ['hospital', 'evacuation'].includes(row.kind)).length;
+    projection.unplacedComplaints = positioned.length - projection.markers.filter(row => row.kind === 'complaint').length;
+  }
+  return projection;
 }

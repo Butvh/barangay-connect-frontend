@@ -1,6 +1,6 @@
 import { Auth, Api, UI, Fmt, e, live, errorView } from './official-shared.js';
 import { Shell } from '../core/shell-official.js';
-import { BCMap } from '../core/map.js';
+import { BCMap } from '../core/scoped-map.js';
 import { logAlert, resolveAlert } from './official-alert-actions.js';
 import { assignAlert, cancelAlertAssignment } from './official-assignment.js';
 import { alertDetail } from './official-alert-view.js';
