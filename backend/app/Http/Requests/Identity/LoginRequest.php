@@ -21,13 +21,14 @@ final class LoginRequest extends FormRequest
 
     public function rules(): array
     {
-        return ['email' => ['required', 'string', 'email', 'max:254'], 'password' => ['required', 'string', 'max:128']];
+        return ['email' => ['required', 'string', 'email', 'max:254'], 'password' => ['required', 'string', 'max:128'],
+            'portal' => ['required', 'string', 'in:resident,official']];
     }
 
     public function after(): array
     {
         return [function (Validator $validator) {
-            if (array_diff(array_keys($this->all()), ['email', 'password', '_token'])) {
+            if (array_diff(array_keys($this->all()), ['email', 'password', 'portal', '_token'])) {
                 $validator->errors()->add('input', 'Unexpected fields are not accepted.');
             }
         }];

@@ -46,7 +46,7 @@ try {
   const operations = createOperations({ request: createDomainTransport(http) });
   await assert.rejects(operations.alerts.list(), error => error.code === 'AUTH' && error.status === 401);
   await assert.rejects(operations.alerts.create({ description: 'Fictional boundary test' }, { idempotencyKey: 'persistent-intent-123' }), error => error.code === 'AUTH' && error.status === 401);
-  await assert.rejects(http.request('auth/login', { method: 'POST', body: { email: 'fictional@example.invalid', password: 'LocalBoundary123' } }), error => error.code === 'NOT_AVAILABLE' && error.status === 503);
+  await assert.rejects(http.request('auth/login', { method: 'POST', body: { email: 'fictional@example.invalid', password: 'LocalBoundary123', portal: 'official' } }), error => error.code === 'NOT_AVAILABLE' && error.status === 503);
   console.log('PASS actual P2 factories use real shared HTTP against Laravel; incomplete identity/modules stay closed');
   for (const path of ['/.env', '/backend/.env', '/vendor/autoload.php', '/storage/private.pdf', '/frontend/assets/js/data/seed.js']) {
     assert.equal((await browserFetch(origin + path, { headers: { Accept: 'application/json' } })).status, 404, path);

@@ -29,9 +29,9 @@ export function createBackendAuth({ http, location = globalThis.location } = {})
     emit();
     return current();
   }
-  async function login(email, password) {
+  async function login(email, password, { portal = /(?:^|\/)resident-login\.html$/.test(location?.pathname || '') ? 'resident' : 'official' } = {}) {
     const request = ++version;
-    const result = await observed('auth/login', { method: 'POST', body: { email: String(email).trim().toLowerCase(), password } });
+    const result = await observed('auth/login', { method: 'POST', body: { email: String(email).trim().toLowerCase(), password, portal } });
     if (request !== version) throw new ApiError('AUTH', 'Your session changed. Try signing in again.');
     accept(result.data, result.meta); emit('signed_in'); return current();
   }

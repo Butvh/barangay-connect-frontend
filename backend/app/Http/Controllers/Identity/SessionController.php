@@ -31,7 +31,10 @@ final class SessionController extends Controller
         }
         $user = $guard->user();
         $identity = EffectiveIdentity::fromUser($user);
-        if (! $identity) {
+        $portalMatches = $identity && ($request->validated('portal') === 'resident'
+            ? $identity->role === 'resident'
+            : in_array($identity->role, ['captain', 'secretary', 'responder', 'rescuer'], true));
+        if (! $portalMatches) {
             $guard->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();

@@ -10,6 +10,8 @@ export function monitoringMarkers(data, filters, role) {
   const positioned = complaints.map(record => ({ record, household: households.find(h => locationKey(h.address) === locationKey(record.location)) }));
   return {
     alertCount: alerts.length,
+    unplacedAlerts: alerts.filter(row => !located(row)).length,
+    unplacedFacilities: facilities.filter(row => !facilityLocated(row)).length,
     unplacedComplaints: positioned.filter(c => !c.household).length,
     markers: [
       { id: 'hall', kind: 'hall', x: 54.4, y: 22, label: 'Barangay hall' },

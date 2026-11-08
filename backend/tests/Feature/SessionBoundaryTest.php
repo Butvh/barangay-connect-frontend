@@ -26,7 +26,7 @@ final class SessionBoundaryTest extends TestCase
         config(['identity.enabled' => true]);
         $password = ' Password123 ';
         $this->users->users[42] = $this->user(['password' => Hash::make($password)]);
-        $this->postJson('/api/v1/auth/login', ['email' => 'PERSON@example.test', 'password' => $password])
+        $this->postJson('/api/v1/auth/login', ['portal' => 'official', 'email' => 'PERSON@example.test', 'password' => $password])
             ->assertOk()->assertJsonPath('data.id', 42)->assertSessionHas('identity_role', 'secretary')
             ->assertSessionHas('identity_version', 2)->assertJsonMissingPath('data.password');
         $this->getJson('/api/v1/me')->assertOk()->assertJsonPath('data.id', 42);
@@ -43,30 +43,30 @@ final class SessionBoundaryTest extends TestCase
 
     public function test_schema_dependency_is_explicit_and_no_password_is_echoed(): void
     {
-        $this->postJson('/api/v1/auth/login', ['email' => 'person@example.test', 'password' => 'PrivatePassword123'])
+        $this->postJson('/api/v1/auth/login', ['portal' => 'official', 'email' => 'person@example.test', 'password' => 'PrivatePassword123'])
             ->assertStatus(503)->assertJsonPath('code', 'NOT_AVAILABLE')
             ->assertDontSee('PrivatePassword123')->assertDontSee('App\\Models');
     }
 
     public function test_login_rejects_unknown_protected_fields(): void
     {
-        $this->postJson('/api/v1/auth/login', ['email' => 'person@example.test', 'password' => 'PrivatePassword123', 'is_captain' => true])
+        $this->postJson('/api/v1/auth/login', ['portal' => 'official', 'email' => 'person@example.test', 'password' => 'PrivatePassword123', 'is_captain' => true])
             ->assertUnprocessable()->assertJsonPath('code', 'VALIDATION');
     }
 
     public function test_malformed_login_fields_fail_validation_without_internal_error(): void
     {
-        $this->postJson('/api/v1/auth/login', ['email' => ['not-a-string'], 'password' => ['not-a-string']])
+        $this->postJson('/api/v1/auth/login', ['portal' => 'official', 'email' => ['not-a-string'], 'password' => ['not-a-string']])
             ->assertUnprocessable()->assertJsonPath('code', 'VALIDATION');
     }
 
     public function test_login_has_independent_account_rate_limit(): void
     {
         for ($attempt = 0; $attempt < 5; $attempt++) {
-            $this->postJson('/api/v1/auth/login', ['email' => 'limited@example.test', 'password' => 'TestPassword123'])
+            $this->postJson('/api/v1/auth/login', ['portal' => 'official', 'email' => 'limited@example.test', 'password' => 'TestPassword123'])
                 ->assertStatus(503);
         }
-        $this->postJson('/api/v1/auth/login', ['email' => 'limited@example.test', 'password' => 'TestPassword123'])
+        $this->postJson('/api/v1/auth/login', ['portal' => 'official', 'email' => 'limited@example.test', 'password' => 'TestPassword123'])
             ->assertStatus(429)->assertJsonPath('code', 'RATE_LIMIT')->assertHeader('Retry-After');
     }
 
@@ -101,7 +101,7 @@ final class SessionBoundaryTest extends TestCase
     {
         config(['identity.enabled' => true]);
         $this->users->users[42] = $this->user(['auth_version' => -1, 'password' => Hash::make('TestPassword123')]);
-        $this->postJson('/api/v1/auth/login', ['email' => 'person@example.test', 'password' => 'TestPassword123'])
+        $this->postJson('/api/v1/auth/login', ['portal' => 'official', 'email' => 'person@example.test', 'password' => 'TestPassword123'])
             ->assertUnauthorized();
     }
 
@@ -143,7 +143,7 @@ final class SessionBoundaryTest extends TestCase
     {
         // Laravel normally skips CSRF in unit tests; simulate a normal local request.
         $this->app['env'] = 'local';
-        $this->postJson('/api/v1/auth/login', ['email' => 'person@example.test', 'password' => 'PrivatePassword123'])
+        $this->postJson('/api/v1/auth/login', ['portal' => 'official', 'email' => 'person@example.test', 'password' => 'PrivatePassword123'])
             ->assertStatus(419)->assertJsonPath('code', 'CSRF');
     }
 

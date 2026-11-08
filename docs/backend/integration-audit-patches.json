@@ -1,0 +1,140 @@
+{
+  "assets/js/adapters/http.js": {
+    "owner": "p1",
+    "before": "4923dff7571d82c2e6212028d52c09efb2fade7bd643f595751080908fa04ab3",
+    "after": "a48d7a30a33359f3692351c2ffd8e93b8ea216915ddb0b8a989bdf98ccb1174e",
+    "reason": "Actionable, allowlisted facility validation and safe field summary"
+  },
+  "assets/js/adapters/session.js": {
+    "owner": "p1",
+    "before": "adfd3ddaede55a3e0acf6f38002de45e4748590d41444d983780c193e07f1e91",
+    "after": "0075ee6cb179ea09ecfa6272c1e8731ebd2ae501c691f33b8d100cf03e62c88a",
+    "reason": "Explicit portal intent and server-side effective-role boundary"
+  },
+  "assets/js/pages/captain-personnel-dialogs.js": {
+    "owner": "p1",
+    "before": "d4104ebfb66344cca8ae6c61bfdc736fd9c09c0004b087dfaae0fef6872a7fe2",
+    "after": "434fea3d8e03ebbdb998e0db0c6778ca82fc92df1b0d95f5922c92605d2466a4",
+    "reason": "Repair authored UTF-8 and retain explicit resident registration portal"
+  },
+  "assets/js/pages/facility-form.js": {
+    "owner": "p1",
+    "before": "8368411c99fc22dd19c9360cd35089f8689159906d9cd103622b59ad57f2da11",
+    "after": "0956a741b6853d75ac67a954786372e76c3b4db3735729d06e8293b207440c3a",
+    "reason": "Actionable, allowlisted facility validation and safe field summary"
+  },
+  "assets/js/pages/official-map-model.js": {
+    "owner": "p1",
+    "before": "a343acbfc02ec7d89bca14a5c9564caeff132e4228c967147f4e5dc3f52de881",
+    "after": "9ee2c399e63219118c0e7369715e3e1f7d2466d051cca6ecb41f8cdaed8f5c60",
+    "reason": "Truthful map pin counts, Captain complaints access and resident facility visibility"
+  },
+  "assets/js/pages/official-map.js": {
+    "owner": "p1",
+    "before": "7fb349d6e1db40cbc222482172a41453612c418c0e5f67c4a8be5b64e0cb8192",
+    "after": "2dcc750124afeaf63814e19a319c873c6b55af9fba75ae863d49ace5a059906a",
+    "reason": "Truthful map pin counts, Captain complaints access and resident facility visibility"
+  },
+  "assets/js/pages/register.js": {
+    "owner": "p1",
+    "before": "8b089ee424d09efa01d415881f7bad8c3843f389d0a3cd141b72778bb2f71e1f",
+    "after": "39f8162db4ac1acaafd6170e67325fe56090ca0aa4af43b2302163af4d64050b",
+    "reason": "Repair authored UTF-8 and retain explicit resident registration portal"
+  },
+  "backend/app/Http/Controllers/Identity/SessionController.php": {
+    "owner": "p1",
+    "before": "0cc857bee8f4f5161d037d4b24258eeed3ccbbde0cc66d86b174458b7627a7fc",
+    "after": "a1ed7dda0dda75726526f3211475027a8054d8f96e0f27de917d878ebbaed9e0",
+    "reason": "Explicit portal intent and server-side effective-role boundary"
+  },
+  "backend/app/Http/Requests/Identity/LoginRequest.php": {
+    "owner": "p1",
+    "before": "ef04d943ac9835bbfcebc86f6ec54b872a3737108c1c71e2f74bfffcd964faef",
+    "after": "b865490e93ad8fb0ebae54073e37108dbd3349dd80a2f74551b2a6db147bb309",
+    "reason": "Explicit portal intent and server-side effective-role boundary"
+  },
+  "backend/app/Services/Facilities/FacilityAdministration.php": {
+    "owner": "p1",
+    "before": "927e7f67f2c1ec62f000a77e8799fd6d5dff8bedc955d58c02dc2486efbc9954",
+    "after": "6ea99979cd97e45534204518081b12c8cafce5c18652de019b7cb222f973aa09",
+    "reason": "Actionable, allowlisted facility validation and safe field summary"
+  },
+  "backend/app/Support/ApiExceptions.php": {
+    "owner": "p1",
+    "before": "f900d68704fdb49e69c9046d6aca4b3fbffe529996e66e016d7f4e1b87876f5b",
+    "after": "eb419373a6fbdddcc2b2fffe08355bc3b9c0d730a0a38f55f575a09ca6f77376",
+    "reason": "Actionable, allowlisted facility validation and safe field summary"
+  },
+  "backend/tests/Feature/CombinedIdentityTest.php": {
+    "owner": "p1",
+    "before": "bb25afa9bc2059d7766a469a663d098628ca20bb1cdf11cb75c7d93beed352b4",
+    "after": "19ccb88aaa86174f46f1a7638f41653ee64f199dbe51fe3aa842ad7df86089fa",
+    "reason": "Explicit portal intent and server-side effective-role boundary"
+  },
+  "backend/tests/Feature/CombinedSessionObservationTest.php": {
+    "owner": "p1",
+    "before": "e2ba10e1aed1a6171175712bcd57cb462bee0e7f05abd0dcc7f14df6f7e8e2b1",
+    "after": "7df8cd2172779e6ca361f5b6e398dce87cb68373dec2983696705996e4a8428d",
+    "reason": "Explicit portal intent and server-side effective-role boundary"
+  },
+  "backend/tests/Feature/SessionBoundaryTest.php": {
+    "owner": "p1",
+    "before": "a9e4f014831763bd2bc2055238f051777965114c0961b0c3607ca94871af2d7f",
+    "after": "89ddd03b3457d8bbfa8ccb929a8e7b42623b2eaf5331fa50ee797b798cc52f85",
+    "reason": "Explicit portal intent and server-side effective-role boundary"
+  },
+  "backend/tests/Support/browser-operational-fixture.php": {
+    "owner": "p1",
+    "before": "0d032e356da9a150fe480728ee9315f3060c930240032fdc68109b08324f8fd9",
+    "after": "969f5410431c26edd335347c8ff1e4cd2426afdb7fe9ea84681c08bbf4464d04",
+    "reason": "Declare coverage and known illustrative coordinates only for fresh fictional fixtures"
+  },
+  "scripts/prepare-integration.mjs": {
+    "owner": "p1",
+    "before": "8fe923724652186f8d985ea3d7f7f1d2a2c6c888da8ebf21afd29a0bf3692c9b",
+    "after": "facf7991f33662deb48d894acf33cc624e1554d38d9e4a2feffc577f05f5f5a5",
+    "reason": "Preserve original composition and add explicit integrated-candidate provenance verification"
+  },
+  "scripts/run-tests.mjs": {
+    "owner": "p1",
+    "before": "f41c408fbbedc16f90c1abbb44117029f12ac12fbcabb706a1b6e8acf0eaaa96",
+    "after": "fa7715593049ca6c4052b030ba0ba82073416f405f2c6c4127579fc6fb23c606",
+    "reason": "Run audit regressions in the original frontend gate"
+  },
+  "scripts/verify-integration.mjs": {
+    "owner": "p1",
+    "before": "0484f58362c23d39c76f99a1c9f109e4439bd55d722db8fe0029a255ef62ea5a",
+    "after": "029dc3f1420277adaf8c19d5961835f09960393bf089d72c3401c6dcc9c61cb7",
+    "reason": "Preserve original composition and add explicit integrated-candidate provenance verification"
+  },
+  "tests/backend-live.mjs": {
+    "owner": "p1",
+    "before": "0cef539329dd95b9d43e8ccd71aebb0badb8bf8b8101070e052696d47978f11d",
+    "after": "42e65616ca6bda7cba5c019e658a3a5be8f6da6de3768bebed042477c93c3acb",
+    "reason": "Explicit portal intent and server-side effective-role boundary"
+  },
+  "backend/app/Services/Incidents/OverviewService.php": {
+    "owner": "p2",
+    "before": "b021015d8c1fc3c8d9c0956119040a20db0a76de68bc8dcc3638cd085e88b19f",
+    "after": "6e26f01784e700515b9ce1420c19828175a866edbbba384f23c9b559c6c11e88",
+    "reason": "Truthful map pin counts, Captain complaints access and resident facility visibility"
+  },
+  "backend/tests/P2/http-cases.php": {
+    "owner": "p2",
+    "before": "285c7baa807136bda42dcdc37f9378a600155dd4973efdefcbcb00fd6e548f48",
+    "after": "54f069e8b3575363d5b2d54670d07f6076178a2da30be9637c29e4276f9e45fd",
+    "reason": "Explicit portal intent and server-side effective-role boundary"
+  },
+  "backend/tests/P2/http-ui-cases.php": {
+    "owner": "p2",
+    "before": "f95b79af2082b6216eb85468685da2794b8cc28a4395767ec68dce6fc2ad4886",
+    "after": "34f4e2a7de1ed2bd4e69e91e03294cff0c232305c18c81af474cc0dfb000b186",
+    "reason": "Explicit portal intent and server-side effective-role boundary"
+  },
+  "tests/p2-workflow-http.mjs": {
+    "owner": "p2",
+    "before": "82e15dedc2b4f39e2fcc1a0fc4d17f354c740bb6efe1c860af86de0bf77c384c",
+    "after": "6f8c18c3b5b7a8beab1f523e2352c4d4e5fd4d256942fac534ee9485beb5642c",
+    "reason": "Explicit portal intent and server-side effective-role boundary"
+  }
+}

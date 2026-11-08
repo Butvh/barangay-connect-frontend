@@ -15,6 +15,10 @@ const messages = {
   PHOTO_CONFLICT: 'This upload intent already has different photo bytes.', PHOTO_INVALID: 'Choose a valid JPEG or PNG within the photo limits.',
   PHOTO_NOT_FOUND: 'This photo is not available.', PHOTO_INTEGRITY: 'This private photo is unavailable.', PHOTO_STORAGE: 'Private photo storage is unavailable.',
 };
+// Only fixed, reviewed explanations may cross the error boundary; never echo server input.
+const fieldMessages = new Set(['This field is required.', 'Enter a whole number.',
+  'Use a whole number from 1 to 999999.', 'Enter the evacuation center capacity.',
+  'Map coverage is not available for this barangay.', 'Select both map coordinates.']);
 
 export function createHttp({ fetchImpl = globalThis.fetch, origin = globalThis.location?.origin, timeout = 15000, onServerTime = () => {} } = {}) {
   const base = new URL('/api/v1/', origin);
@@ -22,7 +26,7 @@ export function createHttp({ fetchImpl = globalThis.fetch, origin = globalThis.l
   let csrfToken = null, csrfPending = null, identityContext = null, observationContext = null;
   function problem(code, status = 0, payload = {}, response = null) {
     const fields = {};
-    for (const key of Object.keys(payload?.fields || {})) if (/^[a-z][a-z0-9_.]{0,99}$/i.test(key)) fields[key] = 'Check this field.';
+    for (const [key, value] of Object.entries(payload?.fields || {})) if (/^[a-z][a-z0-9_.]{0,99}$/i.test(key)) fields[key] = fieldMessages.has(value) ? value : 'Check this field.';
     const error = new ApiError(code, messages[code] || messages.SERVER, fields);
     error.status = status;
     error.request_id = typeof payload?.request_id === 'string' && /^[a-z0-9-]{1,100}$/i.test(payload.request_id) ? payload.request_id : null;

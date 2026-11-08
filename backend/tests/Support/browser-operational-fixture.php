@@ -63,7 +63,7 @@ if (in_array($mode, ['inspect', 'deliver'], true)) {
         'active_responder' => $db->table('alert_assignments')->where('alert_id', $id)->where('role', 'responder')->where('status', 'active')->value('user_id')], JSON_THROW_ON_ERROR);
     exit;
 }
-$scope = Barangay::forceCreate(['name' => 'Barangay Sampaguita'])->id;
+$scope = Barangay::forceCreate(['name' => 'Barangay Sampaguita', 'map_scope' => 'sampaguita'])->id;
 $result = ['people' => []];
 foreach (['resident', 'residentRescue', 'otherResident', 'captain', 'secretary', 'responder', 'replacement', 'rescuer', 'foreignResident'] as $key) {
     $role = match ($key) {
@@ -83,6 +83,6 @@ foreach (['resident', 'residentRescue', 'otherResident', 'captain', 'secretary',
     }
     $result['people'][$key] = ['id' => $user->id, 'role' => $role, 'email' => $email, 'password' => $password];
 }
-$result['facility'] = Facility::forceCreate(['managed_by_barangay_id' => $scope, 'name' => 'Sampaguita Elementary School', 'type' => 'Evacuation Center', 'address' => 'School Street', 'capacity' => 250, 'active' => true])->id;
+$result['facility'] = Facility::forceCreate(['managed_by_barangay_id' => $scope, 'name' => 'Sampaguita Elementary School', 'type' => 'Evacuation Center', 'address' => 'School Street', 'capacity' => 250, 'active' => true, 'map_x' => 29.8, 'map_y' => 30.5, 'map_scope' => 'sampaguita'])->id;
 // Credentials are consumed only in process memory, never written to browser evidence.
 echo json_encode($result, JSON_THROW_ON_ERROR);

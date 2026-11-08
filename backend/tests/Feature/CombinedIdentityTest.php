@@ -6,6 +6,7 @@ use App\Http\Resources\Identity\UserResource;
 use App\Models\Barangay;
 use App\Models\PersonnelAppointment;
 use App\Models\User;
+use App\Services\Identity\EffectiveIdentity;
 use App\Services\Identity\IdentityReferences;
 use App\Services\Identity\SourceReferences;
 use Illuminate\Http\Request;
@@ -74,7 +75,7 @@ final class CombinedIdentityTest extends TestCase
             return;
         }
         $user = $this->fixture(true);
-        $this->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => 'IntegrationTest123'])
+        $this->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => 'IntegrationTest123', 'portal' => (EffectiveIdentity::fromUser($user)?->role === 'resident' ? 'resident' : 'official')])
             ->assertUnauthorized()->assertJsonPath('code', 'AUTH');
         $this->assertGuest();
     }
@@ -90,13 +91,13 @@ final class CombinedIdentityTest extends TestCase
         $this->assertArrayNotHasKey('auth_version', $dto);
         $this->getJson('/api/v1/me')->assertUnauthorized();
         $this->app['env'] = 'local';
-        $this->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => 'IntegrationTest123'])
+        $this->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => 'IntegrationTest123', 'portal' => (EffectiveIdentity::fromUser($user)?->role === 'resident' ? 'resident' : 'official')])
             ->assertStatus(419)->assertJsonPath('code', 'CSRF');
     }
 
     private function login(User $user): void
     {
-        $response = $this->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => 'IntegrationTest123'])
+        $response = $this->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => 'IntegrationTest123', 'portal' => (EffectiveIdentity::fromUser($user)?->role === 'resident' ? 'resident' : 'official')])
             ->assertOk()->assertJsonPath('data.id', $user->id)->assertJsonMissingPath('data.password');
         $cookie = $response->getCookie(config('session.cookie'), false);
         $this->assertTrue($cookie->isHttpOnly());

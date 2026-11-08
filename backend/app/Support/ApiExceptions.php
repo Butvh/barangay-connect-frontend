@@ -46,9 +46,10 @@ final class ApiExceptions
             $message = $error->getMessage();
             $fields = $error->fields;
         } elseif ($error instanceof ValidationException) {
-            // Generic copy avoids echoing malicious field values or validation parameters.
-            foreach (array_keys($error->errors()) as $key) {
-                $fields[$key] = 'Check this field.';
+            // Derive fixed explanations from rule names, never interpolate submitted values.
+            foreach ($error->validator->failed() as $key => $rules) {
+                $fields[$key] = isset($rules['Required']) ? 'This field is required.'
+                    : (isset($rules['Integer']) ? 'Enter a whole number.' : 'Check this field.');
             }
         }
         $id = $request->attributes->get('request_id') ?? (string) Str::uuid();

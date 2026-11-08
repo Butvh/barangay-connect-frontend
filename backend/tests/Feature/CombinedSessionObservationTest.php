@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Services\Identity\EffectiveIdentity;
 use Illuminate\Support\Facades\Auth;
 use Tests\Support\CombinedMysql;
 use Tests\TestCase;
@@ -17,7 +18,7 @@ final class CombinedSessionObservationTest extends TestCase
         Auth::forgetGuards();
         $user = $this->sourceUser();
         $login = function () use ($user): string {
-            $response = $this->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => 'IntegrationTest123'])
+            $response = $this->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => 'IntegrationTest123', 'portal' => (EffectiveIdentity::fromUser($user)?->role === 'resident' ? 'resident' : 'official')])
                 ->assertOk()->assertJsonMissingPath('data.auth_version');
             $nonce = $response->json('meta.session_observation');
             $this->assertIsString($nonce);

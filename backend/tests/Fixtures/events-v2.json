@@ -1,0 +1,37 @@
+{
+  "contract": "barangay-connect.outbox.v2",
+  "base": {
+    "event_id": "8c3f1c74-98ef-4f27-a462-48beb6df4620",
+    "version": 2,
+    "barangay_id": 1,
+    "resource_id": 1,
+    "occurred_at": "2026-11-03T00:00:00Z"
+  },
+  "recipient": {"user_id": 1, "audience": "official", "in_app": true, "sms": false},
+  "valid": [
+    {"type": "incident.created.v2", "resource_type": "incident", "template_key": "incident-created.v2", "payload": {"status": "Pending"}, "route": "urgent", "sms_authorized": true},
+    {"type": "incident.assigned.v2", "resource_type": "incident", "template_key": "incident-assigned.v2", "payload": {"status": "Acknowledged"}, "route": "in_app", "sms_authorized": false},
+    {"type": "incident.status_changed.v2", "resource_type": "incident", "template_key": "incident-status-changed.v2", "payload": {"status": "Responding"}, "route": "in_app", "sms_authorized": false},
+    {"type": "incident.rescue_required.v2", "resource_type": "incident", "template_key": "incident-rescue-required.v2", "payload": {"status": "Rescue in progress"}, "route": "in_app", "sms_authorized": false},
+    {"type": "announcement.published.v2", "resource_type": "announcement", "template_key": "announcement-published.v2", "payload": {}, "route": "make", "sms_authorized": true},
+    {"type": "feedback.submitted.v2", "resource_type": "feedback", "template_key": "feedback-submitted.v2", "payload": {"kind": "general", "status": null}, "route": "in_app", "sms_authorized": false},
+    {"type": "feedback.updated.v2", "resource_type": "feedback", "template_key": "feedback-updated.v2", "payload": {"kind": "complaint", "status": "Assigned"}, "route": "in_app", "sms_authorized": false},
+    {"type": "verification.updated.v2", "resource_type": "verification", "template_key": "verification-updated.v2", "payload": {"status": "Resubmission requested"}, "route": "in_app", "sms_authorized": false},
+    {"type": "personnel.updated.v2", "resource_type": "personnel_appointment", "template_key": "personnel-updated.v2", "payload": {"role": null, "status": "Unassigned"}, "route": "in_app", "sms_authorized": false},
+    {"type": "facility.updated.v2", "resource_type": "facility", "template_key": "facility-updated.v2", "payload": {"status": "Inactive"}, "route": "in_app", "sms_authorized": false},
+    {"type": "security.updated.v2", "resource_type": "user", "template_key": "security-updated.v2", "payload": {"action": "access_revoked"}, "route": "in_app", "sms_authorized": false},
+    {"type": "identity.resident_registered.v2", "resource_type": "user", "template_key": "identity-resident-registered.v2", "payload": {}, "route": "in_app", "sms_authorized": false},
+    {"type": "profile.updated.v2", "resource_type": "user", "template_key": "profile-updated.v2", "payload": {}, "route": "in_app", "sms_authorized": false},
+    {"type": "household.updated.v2", "resource_type": "household", "template_key": "household-updated.v2", "payload": {}, "route": "in_app", "sms_authorized": false}
+  ],
+  "invalid": [
+    {"name": "prototype_id", "patch": {"event_id": "0123456789abcdef0123456789abcdef"}, "diagnostic": "invalid_event_identity"},
+    {"name": "prototype_type", "patch": {"type": "incident.created"}, "diagnostic": "unknown_event_type"},
+    {"name": "wrong_version", "patch": {"version": 1}, "diagnostic": "event_version_template_mismatch"},
+    {"name": "wrong_template", "patch": {"template_key": "caller-selected"}, "diagnostic": "event_version_template_mismatch"},
+    {"name": "private_code", "patch": {"payload": {"status": "Pending", "code": "fictional-secret"}}, "diagnostic": "invalid_event_payload"},
+    {"name": "arbitrary_body", "patch": {"payload": {"message": "Caller text", "number": "not-a-recipient"}}, "diagnostic": "invalid_event_payload"},
+    {"name": "missing_snapshot", "patch": {"payload": {}}, "diagnostic": "invalid_event_payload"},
+    {"name": "embedded_recipients", "patch": {"payload": {"version": 1, "context": {"status": "Pending"}, "recipients": []}}, "diagnostic": "invalid_event_payload"}
+  ]
+}

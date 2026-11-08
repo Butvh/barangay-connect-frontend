@@ -90,14 +90,14 @@ final class FacilityAdministration
             'capacity' => 'nullable|integer|min:1|max:999999', 'contact' => 'nullable|string|max:50', 'status' => 'sometimes|in:Active,Inactive',
             'notes' => 'nullable|string|max:300', 'map_x' => 'nullable|numeric|between:0,100', 'map_y' => 'nullable|numeric|between:0,100']);
         if ($fields['type'] === 'EvacuationCenter' && empty($fields['capacity'])) {
-            throw new ApiProblem('VALIDATION', 422, 'Evacuation center capacity is required.', ['capacity' => 'Enter a valid capacity.']);
+            throw new ApiProblem('VALIDATION', 422, 'Evacuation center capacity is required.', ['capacity' => 'Enter the evacuation center capacity.']);
         }
         if (array_key_exists('map_x', $input) !== array_key_exists('map_y', $input) || (($fields['map_x'] ?? null) === null) !== (($fields['map_y'] ?? null) === null)) {
-            throw new ApiProblem('VALIDATION', 422, 'Choose a complete map location.');
+            throw new ApiProblem('VALIDATION', 422, 'Choose a complete map location.', ['map_x' => 'Select both map coordinates.']);
         }
         $scope = $this->context->db()->table('barangays')->where('id', $actor->barangayId)->value('map_scope');
         if (($fields['map_x'] ?? null) !== null && ! $scope) {
-            throw new ApiProblem('VALIDATION', 422, 'Map coverage is not available for this barangay.');
+            throw new ApiProblem('VALIDATION', 422, 'Map coverage is not available for this barangay.', ['map_x' => 'Map coverage is not available for this barangay.']);
         }
 
         return ['name' => trim($fields['name']), 'type' => $fields['type'] === 'Hospital' ? 'Hospital' : 'Evacuation Center',
