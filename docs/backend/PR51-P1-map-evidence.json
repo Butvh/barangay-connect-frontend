@@ -1,0 +1,203 @@
+{
+  "status": "P1 role ready; final integrated acceptance pending P2 handoff and independent reviews/recording backup",
+  "productBase": "b00d944789dada39a356ebb6497da0aae4d74049",
+  "contract": "542876273b513fb7a7c23ccb9e22af27407d4043",
+  "runtime": "724abcc57aa21dccca3583b18686be0be56ebca1",
+  "tree": "25d5592fc5a632af2e481d9e0c918fa699ca35cb",
+  "branch": "codex/p1-pr51-map-scope",
+  "schemaHandoff": "bad5d430ee4ed1efee3809028a6870e4555ab01e",
+  "schemaIntegrationCheckpoint": "2911d8075c6cf18b9a99ef3b9d464a54ba387679",
+  "schemaCi": {
+    "run": 42465432478,
+    "check": "success",
+    "backend": "success",
+    "combined": "success",
+    "deploy": "skipped",
+    "finalThreeRoleVerdict": false
+  },
+  "p2PublishedRoleHeadAtCheck": "e8fc119b48838b7f55c25d63f43fc9790613fc08",
+  "p2RuntimeHandoff": null,
+  "snapshot": {
+    "candidate": "724abcc57aa21dccca3583b18686be0be56ebca1",
+    "dirty": false,
+    "files": 879,
+    "ownerFiles": 279,
+    "explicitPatches": 54,
+    "sha256": "b5a109d1aa77500bf071033f6687caa77494e3fdbe2124f8274c39d223d3b712"
+  },
+  "originalPins": {
+    "p1": "7369fe93f81a09e4ba490b684d8fa35f0bfd8a1a",
+    "dba": "bf2c5e800bbd9bb996e3070554bbcfdcc4d4169e",
+    "p2": "429490a8da8a0b25d6ee95f018833a1646c1def9"
+  },
+  "preserved": {
+    "ownerBaseline": true,
+    "composerAndVerifier": true,
+    "main": "3014ad60ca41a9a5aa4d5a0152faed09d0dfdaf0"
+  },
+  "executions": [
+    {
+      "kind": "frontend",
+      "source": "724abcc57aa21dccca3583b18686be0be56ebca1",
+      "result": "passed",
+      "originalCore": 354,
+      "appendedMap": 9,
+      "appendedComposition": 4,
+      "sha256": "3d08165db833636103fa1e5b641c5b8fec74b540edbc02445eb31d4a4b6f00ac"
+    },
+    {
+      "kind": "focused-real-mysql-http",
+      "source": "3ebae0d02ac408d7d393f82193f1671b5ec962fe",
+      "tests": 18,
+      "assertions": 202,
+      "failures": 0,
+      "skips": 0,
+      "phpAndFocusedTestBytesMatchRuntime": true,
+      "junitSha256": "f9d9b554547068350f336df8b0d1efecf94907bdf6f5c6304b95a71cd2959d0f"
+    },
+    {
+      "kind": "real-map-browser",
+      "source": "15e68cb0c22644f77d817b58afd867c61e7ea3c9",
+      "scenarios": 7,
+      "screenshots": 13,
+      "result": "passed",
+      "runtimeBytesMatch": true,
+      "reportSha256": "b0a5cd3afeacb2878a52dee87325ff1b49c96a863c6e0a5a14c9a8239701073c"
+    },
+    {
+      "kind": "fictional-static-demo-browser",
+      "source": "724abcc57aa21dccca3583b18686be0be56ebca1",
+      "scenarios": 3,
+      "screenshots": 3,
+      "result": "passed",
+      "backendAcceptance": false,
+      "reportSha256": "6329f549b4611f9a12a1264c8b629ada7878ed52d0e516a7c1f15cea480f2eed"
+    },
+    {
+      "kind": "artifact-source",
+      "source": "15e68cb0c22644f77d817b58afd867c61e7ea3c9",
+      "tests": 13,
+      "failed": 0,
+      "sha256": "98d0c366fce2a271d35ad662f79b8357de9f40324413ba512727bfcff1e0e629"
+    },
+    {
+      "kind": "original-p2-node",
+      "source": "3ebae0d02ac408d7d393f82193f1671b5ec962fe",
+      "tests": 43,
+      "failed": 0,
+      "sha256": "00d9ec78d912967caaf6919c72c9d192392140e3a731eb797125411d7286d2dc"
+    },
+    {
+      "kind": "earlier-original-operations-browser",
+      "source": "0651cd7ff9267dd2a5832104d2d71be3e1590d73",
+      "scenarios": 10,
+      "screenshots": 4,
+      "result": "passed",
+      "sha256": "f37664b956237d6a16e11f21a52fddbbb543014f3b9d2dd05be7129e5e2b9608"
+    },
+    {
+      "kind": "earlier-original-personnel-facility-browser",
+      "source": "3ebae0d02ac408d7d393f82193f1671b5ec962fe",
+      "scenarios": 7,
+      "result": "passed",
+      "sha256": "d80ecbc903aebd193485c1d319a2e1722f24a2fdaecec71e49909ed453af93a2"
+    },
+    {
+      "kind": "supplemental-broad-ui-static-audit",
+      "result": "nonpass-untriaged",
+      "flags": 103,
+      "scopeIncludesGeneratedVendorAndDynamicTemplates": true,
+      "generalUxComplianceClaim": false
+    }
+  ],
+  "nonpassesPreserved": [
+    "genuine baseline HTTP RED 5/54 with two failures",
+    "dirty snapshot correctly refused by staging",
+    "pre-handoff archive query compatibility failure",
+    "readiness/list completion test timing failures",
+    "real keyboard focus race on scope/marker refresh",
+    "static-demo selector matched unrelated dropdown control",
+    "restricted temporary Git fixture permission failure before successful unchanged rerun",
+    "supplemental broad UI audit103 untriaged"
+  ],
+  "pending": [
+    "P2 explicit production domain/UI handoff",
+    "dependent source/admission integration in required order",
+    "entire combined suite and required CI on one final candidate",
+    "independent P2/DBA final verdicts",
+    "current actual recording source identification/capture/transfer/different-new-target restore"
+  ],
+  "safety": {
+    "retainedDataChanged": false,
+    "retainedPinsInvented": false,
+    "sharedDatabaseMigrated": false,
+    "mainMerged": false,
+    "productionEnabled": false,
+    "externalDeliveryEnabled": false,
+    "makeActivated": false,
+    "providerSpend": false
+  },
+  "runtimeFingerprints": {
+    "assets/js/adapters/administrative-registration.js": "b648383a6d8e987db9c0cf6d638e525b20f50031e18b2c92ebc00aa99a9a3b3e",
+    "assets/js/adapters/administrative-submission.js": "95e724f187deaa692d5c76169f842f8ce7c136baba616656ca9ec10e74c8beaf",
+    "assets/js/adapters/api.js": "074d4a1e5af26125f528cb7a5aaa4b005b9a4f24b70d25c52a9733e83611c073",
+    "assets/js/adapters/communications.js": "cab35eb907928b3f3fbfa2454f329d77b66b1f41fdbaecee3a8fd055994c59c9",
+    "assets/js/adapters/domain-transport.js": "08398afb6564fb231b1165dac015f6b66b5ae006bfb000ccb5444512ee547bc2",
+    "assets/js/adapters/domains.js": "be6a42c487957609956de2d3ded2df6aac2bb1b441cb9064378e0135e9ee1b11",
+    "assets/js/adapters/http.js": "a48d7a30a33359f3692351c2ffd8e93b8ea216915ddb0b8a989bdf98ccb1174e",
+    "assets/js/adapters/operational-registration.js": "ae06a61018eafee245202803475e55eb3d8735aa48bb7288ae1bf4214dd3b847",
+    "assets/js/adapters/operations.js": "3a4b3959a7adedcc4029851def08b24b16a133ab7506ba78973762a6754e01af",
+    "assets/js/adapters/p2-contract.js": "64ee4c19719e75b3f7cf0142edac1cb3309ebd649c4db286ab7c0bf152378fb0",
+    "assets/js/adapters/p2-domains.js": "36d6bed143e3297ba021e36558b186f0ab0bd11880a1f1d16a5e207f13b2899d",
+    "assets/js/adapters/p2-form-intent.js": "f43fe3b4a9551eb1f0f72131bc49d4326ce1bc4afa57be2cf7a068da5bbec9bc",
+    "assets/js/adapters/p2-photo-intent.js": "2c1d1a55fc8f87c8b8df701d472026c6057b017e753571d2a4f198a391b18b3b",
+    "assets/js/adapters/p2-registration.js": "34f1e91e1fb11ac26716dbda0208c87058c00f0475fbfc3fbde9fbad67941c45",
+    "assets/js/adapters/polling.js": "492e4d8de454b87b570cf65094f263a6b23b92d37bccd82024a16d0e9c3a3a70",
+    "assets/js/adapters/private-document-submission.js": "1c7f88b8e2db4bde2b1cfb599a1fdd909d5fbeaca649714434287a0fac31e88a",
+    "assets/js/adapters/reports.js": "e4852624ad4cf3686efd28be0c154f6927b733c39797e0e86f10ef520954cbd7",
+    "assets/js/adapters/session.js": "0075ee6cb179ea09ecfa6272c1e8731ebd2ae501c691f33b8d100cf03e62c88a",
+    "assets/js/adapters/source-references.js": "e273e82bc6cadc778cdc8f7148bdd1f89c6fa024e336207c966bea72b79a9316",
+    "assets/js/adapters/submission-intent.js": "b5ad1af1c823fabbfd70b1c088407efb9281e2c96340d31670ce19d79ba6b1e9",
+    "assets/js/core/.gitkeep": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "assets/js/core/account-security.js": "42d574ec6408c310bdbd065fc699ea76a65d933815afbea158c0a3a6e1275502",
+    "assets/js/core/activity.js": "84799812af7a754d7e74791287a602260cd6f6870401c05e7d3ac5fce485868e",
+    "assets/js/core/alertMachine.js": "c54df3a144c26b0f38e43bc58687d1e77e7ae1adc242513f980b9584009efa00",
+    "assets/js/core/announcements.js": "ed74f490db4028b0d75596295f4eaebd10b562ef140f2f71a1f26cbbd9fef59f",
+    "assets/js/core/api.js": "e544297f59e311f4c60f2f078062867c9bb097bbcf311cdecf5554ac4a03427a",
+    "assets/js/core/assignments.js": "17b492d852195f16f424802b5bbd712514c7a8ac21651424755cacbd799ce01a",
+    "assets/js/core/auth.js": "f4170bbdc377d30b929fc375d2b478c22aff6226b06b8c416aa1f68c09975a38",
+    "assets/js/core/change-password.js": "85874e2f3ef2e651a4e9a3eca706ef059cb2e7594c90013ba439d8e0b39655c6",
+    "assets/js/core/config.js": "435573f1135626d47dda1ce6c079bda998032c5cc553d723109a15fda32479a4",
+    "assets/js/core/demo-map-metadata.js": "c5f03760c7d37e0ee4ca0ed15c125dd0b0b9b9909cf76c3395592ced9e638886",
+    "assets/js/core/facilities.js": "f992ef26034fb663996d6ff8a361efb1753bb97acbfc853bf2bd0ec332b7db07",
+    "assets/js/core/forgot-password.js": "58fdcfc63c3bde13de2c011634f18f03776aa96efded3c174ae596cfb1681fb4",
+    "assets/js/core/form-validation.js": "5624281c966657bdfad403d549a388ead5d1cc8e74a9c4812eaa6e5b3eb7a910",
+    "assets/js/core/format.js": "2f9b209616dfad7c54a43264abd46f7f323c4294c88c6a3004766ec0a37bfe16",
+    "assets/js/core/icons.js": "4a41c6307f0cfdc1e67c3691761f20d97eb3a4d46954b8bbc14d156a7a32d1f8",
+    "assets/js/core/incident-photos.js": "a73b16a70e063e2bbffed4658ea63cd373ac97c54873fd6e764d0b0a86478522",
+    "assets/js/core/map-geometry.js": "d3c8d4c175e7ed95efa14cca74c69f7bb680ce4eaae72edd2b5ac4a13344563e",
+    "assets/js/core/map-scope.js": "8cafe2d224d83bf206129a6b1799072275f2ad838ea0a148bf3c3d0bcc6cd5f8",
+    "assets/js/core/map.js": "0a57a329681531290bdd215cd0de0ba5bc37af6b42ba621f4f419b6a47a2c1f1",
+    "assets/js/core/notification-center.js": "402b3de6b29f7965d9e5c79c9b4a9e91c8cbe69af0d83dc979035207721e0d0d",
+    "assets/js/core/notification-preferences.js": "45bfe5fd8e8f84f66814f498080654fb3f0aa6090953875da4de4153e2f928e5",
+    "assets/js/core/notifications.js": "9466d1d7e2e6df7e85704305b3fbc597b49d0213c1d1069875e7f5b0a2aff3db",
+    "assets/js/core/password-recovery.js": "185a47d943c5bda9fa91a3336a071f7d56035320b3a6d33bd29b010d9e91ff53",
+    "assets/js/core/permissions.js": "d4a4fa163bb70dfd23bd26cd77fdda3e6ff9084873f7ae2b52fa2fef084a967e",
+    "assets/js/core/personnel.js": "ebfb4bca6fdba0fd0a0ec6bdca1792e2087b6279374221b325bdad3feb8bc8f6",
+    "assets/js/core/private-documents.js": "7ce6f40efc4901a275a134a6ce7b9ee3626f2f4679fd86b968b49c303dab00a6",
+    "assets/js/core/runtime-config.js": "85febb6dd7f3e01dba61bb3552ddcd9c961d326aa0f0d6a3d42272c37b5e24a8",
+    "assets/js/core/scoped-map.js": "1825298068c0cf4ea3ef023fe4bfb3766e1367da620385cf79d07c5af2011a9e",
+    "assets/js/core/select.js": "bb4c8e7a0866e1a60238050c1f5d9a38635230d18000138770bf19921da41c13",
+    "assets/js/core/shell-official.js": "1039ff48f01ebea5c42ecf31cc2c36bbb095110af85fc53ef84e3e7b8cd54e32",
+    "assets/js/core/shell-resident.js": "1d7e283314107554adba031b4bbcdfde705972a77c1e14e8aa8aceb57e9a8e3d",
+    "assets/js/core/sign-out.js": "8df9f056f11a4746475b04759d910ebabf60768538ea9bf00fc07e785b114050",
+    "assets/js/core/store.js": "957e4d30fbc6fbe6035502f341cb0ec0ec70d51e6a7e691bf868b916c7f3ff87",
+    "assets/js/core/ui.js": "4ba28d9c8a068103bc85c6997e583778169e73f4f735bdef40dd336f21245c48",
+    "assets/js/core/verification.js": "d0b54975e9d8ff54780a7e0216b6150b15d17856d74476c66c465c0b0685dabf",
+    "backend/app/Http/Controllers/Identity/AdministrationController.php": "9296a16273de1c6058ff24a16a90e69da979a1d955a26a0a7477f9e92ee627e5",
+    "backend/app/Http/Controllers/Identity/OperationalReferencesController.php": "0562995a1c8dfa980c287b9b352f4074416cbced486e21e1fc335535727bc021",
+    "backend/app/Services/Facilities/FacilityAdministration.php": "beaf724c639c8ee58f6b3e1ebb6bf99eb499f09adb24811e27cd2f82ed023c83",
+    "backend/app/Services/Identity/SourceReferences.php": "2ec589725b6dfcf15da63b0830efe2d971b8cd433bc29df5f94f8afc883045f2",
+    "backend/app/Support/MapCoverage.php": "f112d4daac306ed16dc5f1aee6412cd6f7167d6bbafc712801fe06e14b2577e5"
+  }
+}
