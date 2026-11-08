@@ -26,10 +26,11 @@
 - [x] Add minimal CivicService commands, guarded reads and DTO mapping; portable13 RED/GREEN plus original52.
 - [x] Consume unchanged DBA schema and run actual MySQL/HTTP and independent-process races:6 tests/169 assertions. No substitute migration/model.
 - [x] Add owned communications and original selected-detail actions; new+original JS27 pass after fresh review cancellation correction. Browser acceptance still awaits P1 admission.
-- [ ] Run original P2 contracts/adapter/SQL/lock/civic and emergency regressions, syntax/style/static checks. Keep unsupported paths disabled until genuine integration succeeds.
-- [ ] Publish P2 branch, exact commits/dependencies and evidence in PR51; no competing integration PR or integration-branch push.
+- [x] Run original P2 contracts/adapter/SQL/lock, complete combined PHP, existing frontend and applicable syntax/style/static checks. Existing original SQL covers both emergency branches; unsupported positive UI paths remain gated.
+- [ ] Run expanded original civic and final emergency/device browser regressions on P1's exact admitted candidate; do not substitute owned-worktree or historical browser evidence.
+- [x] Publish P2 branch, exact commits/dependencies and evidence in PR51; runtime c919306, comments6721011023/6721032735. No competing integration PR or integration-branch push.
 - [ ] Rehearse P1's frozen candidate independently when available. Keep acceptance pending if dependency/candidate has not been published.
-- [ ] Verify recording-custodian handoff prerequisites privately and report access dependency without disclosing keys/paths/SQL/objects.
+- [x] Verify recording-custodian identification prerequisites privately; matching private references remain outside Git. Actual final-candidate capture/private handoff/DBA restore acceptance are still pending, with no keys/paths/SQL/objects disclosed publicly.
 
 ## Execution ledger
 
@@ -37,3 +38,6 @@
 - Service task: portable13 RED (missing workflows) -> GREEN, original52 remain green. One receipt namespace binds action/resource/revision.
 - UI task: seven feature regressions RED -> GREEN. Fresh review found unused cancelled intent retained an obsolete revision; actual reproduction RED0!=1 -> explicit discard/close recovery GREEN; JS27 pass. No deferred finding.
 - SQL task: first connection attempts could not reach the stopped/recovering isolated MySQL runtime. Preserved initialized data; restart only. Test bootstrap/empty-lock-observer defects corrected without changing product gates/helper; six real service/controller/race cases now169 assertions green. Full original suites running; no final candidate claim.
+- Broader owned evidence: original SQL53 and unchanged actual-service lock probe pass; all original P2 Node entries plus new contracts51 pass; original frontend and rehearsal11 pass; scoped Pint/static509 pass. Configured compatibility and actual P2 source/fake-consumer modes positive/missing/revoked/wrong_purpose pass with zero real calls. Setup refusals retained; no registration/source bypass.
+- Complete combined PHP on runtime c919306: exit0,415 tests/2,432 assertions,0 failures/errors,1 Windows symlink skip,21m22s. Logs and JUnit retained privately; source/candidate/browser/DBA gates remain distinct.
+- Ruling: defer the expanded original civic/device/emergency browser verdict until P1 publishes the combined admitted candidate — source verification and sole integration ownership take precedence over a locally composed browser run — cost: final browser acceptance remains pending rather than certifying mixed/unadmitted source.
