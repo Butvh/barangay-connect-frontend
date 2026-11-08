@@ -21,6 +21,8 @@ Route::middleware([CurrentIdentity::class, P2Errors::class, P2Enabled::class])->
     Route::get('feedback/{id}/assignment-options', [Civic::class, 'feedbackAssignmentOptions']);
     Route::post('feedback/{id}/assignment', [Civic::class, 'assignFeedback']);
     Route::post('feedback/{id}/resolution', [Civic::class, 'resolveFeedback']);
+    Route::post('feedback/{id}/review', [Civic::class, 'reviewFeedback']);
+    Route::post('feedback/{id}/archive', [Civic::class, 'archiveFeedback']);
     Route::get('notifications', [Notifications::class, 'index']);
     Route::post('notifications/clear-read', [Notifications::class, 'clearRead']);
     Route::post('notifications/mark-all-read', [Notifications::class, 'readAll']);

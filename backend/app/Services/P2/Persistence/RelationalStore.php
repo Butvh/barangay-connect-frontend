@@ -65,7 +65,7 @@ final class RelationalStore implements GuardedStore
         'incident_status_history' => 'alert_id stage actor_id role_at_action occurred_at evidence sequence',
         'announcements' => 'barangay_id author_id author_role title content status published_at expires_at archived_at retracted_at retraction_reason revision created_at updated_at',
         'announcement_history' => 'announcement_id actor_id role_at_action action reason snapshot occurred_at',
-        'community_feedback' => 'barangay_id resident_id kind title description category location assigned_tanod_id status rating comment submitted_at assigned_at resolved_at revision created_at',
+        'community_feedback' => 'barangay_id resident_id kind title description category location assigned_tanod_id status rating comment submitted_at assigned_at resolved_at reviewed_by reviewed_at archived_by archived_at revision created_at',
         'idempotency_requests' => 'actor_id route key_digest request_hash http_status outcome expires_at',
         'notifications' => 'read_at dismissed_at',
     ];
