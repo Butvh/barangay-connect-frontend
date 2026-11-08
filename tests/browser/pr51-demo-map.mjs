@@ -46,7 +46,7 @@ try {
       await page.goto(origin+'/official-facilities.html'); await page.locator('[data-add]').click();
       await page.waitForFunction(()=>{const button=document.querySelector('[data-pin]');return button&&(!button.disabled||button.title);});
       assert.equal(await page.locator('[data-pin]').isEnabled(),true);
-      assert.equal(await page.locator('[data-menu="2"]').count(),1,'Original shared fictional referral remains manageable by its declared fixture owner.');
+      assert.equal(await page.locator('[data-facility-card="2"] [data-menu="2"]').count(),1,'Original shared fictional referral remains manageable by its declared fixture owner.');
     }
     const label=`${mode} fictional demo preserves data and explicit coverage`;report.checks.push(label);console.log('PASS demo compatibility: '+label);
     await context.close();
