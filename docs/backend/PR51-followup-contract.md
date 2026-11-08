@@ -1,6 +1,6 @@
 # PR51 follow-up contract and ownership
 
-Status: **P1 accepts P2's domain proposal; DBA ratification and P2 map confirmation pending.** No dependent product or schema changes proceed until the respective owners agree. Integration reference: PR #51 only. Inspected source checkpoint: `b00d944789dada39a356ebb6497da0aae4d74049`. All role branches start there; document-only checkpoints do not replace the product baseline. P2 proposal: `e8fc119b48838b7f55c25d63f43fc9790613fc08`; DBA persistence proposals: PR51 comments `6719205874` and `6719259770`.
+Status: **RATIFIED by P1, P2 and DBA.** Integration reference: PR #51 only. Product/role checkpoint: `b00d944789dada39a356ebb6497da0aae4d74049`; document-only checkpoints do not replace it. P2 domain proposal: `e8fc119b48838b7f55c25d63f43fc9790613fc08`. Agreement: P1 comment `6719300658`, DBA `6719300876`, P2 `6719320886`. These include the corrected actual lock order and independent archive transition below. Dependent product work may begin within this ownership; positive P2 SQL waits for DBA's schema checkpoint.
 
 ## Ownership and handoff
 
@@ -15,7 +15,7 @@ Status: **P1 accepts P2's domain proposal; DBA ratification and P2 map confirmat
 
 P2/DBA: report exact role branch/base/commit, files, dependency SHAs, commands/results/skips and ready/not-ready verdict in PR51. Raise shared-file overlap before editing. Production activation, external delivery, main merging and retained database mutations remain outside this packet.
 
-## Map scope proposal (P1; DBA/P2 confirmation required)
+## Agreed map scope (P1; no schema/backfill)
 
 1. Existing `barangays.map_scope` is authoritative: the only recognized artwork key is exact `sampaguita`, matching existing fixtures and `assets/img/maps/sampaguita.png`. NULL, missing, unknown, generic truthy flags, names and numeric IDs never enable it. No schema addition or data backfill is proposed.
 2. Keep `Api.barangays.list()` and the current server-selected factories/readers. Return `{id, name, map_scope}` from both existing barangay read paths. A compatibility `map_available` may remain, computed from recognized coverage, but clients must select by exact scope. Registration may list available barangays; authenticated map consumers select only the current identity's row. Client input cannot submit `barangay_id`, `map_scope` or availability to choose authority.
@@ -26,24 +26,24 @@ P2/DBA: report exact role branch/base/commit, files, dependency SHAs, commands/r
 
 Retained recording proposal only: before = current declared scope/actual coordinates (unknown until custodian identifies current profile); after = custodian-approved exact artwork declaration and independently verified approximate pins, if supported. No change is executed under this proposal. Capture before/after with DBA approval if later authorized.
 
-## General Feedback proposal (P2 ratifies domain; DBA ratifies persistence)
+## Agreed General Feedback (P2 domain; DBA persistence)
 
 The existing full comment/rating/submitted time/resident/tenant/revision remain canonical. General `status` stays NULL; Complaint/Suggestion status transitions remain unchanged. Proposed minimal lifecycle:
 
-| Decision | Proposed contract — awaiting P2/DBA |
+| Decision | Agreed contract |
 | --- | --- |
 | Commands | `POST /feedback/{id}/review` and `POST /feedback/{id}/archive`; `expected_revision` plus the existing original idempotency command key. No client actor/time/state fields. |
 | Permissions | Current Captain/Secretary in the owning barangay only; current role/scope/security generation revalidated under locks. Other roles cannot review/archive; residents retain authorized own-history reads. |
-| Transitions | P2 decision: review and archive are independent; archive never implicitly reviews. Review of archived or fresh already-applied commands returns `INVALID_STATE`409; no delete/unarchive. Existing general rows start unreviewed without invented history. |
+| Transitions | Review and archive are independent; archive never implicitly reviews. Review of archived or fresh already-applied commands returns `INVALID_STATE`409; no delete/unarchive. If both timestamps exist, archive cannot precede review. Existing general rows start unreviewed without invented history. |
 | DTO | Existing fields plus nullable server `reviewed_at`, `reviewed_by`, `archived_at`, `archived_by` with UTC times. No new actor lookup/capability/history DTO required. Immutable action-time actor name/role/time remains in existing activity logs/reports. |
 | Visibility | Official-only query `archive=active\|all\|only`, default active; filters general only, `only` returns archived general. Direct scoped GET remains readable. Residents default to all own history and cannot use the administrative selector. No new archive-list/restore UI. Queue archive clears selection to next visible/empty, never reveals a linked archived entry in the active queue. |
 | Metrics | Fetch complete authorized `archive=all` official data. Average rating/positive percentage include archived valid ratings; received-this-month includes all scoped submissions by Asia/Manila submitted time. Queue filters never change this population. Resident history remains complete. |
 | Retry/conflict | Same original key/body uses the existing receipt and re-reads the currently authorized resource; no promise of an immutable response snapshot. No duplicate audit. Changed body/resource/action key reuse conflicts. Fresh stale revision returns `CONFLICT`409; fresh already-applied/wrong-type returns `INVALID_STATE`409, without effects or automatic rebase. Preserve the same form intent after a lost reply. |
 | Audit/event | Atomic command receipt + lifecycle update + existing immutable typed activity log. Administrative audit only: **no new event, outbox recipient or notification/SMS intent**. Existing `feedback.updated.v2` is restricted to complaint/suggestion and is unchanged. No parallel history table. |
 | Persistence | DBA's minimum proposal: nullable paired `reviewed_by/reviewed_at` and `archived_by/archived_at`, scoped restrictive actor FKs, general-only checks and scoped queue index. Reuse revision/receipt/audit/outbox. Actor history survives role reassignment. DBA decides whether existing audit derivation is sufficient instead. |
-| Lock order | Original receipt, declared sorted actor/person eligibility rows, then scoped feedback, atomic write/audit/event. P2/DBA confirm actual lock plan; no broad audience locks or late actor reads after source locks. |
+| Lock order | Existing `Module::once`: sorted actor/person guards and current rows -> existing receipt -> scoped feedback source -> atomic markers/revision/audit/receipt. Include resource/action identity in command intent. No new event, broad audience locks or late actor reads after source locks. |
 
-P1 accepts P2's exact endpoint/DTO/read/retry/transition/audit-only proposal above. DBA must confirm schema/constraints/lock compatibility; P2 must confirm the map/shared-file boundary. P1 owns exposing the existing complete feedback reader (`archive=all` for current Captain/Secretary, resident default unchanged) and readiness/admission; P2 owns communications adapter/routes/domain/feedback pages and tests. Incomplete General Feedback actions remain disabled until schema + production services + original forms pass real end-to-end tests.
+P1 owns exposing the existing complete feedback reader (`archive=all` for current Captain/Secretary, resident default unchanged) and readiness/admission; P2 owns communications adapter/routes/domain/feedback pages and tests. DBA owns the four-field additive migration/model/constraints/index and its upgrade/rollback tests; no map migration. Incomplete General Feedback actions remain disabled until schema + production services + original forms pass real end-to-end tests.
 
 ## Acceptance and freeze
 
