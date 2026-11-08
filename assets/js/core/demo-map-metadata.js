@@ -8,9 +8,9 @@ export function demoMapMetadata(db, template) {
   });
   const facilities = db.facilities.map(row => {
     if (Object.hasOwn(row, 'map_scope')) return row;
-    // Preserve the old explicitly documented shared demo referral's owner only
-    // when its fixture identity still matches. Never infer another shared owner.
-    const fixture = template.facilities.find(item => ['id', 'barangay_id', 'name', 'address', 'type'].every(key => item[key] === row[key]));
+    // Legacy v1 has one fixed shared referral, identified by its fixture key;
+    // its display text may have been edited. Never infer another shared owner.
+    const fixture = template.facilities.find(item => item.id === row.id && item.barangay_id === row.barangay_id);
     const owner = row.managed_by_barangay_id ?? row.barangay_id ?? fixture?.managed_by_barangay_id ?? null;
     const context = mapScopeFor(barangays.find(area => area.id === owner), owner);
     return { ...row, ...(row.barangay_id === null && owner !== null ? { managed_by_barangay_id: owner } : {}),

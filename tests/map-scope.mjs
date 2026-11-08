@@ -56,6 +56,7 @@ test('legacy fictional demo reads explicit artwork metadata without resetting or
   const db=createSeed(), storage=memoryStorage();
   for (const area of db.barangays) delete area.map_scope;
   for (const facility of db.facilities) { delete facility.map_scope; delete facility.managed_by_barangay_id; }
+  db.facilities[1].name='Previously renamed fictional shared referral';
   db.emergency_alerts[0].description='Preserve this existing fictional draft';
   const raw=JSON.stringify(db); storage.setItem('legacy-demo',raw);
   const store=createStore({storage,key:'legacy-demo',eventTarget:null});
@@ -64,6 +65,7 @@ test('legacy fictional demo reads explicit artwork metadata without resetting or
   assert.equal(projected.barangays[1].map_scope,null);
   assert.equal(projected.facilities[1].managed_by_barangay_id,1);
   assert.equal(projected.facilities[1].map_scope,'sampaguita');
+  assert.equal(projected.facilities[1].name,db.facilities[1].name);
   assert.equal(projected.emergency_alerts[0].description,db.emergency_alerts[0].description);
   assert.equal(storage.getItem('legacy-demo'),raw);
   assert.equal(typeof store.subscribe('barangays',()=>{}),'function');
