@@ -66,6 +66,7 @@ try {
     await edgePicker.getByRole('button', { name: 'Confirm location', exact: true }).click();
     assert.match(await edit.locator('[data-pin-label]').innerText(), /0\.00%, 100\.00%/);
     await edit.locator('[type=submit]').click(); await edit.waitFor({ state: 'detached' });
+    await page.locator(`[data-facility-card="${row.id}"]`).getByText('Verified fictional PR51 street', { exact: true }).waitFor();
     for (const status of ['Inactive', 'Active']) {
       await page.locator(`[data-menu="${row.id}"]`).click(); await page.locator('[data-status]').click();
       const title = status === 'Inactive' ? 'Deactivate facility?' : 'Reactivate facility?';
