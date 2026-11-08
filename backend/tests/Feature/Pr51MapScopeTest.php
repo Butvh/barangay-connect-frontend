@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\Barangay;
 use App\Models\Facility;
 use App\Providers\IntegrationServiceProvider;
+use App\Services\Identity\EffectiveIdentity;
+use App\Services\Identity\SourceReferences;
 use Illuminate\Support\Facades\DB;
 use Tests\Support\CombinedMysql;
 use Tests\TestCase;
@@ -118,5 +120,32 @@ final class Pr51MapScopeTest extends TestCase
         $this->assertNull($cleared['map_x']);
         $this->assertSame('legacy-artwork', $cleared['history'][0]['snapshot']['map_scope']);
         $this->assertSame(2, $cleared['revision']);
+    }
+
+    public function test_resident_reference_directory_keeps_active_shared_referrals_and_excludes_inactive_and_foreign_local(): void
+    {
+        $resident = $this->sourceUser();
+        $captain = $this->sourceUser('captain', $resident->barangay_id);
+        $foreign = Barangay::forceCreate(['name' => 'Foreign referral manager']);
+        $data = ['name' => 'Fictional reference hospital', 'type' => 'Hospital', 'address' => 'Fictional street', 'active' => true];
+        $local = Facility::forceCreate($data + ['managed_by_barangay_id' => $resident->barangay_id]);
+        $inactive = Facility::forceCreate(array_replace($data, ['managed_by_barangay_id' => $resident->barangay_id, 'active' => false]));
+        $shared = Facility::forceCreate($data + ['managed_by_barangay_id' => $foreign->id, 'visibility' => 'shared']);
+        $hidden = Facility::forceCreate($data + ['managed_by_barangay_id' => $foreign->id]);
+        try {
+            $this->signIn($resident, 'resident');
+            $ids = array_column($this->getJson('/api/v1/references/facilities')->assertOk()->json('data'), 'id');
+            $this->assertContains($local->id, $ids);
+            $this->assertContains($shared->id, $ids);
+            $this->assertNotContains($inactive->id, $ids);
+            $this->assertNotContains($hidden->id, $ids);
+            $this->getJson('/api/v1/references/facilities/'.$inactive->id)->assertNotFound();
+            // Internal incident history may still resolve its authorized inactive destination.
+            $this->assertFalse(app(SourceReferences::class)->facility(EffectiveIdentity::fromUser($resident), $inactive->id)['is_active']);
+            $this->signIn($captain, 'captain');
+            $this->getJson('/api/v1/references/facilities/'.$inactive->id)->assertOk()->assertJsonPath('data.is_active', false);
+        } finally {
+            DB::table('facilities')->where('id', $shared->id)->update(['visibility' => 'local']);
+        }
     }
 }

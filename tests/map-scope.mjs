@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { mapScopeFor, mapCoordinates, scopedMarkers } from '../assets/js/core/map-scope.js';
 import { createSeed } from '../assets/js/data/seed.js';
-import { createFacility, updateFacility, facilitySnapshot } from '../assets/js/core/facilities.js';
+import { createFacility, updateFacility, facilitySnapshot, facilityActive } from '../assets/js/core/facilities.js';
 
 test('coverage selects exact declared artwork independently of IDs, names and generic flags', () => {
   assert.equal(mapScopeFor({ id: 99, name: 'Other name', map_scope: 'sampaguita' }, 99).supported, true);
@@ -45,4 +45,9 @@ test('demo ID1 without coverage rejects a new pin and preserves an existing hist
   db.facilities[0].map_scope='legacy-artwork';
   const updated=updateFacility(db,user,1,{name:'Legacy renamed',expected_revision:0},'2026-11-08T08:01:00Z');
   assert.equal(updated.map_scope,'legacy-artwork');
+});
+test('real source-reference availability preserves inactive status without affecting legacy demo defaults', () => {
+  assert.equal(facilityActive({is_active:false}),false);
+  assert.equal(facilityActive({is_active:true}),true);
+  assert.equal(facilityActive({}),true);
 });

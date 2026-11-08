@@ -194,8 +194,8 @@
   },
   "assets/js/core/facilities.js": {
     "before": "3914fd403b1da32e192aaf8edf881c081870e56c7d82904b5417cb794b6d91c8",
-    "after": "a9c4ce7a0e89456cb9ec7b9f66ac7bfed50be92ebe758b8a0281f7030685f81f",
-    "reason": "PR51: Use explicit demo coverage/owner declarations; preserve scope in immutable destination snapshots."
+    "after": "f992ef26034fb663996d6ff8a361efb1753bb97acbfc853bf2bd0ec332b7db07",
+    "reason": "PR51: Use explicit demo coverage/owner declarations; preserve scope in immutable destination snapshots. PR51: Use explicit demo coverage/owner declarations; preserve scope in immutable destination snapshots."
   },
   "assets/js/core/map.js": {
     "before": "8c6b23dc0ecf1649e89df9b93654869d123feef68cefe50250d307fbe75779d9",
@@ -276,5 +276,15 @@
     "before": "7821ea60ef7e489157b0e917e4aa4190052abb1d61f6d5a9f7cac53e4879f51c",
     "after": "f5f94f91a862efe8f0599ab49e00abb8e8b3d005a7f5d0ac2f2910d578df1ad8",
     "reason": "PR51: Thread explicit isolated lifecycle test option into original runtime without changing any original assertion."
+  },
+  "backend/app/Http/Controllers/Identity/OperationalReferencesController.php": {
+    "before": "706379bcca160a5e30bd5e6cd4ba0cb9841465d6ece73220e7cc60ad8f301ee6",
+    "after": "0562995a1c8dfa980c287b9b352f4074416cbced486e21e1fc335535727bc021",
+    "reason": "PR51: Hide inactive resident directory detail without changing internal historical destination references or official monitoring."
+  },
+  "backend/app/Services/Identity/SourceReferences.php": {
+    "before": "8b431d7cb51dff74ea0e11186815fbbda8004cbc18dcf8a5552efc39f51dfc92",
+    "after": "2ec589725b6dfcf15da63b0830efe2d971b8cd433bc29df5f94f8afc883045f2",
+    "reason": "PR51: Keep resident selectable reference directory active-only; retain internal scoped single-facility history resolution."
   }
 }

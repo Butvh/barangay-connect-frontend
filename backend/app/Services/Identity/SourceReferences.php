@@ -110,6 +110,7 @@ final class SourceReferences
         $this->actor($actor, $locked);
 
         return $this->table('facilities', $locked)->where(fn ($q) => $q->where('managed_by_barangay_id', $actor->barangayId)->orWhere('visibility', 'shared'))
+            ->when($actor->role === 'resident', fn ($q) => $q->where('active', true))
             ->orderBy('id')->get(['id', 'managed_by_barangay_id', 'visibility', 'name', 'type', 'address', 'capacity', 'contact', 'active', 'map_x', 'map_y', 'map_scope', 'revision'])
             ->map(fn ($row) => ['id' => (int) $row->id, 'managed_by_barangay_id' => (int) $row->managed_by_barangay_id,
                 'barangay_id' => $row->visibility === 'shared' ? null : (int) $row->managed_by_barangay_id,
