@@ -25,11 +25,13 @@ final class P2GeneralFeedbackTest extends TestCase
     public function createApplication()
     {
         $app = require __DIR__.'/../../bootstrap/app.php';
-        // Enable the actual route fragments before route registration, only in
-        // this guarded disposable test application. Product gates stay closed.
-        $app->afterBootstrapping(LoadConfiguration::class, function (): void {
-            config(['identity.enabled' => true, 'integration.test_bindings' => true, 'integration.p2_enabled' => true]);
-        });
+        // The ordinary backend job must reach CombinedMysql's skip guard
+        // without enabling isolated bindings during provider registration.
+        if (getenv('P1_COMBINED_TESTS') === '1' && getenv('DB_TEST_DISPOSABLE') === '1') {
+            $app->afterBootstrapping(LoadConfiguration::class, function (): void {
+                config(['identity.enabled' => true, 'integration.test_bindings' => true, 'integration.p2_enabled' => true]);
+            });
+        }
         $app->make(Kernel::class)->bootstrap();
 
         return $app;

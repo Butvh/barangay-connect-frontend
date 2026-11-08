@@ -44,13 +44,13 @@ async function login(key) {
   await page.waitForLoadState('networkidle');
   return { page, context, account };
 }
-async function http(who, path, { method = 'GET', body } = {}) {
-  return who.page.evaluate(async ({ path, method, body }) => {
+async function http(who, path, { method = 'GET', body, query = {} } = {}) {
+  return who.page.evaluate(async ({ path, method, body, query }) => {
     const { Http } = await import('/frontend/assets/js/core/auth.js');
-    try { return { status: 200, data: await Http.request(path, { method, ...(body === undefined ? {} : { body }),
+    try { return { status: 200, data: await Http.request(path, { method, query, ...(body === undefined ? {} : { body }),
       ...(method === 'POST' && (['announcements', 'feedback'].includes(path) || /^feedback\/\d+\/(review|archive)$/.test(path)) ? { headers: { 'Idempotency-Key': crypto.randomUUID() } } : {}) }) }; }
     catch (error) { return { status: error.status, code: error.code }; }
-  }, { path, method, body });
+  }, { path, method, body, query });
 }
 async function noEffects(work) {
   const before = state().hashes; await work(); assert.deepEqual(state().hashes, before, 'Denied/replayed command changed source/history/payload/receipt/object hashes.');
@@ -256,7 +256,7 @@ try {
       await staleDialog.locator('[data-confirm]').click(); assert.equal((await response).status(), 409); await staleDialog.locator('[data-save-error]:visible').waitFor();
       for (const who of [resident, operator]) assert.equal((await http(who, `feedback/${general}/archive`, { method: 'POST', body: { expected_revision: 2 } })).status, 403);
       assert.equal((await http(foreign, `feedback/${general}/review`, { method: 'POST', body: { expected_revision: 2 } })).status, 404);
-      assert.equal((await http(resident, 'feedback?archive=all')).status, 403);
+      assert.equal((await http(resident, 'feedback', { query: { archive: 'all' } })).status, 403);
     });
     await staleDialog.locator('[data-cancel]').click();
     const ownHistory = (await http(resident, 'feedback')).data;
