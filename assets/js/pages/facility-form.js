@@ -24,9 +24,10 @@ export function facilityForm({user, facility=null, onSaved=()=>{}}) {
   form.addEventListener('change',event=>{clearField(event);dirty=true;updateType();});
   let mapContext = null;
   const pin = el.querySelector('[data-pin]'); pin.disabled = true;
+  const coverageNote = document.createElement('small'); coverageNote.setAttribute('role', 'status'); pin.parentElement.append(coverageNote);
   const refreshCoverage = async () => {
-    try { const context = await currentMapScope(); if (!el.open) return; mapContext = context; pin.disabled = busy || !context.supported; pin.title = context.supported ? '' : 'Map coverage is not available for this barangay.'; }
-    catch { if (!el.open) return; mapContext = null; pin.disabled = true; pin.title = 'Map coverage could not load. Close and reopen the form to try again.'; }
+    try { const context = await currentMapScope(); if (!el.open) return; mapContext = context; pin.disabled = busy || !context.supported; pin.title = context.supported ? '' : 'Map coverage is not available for this barangay.'; coverageNote.textContent = pin.title; }
+    catch { if (!el.open) return; mapContext = null; pin.disabled = true; pin.title = 'Map coverage could not load. Close and reopen the form to try again.'; coverageNote.textContent = pin.title; }
   };
   const offCoverage = Api.subscribe('barangays', refreshCoverage);
   refreshCoverage();

@@ -41,8 +41,9 @@ try {
     await form.locator('[name=name]').fill('Fictional PR51 ' + role + ' hospital');
     await form.locator('[name=type]').selectOption('Hospital');
     await form.locator('[name=address]').fill('Fictional PR51 street');
+    await page.waitForFunction(() => { const pin = document.querySelector('[data-pin]'); return pin && (!pin.disabled || pin.title); });
     await screenshot(page, role + '-non-one-form');
-    assert.equal(await form.locator('[data-pin]').isEnabled(), true);
+    assert.equal(await form.locator('[data-pin]').isEnabled(), true, 'Pin disabled: ' + await form.locator('[data-pin]').getAttribute('title'));
     await form.locator('[data-pin]').click();
     const picker = page.getByRole('dialog', { name: 'Select facility location', exact: true });
     await picker.locator('.bc-map-viewport').focus(); await page.keyboard.press('Enter');

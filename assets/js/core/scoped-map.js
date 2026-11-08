@@ -11,7 +11,7 @@ export async function currentMapScope() {
   if (!actor) throw new ApiError('AUTH', 'Sign in to view your barangay map.');
   const rows = await Api.barangays.list();
   const current = Auth.current();
-  if (!current || current.id !== actor.id || current.barangay_id !== actor.barangay_id || current.auth_version !== actor.auth_version) {
+  if (!current || current.id !== actor.id || current.barangay_id !== actor.barangay_id || current.session_observation !== actor.session_observation) {
     throw new ApiError('CONFLICT', 'Your account changed. Refresh this page.');
   }
   return mapScopeFor(rows.find(row => Number(row.id) === Number(actor.barangay_id)), actor.barangay_id);

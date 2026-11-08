@@ -19,7 +19,7 @@
   },
   "assets/js/pages/facility-form.js": {
     "before": "8368411c99fc22dd19c9360cd35089f8689159906d9cd103622b59ad57f2da11",
-    "after": "0572a96d6e0047609135bc43469398ab0b810560b11fc2d1ee9db49013757d49",
+    "after": "8cdd54f9a4d7148492ac7e5267691fae4f8986880b8c84acf2e77ea9e34bc3e3",
     "reason": "Actionable, allowlisted facility validation and safe field summary PR51: Enable pinning from the current scoped API reference and preserve draft/retry behavior."
   },
   "assets/js/pages/official-map-model.js": {
@@ -189,8 +189,8 @@
   },
   "assets/js/adapters/p2-registration.js": {
     "before": "4f329bbf9d980bca7aa0436df59345150ed4c3127bfab17fb483b9bb8097aafe",
-    "after": "a7f915ef2401c2fce3a10d63775846a208c0e24201dfd90543dba7d11f0c9efe",
-    "reason": "PR51: Keep official historical feedback metrics complete and default lifecycle capability closed."
+    "after": "34f1e91e1fb11ac26716dbda0208c87058c00f0475fbfc3fbde9fbad67941c45",
+    "reason": "PR51: Keep official historical feedback metrics complete and default lifecycle capability closed. PR51: Keep official historical feedback metrics complete and default lifecycle capability closed."
   },
   "assets/js/core/facilities.js": {
     "before": "3914fd403b1da32e192aaf8edf881c081870e56c7d82904b5417cb794b6d91c8",

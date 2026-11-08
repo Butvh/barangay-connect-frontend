@@ -18,11 +18,12 @@ export function createP2DomainFactories({ createOperations, createCommunications
   const communications = group => ({ http, auth }) => {
     const source = createCommunications({ request: createDomainTransport(http) })[group];
     if (group !== 'feedback') return source;
-    if (generalFeedbackTest && !['review', 'archive'].every(name => typeof source[name] === 'function')) throw new TypeError('Reviewed General Feedback command adapters are required.');
+    const lifecycleAdapter = ['review', 'archive'].every(name => typeof source[name] === 'function');
+    if (generalFeedbackTest && !lifecycleAdapter) throw new TypeError('Reviewed General Feedback command adapters are required.');
     return { ...source, generalLifecycleAvailable: generalFeedbackTest === true, list(filters = {}) {
       const actor = auth?.current(), role = auth?.roleOf?.(actor) || actor?.role;
       // Summary population stays complete; P2 owns active-queue presentation.
-      return source.list(['captain', 'secretary'].includes(role) ? { archive: 'all', ...filters } : filters);
+      return source.list(lifecycleAdapter && ['captain', 'secretary'].includes(role) ? { archive: 'all', ...filters } : filters);
     } };
   };
   return Object.freeze({
