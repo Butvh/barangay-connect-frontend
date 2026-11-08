@@ -16,7 +16,9 @@ class CommunityFeedback extends Model
 
     protected function casts(): array
     {
-        return ['rating' => 'integer', 'revision' => 'integer', 'submitted_at' => 'immutable_datetime', 'assigned_at' => 'immutable_datetime', 'resolved_at' => 'immutable_datetime'];
+        return ['rating' => 'integer', 'revision' => 'integer', 'reviewed_by' => 'integer', 'archived_by' => 'integer',
+            'submitted_at' => 'immutable_datetime', 'assigned_at' => 'immutable_datetime', 'resolved_at' => 'immutable_datetime',
+            'reviewed_at' => 'immutable_datetime', 'archived_at' => 'immutable_datetime'];
     }
 
     public function resident(): BelongsTo
@@ -32,5 +34,15 @@ class CommunityFeedback extends Model
     public function barangay(): BelongsTo
     {
         return $this->belongsTo(Barangay::class, 'barangay_id');
+    }
+
+    public function reviewer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    public function archiver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'archived_by');
     }
 }

@@ -166,5 +166,20 @@
     "before": "8d2954566f7b3dbfa1c4fe606d5529c944085f4b64dd9b57571be0e62a977c72",
     "after": "e898a855715bb822bd7fe6a2d168275cbacb219be0858cca6d1c3e6a5e5c8ea9",
     "reason": "Document the required explicit portal login contract and server-side rejection"
+  },
+  "backend/app/Models/CommunityFeedback.php": {
+    "before": "bdaad41428d3d2b9163651f1694dd1d41cda9b1e1ffdca309bdb1016bf948d36",
+    "after": "3d2c543f6f5e376ceeff4ecbb4ddb87f5c2d29e31c1926a746516945a1905fb4",
+    "reason": "PR51: reviewed DBA handoff bad5d430ee4ed1efee3809028a6870e4555ab01e; add guarded lifecycle casts/actor relations, retaining the original fields."
+  },
+  "backend/tests/Database/IncidentPhotoProposalTest.php": {
+    "before": "a35afccdafadf67dcf797bf67329f2699cc9b12dfc70886d87f3dd27830ff526",
+    "after": "0e1162f4c40e75cfef6ad14d9821b0e269892fd75628d29bd3a68ccd43ffd780",
+    "reason": "PR51: reviewed DBA handoff bad5d430ee4ed1efee3809028a6870e4555ab01e; preserve original thirteen-migration discovery assertion and explicitly discover the additive lifecycle migration."
+  },
+  "backend/tests/Database/NotificationPreferenceTest.php": {
+    "before": "62ba251367fc0eb70a31978892246550fa6de67919d67109ee8a3f27b3114e6a",
+    "after": "e99728c57d4b30de7af2cf7e3ec7dd564b47465e6638b35c0a75c884e454fea2",
+    "reason": "PR51: reviewed DBA handoff bad5d430ee4ed1efee3809028a6870e4555ab01e; preserve original thirteen-migration discovery assertion and explicitly discover the additive lifecycle migration."
   }
 }
