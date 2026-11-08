@@ -45,7 +45,7 @@ final class OperationalReferencesController extends Controller
     {
         $actor = $this->identity->current($request);
         if ($id === null) {
-            return $this->response($this->sources->facilities($actor));
+            return $this->response($this->facilityDirectory($request));
         }
         $row = $this->sources->facility($actor, (int) $id);
         if (! $row || ($actor->role === 'resident' && ! $row['is_active'])) {
@@ -60,11 +60,21 @@ final class OperationalReferencesController extends Controller
         $data = match ($entity) {
             'users' => $this->own($request),
             'verification' => $this->sources->ownVerification($this->identity->current($request)),
-            'facilities' => $this->sources->facilities($this->identity->current($request)),
+            'facilities' => $this->facilityDirectory($request),
             'barangays' => $this->sources->barangay($this->identity->current($request)),
         };
 
         return $this->response(['revision' => hash('sha256', json_encode($data, JSON_THROW_ON_ERROR))]);
+    }
+
+    private function facilityDirectory(Request $request): array
+    {
+        $actor = $this->identity->current($request);
+        $rows = $this->sources->facilities($actor);
+
+        // Internal source references retain authorized historical destinations;
+        // the resident directory only offers facilities currently in service.
+        return $actor->role === 'resident' ? array_values(array_filter($rows, fn ($row) => $row['is_active'])) : $rows;
     }
 
     private function response(mixed $data): JsonResponse

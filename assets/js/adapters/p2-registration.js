@@ -21,7 +21,9 @@ export function createP2DomainFactories({ createOperations, createCommunications
     const lifecycleAdapter = ['review', 'archive'].every(name => typeof source[name] === 'function');
     if (generalFeedbackTest && !lifecycleAdapter) throw new TypeError('Reviewed General Feedback command adapters are required.');
     const { review, archive, ...ordinary } = source;
-    return { ...ordinary, ...(generalFeedbackTest ? { review, archive } : {}), generalLifecycleAvailable: generalFeedbackTest === true, list(filters = {}) {
+    // Explicitly mask the available owner commands outside the admitted profile;
+    // the shared facade must not mistake its generic fallback for an exposed command.
+    return { ...ordinary, ...(lifecycleAdapter ? { review: generalFeedbackTest === true ? review : undefined, archive: generalFeedbackTest === true ? archive : undefined } : {}), generalLifecycleAvailable: generalFeedbackTest === true, list(filters = {}) {
       const actor = auth?.current(), role = auth?.roleOf?.(actor) || actor?.role;
       // Summary population stays complete; P2 owns active-queue presentation.
       return source.list(lifecycleAdapter && ['captain', 'secretary'].includes(role) ? { archive: 'all', ...filters } : filters);

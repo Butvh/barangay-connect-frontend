@@ -179,8 +179,8 @@
   },
   ".github/workflows/pages.yml": {
     "before": "e3e48258445fa3e66920af1bf1ff26814ae968ac62c3bd3d86fd1c64e9d7cebc",
-    "after": "41917c4363a31c7fea08a61286802743812ae3161eb30900db1b20b8fa8bcc47",
-    "reason": "PR51: Add isolated PR51 map browser regression and evidence upload; retain every original CI gate. PR51: Add isolated PR51 map browser regression and evidence upload; retain every original CI gate. PR51 integration: P1: append portable General Feedback and Node regressions, retaining every original combined gate."
+    "after": "765eae92e47c8ed89b7b983a09f323dc5cb63dd7c2a3bca829ccd0b45f2abb6a",
+    "reason": "PR51: Add isolated PR51 map browser regression and evidence upload; retain every original CI gate. PR51: Add isolated PR51 map browser regression and evidence upload; retain every original CI gate. PR51 integration: P1: append portable General Feedback and Node regressions, retaining every original combined gate. PR51 integration: P1: append portable General Feedback and Node regressions, retaining every original combined gate."
   },
   "UX-CONTRACT.md": {
     "before": "5bfedf961acaa11b35fb36a9cd5d06be0bca1222d985b9a8675c327cbbc9ba6a",
@@ -204,8 +204,8 @@
   },
   "assets/js/adapters/p2-registration.js": {
     "before": "4f329bbf9d980bca7aa0436df59345150ed4c3127bfab17fb483b9bb8097aafe",
-    "after": "bbbfd9c41e8db8291961a100313794f4650887752493f712e709ebc3633287c2",
-    "reason": "PR51: Keep official historical feedback metrics complete and default lifecycle capability closed. PR51: Keep official historical feedback metrics complete and default lifecycle capability closed. PR51 integration: P1: expose lifecycle command transport only in the explicitly admitted isolated profile; preserve complete official reads."
+    "after": "88442548b3f13c9730dfa68937c866df44aa849bae4eff726e1f09a9a139b175",
+    "reason": "PR51: Keep official historical feedback metrics complete and default lifecycle capability closed. PR51: Keep official historical feedback metrics complete and default lifecycle capability closed. PR51 integration: P1: expose lifecycle command transport only in the explicitly admitted isolated profile; preserve complete official reads. PR51 integration: P1: expose lifecycle command transport only in the explicitly admitted isolated profile; preserve complete official reads."
   },
   "assets/js/core/facilities.js": {
     "before": "3914fd403b1da32e192aaf8edf881c081870e56c7d82904b5417cb794b6d91c8",
@@ -294,8 +294,8 @@
   },
   "backend/app/Http/Controllers/Identity/OperationalReferencesController.php": {
     "before": "706379bcca160a5e30bd5e6cd4ba0cb9841465d6ece73220e7cc60ad8f301ee6",
-    "after": "0562995a1c8dfa980c287b9b352f4074416cbced486e21e1fc335535727bc021",
-    "reason": "PR51: Hide inactive resident directory detail without changing internal historical destination references or official monitoring."
+    "after": "3d182ce7b590dbf5698bffe4843bc8a2ceb413acdea71ee0356a907d13577ce9",
+    "reason": "PR51: Hide inactive resident directory detail without changing internal historical destination references or official monitoring. PR51 integration: P1: apply active-only resident facility list and revision projection without changing internal historical references."
   },
   "backend/app/Services/Identity/SourceReferences.php": {
     "before": "8b431d7cb51dff74ea0e11186815fbbda8004cbc18dcf8a5552efc39f51dfc92",

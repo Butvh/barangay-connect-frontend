@@ -135,6 +135,13 @@ jobs:
       - name: P1 and unchanged DBA suites on genuine MySQL
         working-directory: ${{ env.SNAPSHOT_DIR }}/backend
         run: php vendor/phpunit/phpunit/phpunit -c phpunit.combined.xml --display-warnings --fail-on-warning --log-junit combined-junit.xml
+      - name: Full combined PHP evidence
+        if: ${{ always() && env.SNAPSHOT_DIR != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: combined-php-junit
+          path: ${{ env.SNAPSHOT_DIR }}/backend/combined-junit.xml
+          if-no-files-found: error
       - name: Pinned P2 contract suite
         if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
         working-directory: ${{ env.SNAPSHOT_DIR }}
@@ -323,6 +330,21 @@ jobs:
           path: |
             ${{ env.SNAPSHOT_DIR }}/tests/browser/evidence/pr-one-map-scope
             ${{ env.SNAPSHOT_DIR }}/tests/browser/evidence/pr-one-demo-map
+          if-no-files-found: ignore
+      - name: Original final integration browser audit and actual in-app receipt
+        if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
+        working-directory: ${{ env.SNAPSHOT_DIR }}
+        run: |
+          php backend/tests/Support/prepare-browser-database.php bc_dba_p1_final_audit
+          export DB_DATABASE=bc_dba_p1_final_audit DB_TEST_DATABASE=bc_dba_p1_final_audit
+          php backend/artisan migrate --force --no-interaction
+          P1_BROWSER_MODULE="$RUNNER_TEMP/bc-browser-runtime/node_modules/playwright/index.mjs" node tests/browser/integration-audit.mjs
+      - name: Original final audit browser evidence
+        if: ${{ always() && env.SNAPSHOT_DIR != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: p1-final-integration-audit
+          path: ${{ env.SNAPSHOT_DIR }}/tests/browser/evidence/integration-audit
           if-no-files-found: ignore
       - name: Verify owner source preservation
         if: ${{ always() && env.SNAPSHOT_DIR != '' }}

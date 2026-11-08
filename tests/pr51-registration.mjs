@@ -16,8 +16,10 @@ function composition({ role = 'captain', available = true, enabled = false } = {
 }
 test('boolean lifecycle capability and command transport stay unavailable until explicitly selected', async () => {
   assert.equal(composition().api.feedback.generalLifecycleAvailable, false);
-  await assert.rejects(composition().api.feedback.review(10, { expected_revision: 0 }), error => error.code === 'NOT_AVAILABLE');
-  await assert.rejects(composition().api.feedback.archive(10, { expected_revision: 0 }), error => error.code === 'NOT_AVAILABLE');
+  assert.equal(composition().api.feedback.review, undefined);
+  assert.equal(composition().api.feedback.archive, undefined);
+  assert.equal(typeof composition({ enabled: true }).api.feedback.review, 'function');
+  assert.equal(typeof composition({ enabled: true }).api.feedback.archive, 'function');
   assert.equal(composition({ enabled: true }).api.feedback.generalLifecycleAvailable, true);
   assert.throws(() => composition({ enabled: true, available: false }), /Reviewed General Feedback/);
 });

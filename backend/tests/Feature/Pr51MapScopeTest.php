@@ -142,6 +142,7 @@ final class Pr51MapScopeTest extends TestCase
             $this->getJson('/api/v1/references/facilities/'.$inactive->id)->assertNotFound();
             // Internal incident history may still resolve its authorized inactive destination.
             $this->assertFalse(app(SourceReferences::class)->facility(EffectiveIdentity::fromUser($resident), $inactive->id)['is_active']);
+            $this->assertContains($inactive->id, array_column(app(SourceReferences::class)->facilities(EffectiveIdentity::fromUser($resident)), 'id'));
             $this->signIn($captain, 'captain');
             $this->getJson('/api/v1/references/facilities/'.$inactive->id)->assertOk()->assertJsonPath('data.is_active', false);
         } finally {
