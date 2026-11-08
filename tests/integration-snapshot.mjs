@@ -1,0 +1,169 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtemp, mkdir, writeFile, readFile, symlink, rename } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { composeSnapshot, assertSourcePath, verifySources } from '../scripts/integration-sources.mjs';
+
+const page = 'assets/js/pages/resident-report.js';
+const alertPage = 'assets/js/pages/resident-alert.js';
+const photoHelper = 'assets/js/core/incident-photos.js';
+const runtimeConfig = 'assets/js/core/runtime-config.js';
+async function fixture(sharedPage = page) {
+  const root = await mkdtemp(join(tmpdir(), 'bc-snapshot-test-'));
+  const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
+  git('init'); git('config', 'user.name', 'Snapshot test'); git('config', 'user.email', 'snapshot@example.invalid'); git('config', 'core.autocrlf', 'false');
+  const put = async (name, value) => { await mkdir(join(root, name, '..'), { recursive: true }); await writeFile(join(root, name), value); };
+  const commit = () => { git('add', '.'); git('commit', '-m', 'fixture'); return git('rev-parse', 'HEAD'); };
+  await put(sharedPage, 'export const original = true;\n');
+  await put('backend/phpunit.xml', '<phpunit><testsuites><testsuite name="Unit"/></testsuites></phpunit>');
+  const base = commit();
+  await put('backend/database/fixture.php', '<?php // DBA\n'); git('add', 'backend/database/fixture.php');
+  git('rm', sharedPage, 'backend/phpunit.xml'); git('commit', '-m', 'DBA-owned tree'); const dba = git('rev-parse', 'HEAD');
+  git('checkout', '--detach', base);
+  await put(sharedPage, 'export const original = true;\nexport const intent = true;\n');
+  await put('assets/js/adapters/p2-form-intent.js', 'export const adapter = true;\n'); const p2 = commit();
+  git('checkout', '--detach', base);
+  const destination = await mkdtemp(join(tmpdir(), 'bc-snapshot-result-'));
+  const lock = { p2_base: base, dba, p2 };
+  return { root, destination, git, put, commit, lock };
+}
+
+test('approved common-base page overlay preserves the exact P2 blob and before/after fingerprints', async () => {
+  const f = await fixture();
+  // A normal Windows CRLF checkout is the same reviewed text, not a concurrent edit.
+  await f.put(page, 'export const original = true;\r\n');
+  const manifest = await composeSnapshot(f);
+  const incoming = f.git('show', `${f.lock.p2}:${page}`) + '\n';
+  assert.equal(await readFile(join(f.destination, page), 'utf8'), incoming);
+  const sha = value => createHash('sha256').update(value).digest('hex');
+  assert.equal(manifest.sharedOverlays[page].before, sha('export const original = true;\n'));
+  assert.equal(manifest.sharedOverlays[page].after, sha(incoming));
+  assert.equal(manifest.ownerHashes.p2[page], sha(incoming));
+  assert.equal(manifest.ownerHashes.dba['backend/database/fixture.php'], sha('<?php // DBA\n'));
+  const xml = await readFile(join(f.destination, 'backend/phpunit.combined.xml'), 'utf8');
+  for (const name of ['Unit', 'Database', 'Integration', 'Compatibility']) assert.ok(xml.includes(`name="${name}"`));
+  assert.equal(await verifySources(f.destination, manifest), 4);
+  await writeFile(join(f.destination, page), 'changed after assembly');
+  await assert.rejects(verifySources(f.destination, manifest), /source changed/);
+});
+
+test('uncommitted and committed concurrent P1 page edits require reconciliation', async () => {
+  for (const committed of [false, true]) {
+    const f = await fixture(); await f.put(page, 'export const p1Changed = true;\n');
+    if (committed) f.commit();
+    await assert.rejects(composeSnapshot(f), /reconciliation/i);
+  }
+});
+
+test('the resident alert overlay is limited to the unchanged common base', async () => {
+  const f = await fixture(alertPage);
+  const manifest = await composeSnapshot(f);
+  assert.equal(manifest.sharedOverlays[alertPage].base, f.lock.p2_base);
+  assert.equal(await readFile(join(f.destination, alertPage), 'utf8'), f.git('show', `${f.lock.p2}:${alertPage}`) + '\n');
+  await f.put(alertPage, 'export const concurrentEdit = true;\n'); f.commit();
+  await assert.rejects(composeSnapshot(f), /reconciliation/);
+});
+
+test('only the exact shared P1 photo dependencies can be adopted by P2', async () => {
+  const f = await fixture();
+  const canonical = (await readFile(new URL('../' + photoHelper, import.meta.url), 'utf8')).replace(/\r\n/g, '\n');
+  const config = (await readFile(new URL('../' + runtimeConfig, import.meta.url), 'utf8')).replace(/\r\n/g, '\n');
+  await f.put(photoHelper, canonical); await f.put(runtimeConfig, config); const p1 = f.commit();
+  f.git('checkout', '--detach', f.lock.p2);
+  await f.put(photoHelper, canonical); await f.put(runtimeConfig, config); f.lock.p2 = f.commit();
+  f.git('checkout', '--detach', p1);
+  await f.put(photoHelper, canonical.replace(/\n/g, '\r\n'));
+  const manifest = await composeSnapshot(f);
+  assert.equal(await readFile(join(f.destination, photoHelper), 'utf8'), canonical);
+  for (const name of [photoHelper, runtimeConfig]) assert.deepEqual(manifest.sharedDependencies[name], {
+    blob: f.git('rev-parse', `${p1}:${name}`), sha256: manifest.p1Hashes[name], p2: f.lock.p2,
+  });
+  assert.equal(await verifySources(f.destination, manifest), 6);
+  await f.put(photoHelper, canonical + '// Local edit\n');
+  await assert.rejects(composeSnapshot(f), /Exact shared P1 dependency/);
+  f.git('checkout', '--force', '--detach', f.lock.p2);
+  await f.put(runtimeConfig, config + '// Different owner copy\n'); f.lock.p2 = f.commit();
+  f.git('checkout', '--detach', p1);
+  await assert.rejects(composeSnapshot(f), /Exact shared P1 dependency/);
+});
+
+test('an arbitrary P2 original-page collision is rejected, even when its baseline matches', async () => {
+  const f = await fixture();
+  f.git('checkout', '--detach', f.lock.p2); await f.put('assets/js/pages/login.js', 'unreviewed'); f.lock.p2 = f.commit(); f.git('checkout', '--detach', f.lock.p2_base);
+  await assert.rejects(composeSnapshot(f), /allowlist|reviewed/i);
+});
+
+test('reviewed photo/SMS contract documents compose without allowing unrelated P2 documents', async () => {
+  const f = await fixture(); f.git('checkout', '--detach', f.lock.p2);
+  for (const name of ['P2-PHOTO-AUTHORIZATION', 'P2-SMS-ELIGIBILITY', 'P2-PHOTO-SMS-ACCEPTANCE', 'P2-JOINT-ACCEPTANCE', 'P2-PRESENTATION-READINESS']) await f.put(`docs/${name}.md`, '# Reviewed contract\n');
+  await f.put('docs/superpowers/plans/2026-11-04-p2-photo-sms-contracts.md', '# Reviewed execution\n');
+  await f.put('docs/superpowers/plans/2026-11-04-p2-joint-acceptance.md', '# Reviewed joint execution\n');
+  f.lock.p2 = f.commit(); f.git('checkout', '--detach', f.lock.p2_base);
+  const manifest = await composeSnapshot(f); assert.equal(Object.keys(manifest.ownerHashes.p2).length, 9);
+  assert.equal(await verifySources(f.destination, manifest), 11);
+  f.git('checkout', '--detach', f.lock.p2); await f.put('docs/P2-UNREVIEWED.md', '# Not approved\n'); f.lock.p2 = f.commit(); f.git('checkout', '--detach', f.lock.p2_base);
+  await assert.rejects(composeSnapshot({ ...f, destination: await mkdtemp(join(tmpdir(), 'bc-snapshot-reject-')) }), /allowlist/);
+});
+
+test('unapproved DBA collision never overwrites a P1 source', async () => {
+  const f = await fixture();
+  f.git('checkout', '--detach', f.lock.dba); await f.put('backend/phpunit.xml', 'replacement'); f.lock.dba = f.commit(); f.git('checkout', '--detach', f.lock.p2_base);
+  await assert.rejects(composeSnapshot(f), /collision/i);
+});
+
+test('only the named P2 actual-owner acceptance additions are admitted', async () => {
+  const f = await fixture(); f.git('checkout', '--detach', f.lock.p2);
+  for (const path of ['backend/tests/Feature/P2AdministrativeNotificationsTest.php', 'backend/tests/Feature/P2ConsentProducerTest.php',
+    'backend/tests/Feature/P2IncidentPhotoCommandTest.php', 'tests/p2-photo-upload.mjs', 'tests/p2-photo-form.mjs',
+    'docs/P2-ACTUAL-OWNER-INTEGRATION.md', 'docs/superpowers/plans/2026-11-04-p2-actual-owner-integration.md',
+    'docs/superpowers/plans/2026-11-04-p2-current-owner-certification.md',
+    'docs/superpowers/plans/2026-11-05-p2-opening-observation.md', 'tests/p2-resident-photos.mjs']) await f.put(path, 'Reviewed owner source\n');
+  f.lock.p2 = f.commit(); f.git('checkout', '--detach', f.lock.p2_base);
+  const manifest = await composeSnapshot(f);
+  assert.equal(Object.keys(manifest.ownerHashes.p2).length, 12);
+  assert.equal(await verifySources(f.destination, manifest), 14);
+  f.git('checkout', '--detach', f.lock.p2); await f.put('backend/tests/Feature/P2UnreviewedTest.php', 'Not approved');
+  f.lock.p2 = f.commit(); f.git('checkout', '--detach', f.lock.p2_base);
+  await assert.rejects(composeSnapshot({ ...f, destination: await mkdtemp(join(tmpdir(), 'bc-snapshot-reject-')) }), /allowlist/);
+});
+
+
+test('reviewed civic source preserves its owner blobs and rejects divergent shared pages', async () => {
+  const page = 'assets/js/pages/official-announcements.js';
+  const additions = ['backend/app/Contracts/P2/TanodReferences.php', 'docs/P2-COMMUNICATIONS-CLOSURE.md', 'tests/p2-communications-forms.mjs'];
+  const f = await fixture(page);
+  f.git('checkout', '--detach', f.lock.p2);
+  for (const path of additions) await f.put(path, 'Reviewed civic source\n');
+  f.lock.p2 = f.commit();
+  f.git('checkout', '--detach', f.lock.p2_base);
+  const manifest = await composeSnapshot(f);
+  assert.equal(manifest.sharedOverlays[page].base, f.lock.p2_base);
+  for (const path of [page, ...additions]) {
+    const expected = f.git('show', f.lock.p2 + ':' + path) + '\n';
+    assert.equal(await readFile(join(f.destination, path), 'utf8'), expected);
+    assert.equal(manifest.ownerHashes.p2[path], createHash('sha256').update(expected).digest('hex'));
+  }
+  await f.put(page, 'Independent P1 edit\n');
+  f.commit();
+  await assert.rejects(composeSnapshot(f), /reconciliation/);
+});
+
+test('path validation rejects traversal, Windows roots, private bytes and dependencies', () => {
+  for (const path of ['../escape', 'a/../b', '/root', 'C:/escape', 'a\\b', '.git/config', 'backend/.env', 'backend/.env.local', 'backend/vendor/a.php', 'backend/public/frontend/a.js', 'backend/storage/private/a.pdf', 'node_modules/a.js']) assert.throws(() => assertSourcePath(path), /Unsafe/);
+  for (const path of [page, 'backend/.env.example', 'backend/storage/app/private/.gitignore']) assert.doesNotThrow(() => assertSourcePath(path));
+});
+
+test('incoming symlink Git objects and symlinked source parents are rejected', async t => {
+  const f = await fixture();
+  f.git('checkout', '--detach', f.lock.p2); f.git('update-index', '--add', '--cacheinfo', `120000,${f.git('hash-object', '-w', '--stdin')},assets/js/adapters/link.js`);
+  f.git('commit', '-m', 'symlink fixture'); f.lock.p2 = f.git('rev-parse', 'HEAD'); f.git('checkout', '--detach', f.lock.p2_base);
+  await assert.rejects(composeSnapshot(f), /symbolic|symlink/i);
+  const other = await fixture();
+  await rename(join(other.root, 'assets/js/pages'), join(other.root, 'assets/js/pages-real'));
+  try { await symlink(join(other.root, 'assets/js/pages-real'), join(other.root, 'assets/js/pages'), 'junction'); }
+  catch (error) { if (error.code === 'EPERM') { t.diagnostic('Windows does not permit junction creation; Git symlink object rejection still executed.'); return; } throw error; }
+  await assert.rejects(composeSnapshot(other), /symbolic|symlink/i);
+});

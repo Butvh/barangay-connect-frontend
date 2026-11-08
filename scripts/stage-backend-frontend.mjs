@@ -1,0 +1,53 @@
+import { lstat, realpath, mkdir, rm, copyFile, writeFile, readFile } from 'node:fs/promises';
+import { dirname, resolve, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { buildFrontendArtifact } from './stage-frontend.mjs';
+import { verifyIntegratedCandidate } from './integrated-candidate.mjs';
+
+const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+export async function stageBackendFrontend({ root = projectRoot, operationalTest = false, administrationTest = false, photoTest = false, consentTest = false, generalFeedbackTest = false } = {}) {
+  root = await realpath(root);
+  if ((administrationTest || photoTest || consentTest) && !operationalTest) throw new Error('Optional staging requires the isolated operational test composition.');
+  if (generalFeedbackTest && (!operationalTest || !administrationTest)) throw new Error('General Feedback staging requires the isolated operational and administration composition.');
+  if (operationalTest) {
+    if (process.env.DB_TEST_DISPOSABLE !== '1' || process.env.P1_COMBINED_TESTS !== '1' || !/^bc_dba_p1_[a-z0-9_]+$/i.test(process.env.DB_DATABASE || '') || process.env.DB_DATABASE !== process.env.DB_TEST_DATABASE) throw new Error('Operational staging requires the confirmed disposable combined build.');
+    const manifest = JSON.parse(await readFile(resolve(root, 'integration-manifest.json'), 'utf8'));
+    if (manifest.dirty || manifest.p2 !== '429490a8da8a0b25d6ee95f018833a1646c1def9') throw new Error('Use the clean reviewed operational composition.');
+    if (generalFeedbackTest) {
+      if (manifest.kind !== 'integrated-audit-candidate-v1') throw new Error('General Feedback requires an admitted integrated candidate.');
+      await verifyIntegratedCandidate(root, manifest);
+      const admission = JSON.parse(await readFile(resolve(root, 'docs/backend/pr51-general-feedback-admission.json'), 'utf8'));
+      if (admission.kind !== 'pr51-general-feedback-admission-v1' || ![admission.schemaCommit, admission.domainCommit].every(sha => /^[a-f0-9]{40}$/.test(sha || ''))) throw new Error('Missing reviewed schema/domain handoff.');
+      const required = ['backend/app/Models/CommunityFeedback.php', 'backend/app/Services/Civic/CivicService.php', 'backend/app/Services/P2/Persistence/RelationalStore.php', 'backend/routes/communications.php', 'assets/js/adapters/communications.js', 'assets/js/pages/official-feedback.js', 'assets/js/pages/official-feedback-model.js'];
+      if (!required.every(name => Object.hasOwn(admission.requiredSources || {}, name)) || !Object.keys(admission.requiredSources || {}).some(name => /^backend\/database\/migrations\/[^/]+general_feedback[^/]+\.php$/.test(name))) throw new Error('Incomplete General Feedback dependency admission.');
+      for (const [name, expected] of Object.entries(admission.requiredSources)) if (!/^[a-f0-9]{64}$/.test(expected) || manifest.hashes[name] !== expected) throw new Error('General Feedback dependency changed: ' + name);
+    }
+    for (const name of ['operations', 'communications', 'reports', 'p2-domains', 'p2-form-intent']) {
+      const ownerFile = await lstat(resolve(root, `assets/js/adapters/${name}.js`));
+      if (!ownerFile.isFile() || ownerFile.isSymbolicLink()) throw new Error('Missing reviewed operational adapter.');
+    }
+  }
+  const publicPath = resolve(root, 'backend/public'), target = resolve(publicPath, 'frontend');
+  // Verify every destination ancestor before any recursive replacement.
+  for (const path of [resolve(root, 'backend'), publicPath]) {
+    const stat = await lstat(path);
+    if (!stat.isDirectory() || stat.isSymbolicLink()) throw new Error('Backend public path must be a real directory');
+  }
+  if (target !== resolve(root, 'backend/public/frontend') || !target.startsWith(root + sep)) throw new Error('Invalid backend artifact target');
+  try { if ((await lstat(target)).isSymbolicLink()) throw new Error('Backend artifact cannot be a symbolic link'); }
+  catch (error) { if (error.code !== 'ENOENT') throw error; }
+  const artifact = await buildFrontendArtifact({ root });
+  const files = artifact.files.filter(name => name !== 'assets/js/data/seed.js');
+  await rm(target, { recursive: true, force: true });
+  for (const name of files) {
+    const destination = resolve(target, name);
+    await mkdir(dirname(destination), { recursive: true });
+    await copyFile(resolve(artifact.directory, name), destination);
+  }
+  await writeFile(resolve(target, 'assets/js/core/runtime-config.js'), "export const Runtime = Object.freeze({ mode: 'backend', operationalTest: " + Boolean(operationalTest) + ", administrationTest: " + Boolean(administrationTest) + ", photoTest: " + Boolean(photoTest) + ", consentTest: " + Boolean(consentTest) + ", generalFeedbackTest: " + Boolean(generalFeedbackTest) + " });\n");
+  return { directory: target, files };
+}
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const result = await stageBackendFrontend();
+  console.log(`Staged ${result.files.length} frontend files in backend/public/frontend (backend mode, no seed).`);
+}

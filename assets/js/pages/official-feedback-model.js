@@ -9,8 +9,9 @@ export function feedbackRequestId(search) {
   return params.getAll('id').length === 1 && /^[1-9]\d*$/.test(value) && Number.isSafeInteger(id) ? id : 0;
 }
 export function feedbackPage(rows, { type = 'complaint', q = '', status = '', sort = 'newest', page = 1, size = 10, id = null, reveal = false } = {}) {
-  const target = id === null ? null : rows.find(row => row.type === type && row.id === id);
-  const matches = row => row.type === type && (type === 'general' || !status || row.status === status) && (!String(q).trim() || [feedbackText(row), row.category, row.location, row.resident?.full_name, row.assigned_tanod?.full_name].some(value => String(value || '').toLowerCase().includes(String(q).trim().toLowerCase())));
+  const active = row => row.type !== 'general' || !row.archived_at;
+  const target = id === null ? null : rows.find(row => active(row) && row.type === type && row.id === id);
+  const matches = row => active(row) && row.type === type && (type === 'general' || !status || row.status === status) && (!String(q).trim() || [feedbackText(row), row.category, row.location, row.resident?.full_name, row.assigned_tanod?.full_name].some(value => String(value || '').toLowerCase().includes(String(q).trim().toLowerCase())));
   const filtersCleared = Boolean(reveal && target && !matches(target));
   if (filtersCleared) { q = ''; status = ''; }
   const filtered = rows.filter(matches);
@@ -29,7 +30,7 @@ export function feedbackStats(rows, at) {
   const midnight = Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate()) - offset;
   const week = midnight - ((local.getUTCDay() + 6) % 7) * day;
   const month = Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), 1) - offset;
-  const inPeriod = (row, start) => { const created = Date.parse(row.created_at); return created >= start && created <= now; };
+  const inPeriod = (row, start) => { const created = Date.parse(row.submitted_at ?? row.created_at); return created >= start && created <= now; };
   const suggestions = rows.filter(row => row.type === 'suggestion'), general = rows.filter(row => row.type === 'general');
   const ratings = general.map(row => row.rating).filter(value => Number.isInteger(value) && value >= 1 && value <= 5);
   return {

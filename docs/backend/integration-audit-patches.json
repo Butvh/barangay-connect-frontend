@@ -1,0 +1,355 @@
+{
+  "assets/js/adapters/http.js": {
+    "owner": "p1",
+    "before": "4923dff7571d82c2e6212028d52c09efb2fade7bd643f595751080908fa04ab3",
+    "after": "a48d7a30a33359f3692351c2ffd8e93b8ea216915ddb0b8a989bdf98ccb1174e",
+    "reason": "Actionable, allowlisted facility validation and safe field summary"
+  },
+  "assets/js/adapters/session.js": {
+    "owner": "p1",
+    "before": "adfd3ddaede55a3e0acf6f38002de45e4748590d41444d983780c193e07f1e91",
+    "after": "0075ee6cb179ea09ecfa6272c1e8731ebd2ae501c691f33b8d100cf03e62c88a",
+    "reason": "Explicit portal intent and server-side effective-role boundary"
+  },
+  "assets/js/pages/captain-personnel-dialogs.js": {
+    "owner": "p1",
+    "before": "d4104ebfb66344cca8ae6c61bfdc736fd9c09c0004b087dfaae0fef6872a7fe2",
+    "after": "434fea3d8e03ebbdb998e0db0c6778ca82fc92df1b0d95f5922c92605d2466a4",
+    "reason": "Repair authored UTF-8 and retain explicit resident registration portal"
+  },
+  "assets/js/pages/facility-form.js": {
+    "before": "8368411c99fc22dd19c9360cd35089f8689159906d9cd103622b59ad57f2da11",
+    "after": "8cdd54f9a4d7148492ac7e5267691fae4f8986880b8c84acf2e77ea9e34bc3e3",
+    "reason": "Actionable, allowlisted facility validation and safe field summary PR51: Enable pinning from the current scoped API reference and preserve draft/retry behavior."
+  },
+  "assets/js/pages/official-map-model.js": {
+    "before": "a343acbfc02ec7d89bca14a5c9564caeff132e4228c967147f4e5dc3f52de881",
+    "after": "c8b31d0f66f4c54ed0cb3e47a417f4355e8a45da2e6ecef7f75497e43e50c67e",
+    "reason": "Truthful map pin counts, Captain complaints access and resident facility visibility PR51: Filter backend marker/count projection by resolved tenant/artwork without inventing a hall pin."
+  },
+  "assets/js/pages/official-map.js": {
+    "before": "7fb349d6e1db40cbc222482172a41453612c418c0e5f67c4a8be5b64e0cb8192",
+    "after": "5446e03b5387ba1ab69eb247899e3c2ba202bb3a5ba8761864868e66abad846b",
+    "reason": "Truthful map pin counts, Captain complaints access and resident facility visibility PR51: Resolve current server scope and refresh map projection on reference invalidation."
+  },
+  "assets/js/pages/register.js": {
+    "owner": "p1",
+    "before": "8b089ee424d09efa01d415881f7bad8c3843f389d0a3cd141b72778bb2f71e1f",
+    "after": "39f8162db4ac1acaafd6170e67325fe56090ca0aa4af43b2302163af4d64050b",
+    "reason": "Repair authored UTF-8 and retain explicit resident registration portal"
+  },
+  "backend/app/Http/Controllers/Identity/SessionController.php": {
+    "owner": "p1",
+    "before": "0cc857bee8f4f5161d037d4b24258eeed3ccbbde0cc66d86b174458b7627a7fc",
+    "after": "a1ed7dda0dda75726526f3211475027a8054d8f96e0f27de917d878ebbaed9e0",
+    "reason": "Explicit portal intent and server-side effective-role boundary"
+  },
+  "backend/app/Http/Requests/Identity/LoginRequest.php": {
+    "owner": "p1",
+    "before": "ef04d943ac9835bbfcebc86f6ec54b872a3737108c1c71e2f74bfffcd964faef",
+    "after": "b865490e93ad8fb0ebae54073e37108dbd3349dd80a2f74551b2a6db147bb309",
+    "reason": "Explicit portal intent and server-side effective-role boundary"
+  },
+  "backend/app/Services/Facilities/FacilityAdministration.php": {
+    "before": "927e7f67f2c1ec62f000a77e8799fd6d5dff8bedc955d58c02dc2486efbc9954",
+    "after": "beaf724c639c8ee58f6b3e1ebb6bf99eb499f09adb24811e27cd2f82ed023c83",
+    "reason": "Actionable, allowlisted facility validation and safe field summary PR51: Reject new/changed unknown-artwork pins and preserve unchanged legacy coordinates/scope/history."
+  },
+  "backend/app/Support/ApiExceptions.php": {
+    "owner": "p1",
+    "before": "f900d68704fdb49e69c9046d6aca4b3fbffe529996e66e016d7f4e1b87876f5b",
+    "after": "8036b6ea94d594a00841fa1c21a0b79d64b809673c8acacd6e85281094053f9f",
+    "reason": "Actionable, allowlisted facility validation and safe field summary"
+  },
+  "backend/tests/Feature/CombinedIdentityTest.php": {
+    "owner": "p1",
+    "before": "bb25afa9bc2059d7766a469a663d098628ca20bb1cdf11cb75c7d93beed352b4",
+    "after": "19ccb88aaa86174f46f1a7638f41653ee64f199dbe51fe3aa842ad7df86089fa",
+    "reason": "Explicit portal intent and server-side effective-role boundary"
+  },
+  "backend/tests/Feature/CombinedSessionObservationTest.php": {
+    "owner": "p1",
+    "before": "e2ba10e1aed1a6171175712bcd57cb462bee0e7f05abd0dcc7f14df6f7e8e2b1",
+    "after": "7df8cd2172779e6ca361f5b6e398dce87cb68373dec2983696705996e4a8428d",
+    "reason": "Explicit portal intent and server-side effective-role boundary"
+  },
+  "backend/tests/Feature/SessionBoundaryTest.php": {
+    "owner": "p1",
+    "before": "a9e4f014831763bd2bc2055238f051777965114c0961b0c3607ca94871af2d7f",
+    "after": "89ddd03b3457d8bbfa8ccb929a8e7b42623b2eaf5331fa50ee797b798cc52f85",
+    "reason": "Explicit portal intent and server-side effective-role boundary"
+  },
+  "backend/tests/Support/browser-operational-fixture.php": {
+    "owner": "p1",
+    "before": "0d032e356da9a150fe480728ee9315f3060c930240032fdc68109b08324f8fd9",
+    "after": "969f5410431c26edd335347c8ff1e4cd2426afdb7fe9ea84681c08bbf4464d04",
+    "reason": "Declare coverage and known illustrative coordinates only for fresh fictional fixtures"
+  },
+  "scripts/prepare-integration.mjs": {
+    "owner": "p1",
+    "before": "8fe923724652186f8d985ea3d7f7f1d2a2c6c888da8ebf21afd29a0bf3692c9b",
+    "after": "facf7991f33662deb48d894acf33cc624e1554d38d9e4a2feffc577f05f5f5a5",
+    "reason": "Preserve original composition and add explicit integrated-candidate provenance verification"
+  },
+  "scripts/run-tests.mjs": {
+    "before": "f41c408fbbedc16f90c1abbb44117029f12ac12fbcabb706a1b6e8acf0eaaa96",
+    "after": "ef4253c049a59756d14488f3ca62fa3312ac6f57eb69cdb4b703c0162e34523f",
+    "reason": "Run audit regressions in the original frontend gate PR51: Append map-scope regressions without removing original suites or assertions."
+  },
+  "scripts/verify-integration.mjs": {
+    "owner": "p1",
+    "before": "0484f58362c23d39c76f99a1c9f109e4439bd55d722db8fe0029a255ef62ea5a",
+    "after": "029dc3f1420277adaf8c19d5961835f09960393bf089d72c3401c6dcc9c61cb7",
+    "reason": "Preserve original composition and add explicit integrated-candidate provenance verification"
+  },
+  "tests/backend-live.mjs": {
+    "owner": "p1",
+    "before": "0cef539329dd95b9d43e8ccd71aebb0badb8bf8b8101070e052696d47978f11d",
+    "after": "42e65616ca6bda7cba5c019e658a3a5be8f6da6de3768bebed042477c93c3acb",
+    "reason": "Explicit portal intent and server-side effective-role boundary"
+  },
+  "backend/app/Services/Incidents/OverviewService.php": {
+    "owner": "p2",
+    "before": "b021015d8c1fc3c8d9c0956119040a20db0a76de68bc8dcc3638cd085e88b19f",
+    "after": "6e26f01784e700515b9ce1420c19828175a866edbbba384f23c9b559c6c11e88",
+    "reason": "Truthful map pin counts, Captain complaints access and resident facility visibility"
+  },
+  "backend/tests/P2/http-cases.php": {
+    "owner": "p2",
+    "before": "285c7baa807136bda42dcdc37f9378a600155dd4973efdefcbcb00fd6e548f48",
+    "after": "54f069e8b3575363d5b2d54670d07f6076178a2da30be9637c29e4276f9e45fd",
+    "reason": "Explicit portal intent and server-side effective-role boundary"
+  },
+  "backend/tests/P2/http-ui-cases.php": {
+    "owner": "p2",
+    "before": "f95b79af2082b6216eb85468685da2794b8cc28a4395767ec68dce6fc2ad4886",
+    "after": "34f4e2a7de1ed2bd4e69e91e03294cff0c232305c18c81af474cc0dfb000b186",
+    "reason": "Explicit portal intent and server-side effective-role boundary"
+  },
+  "tests/p2-workflow-http.mjs": {
+    "owner": "p2",
+    "before": "82e15dedc2b4f39e2fcc1a0fc4d17f354c740bb6efe1c860af86de0bf77c384c",
+    "after": "6f8c18c3b5b7a8beab1f523e2352c4d4e5fd4d256942fac534ee9485beb5642c",
+    "reason": "Explicit portal intent and server-side effective-role boundary"
+  },
+  "backend/tests/P2/rehearsal.mjs": {
+    "owner": "p2",
+    "before": "68648a5307e7d876659dbe7a65534b3c4406d902c382e40c32178e9d13aea83f",
+    "after": "f301d5cd8b932cd1724e8790c9d22619781971d759d54c1923dbc2cb72454265",
+    "reason": "Retain original source-admission refusal checks and support separately fingerprinted integrated candidate execution"
+  },
+  "backend/tests/P2/rehearsal.test.mjs": {
+    "owner": "p2",
+    "before": "c7ee1b58fb22ac94b46d1bac781d419a1910ef7855809050365d6e9cbb3047c7",
+    "after": "8eabd5b0ce0aa0008a0984f669723ac8f33142578b89a32d38ee494e3adda3ff",
+    "reason": "Retain original source-admission refusal checks and support separately fingerprinted integrated candidate execution"
+  },
+  "backend/tests/P2/sql-cases.php": {
+    "owner": "p2",
+    "before": "71944eff61b079b15044ac9b2146eb0ab7a1c36442f9cbc68399c3c451898593",
+    "after": "ddba8a8f5455be824dc57c306eeddd4ad74d21b89cefc195b6ce69a3d4543b37",
+    "reason": "Actual independent-process rescuer capacity and completion-release regression"
+  },
+  "backend/tests/P2/sql-worker.php": {
+    "owner": "p2",
+    "before": "4167d8e14fb3864d52c0d702ed7244beba5257f7cbcc3af530d54e6154b07233",
+    "after": "1bb7540b4b3cabecfbb1f6f6b946f76818ffb58497521a2cf1d4cef7c1554551",
+    "reason": "Actual independent-process rescuer capacity and completion-release regression"
+  },
+  "docs/backend/FOUNDATION.md": {
+    "owner": "p1",
+    "before": "8d2954566f7b3dbfa1c4fe606d5529c944085f4b64dd9b57571be0e62a977c72",
+    "after": "e898a855715bb822bd7fe6a2d168275cbacb219be0858cca6d1c3e6a5e5c8ea9",
+    "reason": "Document the required explicit portal login contract and server-side rejection"
+  },
+  "backend/app/Models/CommunityFeedback.php": {
+    "before": "bdaad41428d3d2b9163651f1694dd1d41cda9b1e1ffdca309bdb1016bf948d36",
+    "after": "3d2c543f6f5e376ceeff4ecbb4ddb87f5c2d29e31c1926a746516945a1905fb4",
+    "reason": "PR51: reviewed DBA handoff bad5d430ee4ed1efee3809028a6870e4555ab01e; add guarded lifecycle casts/actor relations, retaining the original fields."
+  },
+  "backend/tests/Database/IncidentPhotoProposalTest.php": {
+    "before": "a35afccdafadf67dcf797bf67329f2699cc9b12dfc70886d87f3dd27830ff526",
+    "after": "0e1162f4c40e75cfef6ad14d9821b0e269892fd75628d29bd3a68ccd43ffd780",
+    "reason": "PR51: reviewed DBA handoff bad5d430ee4ed1efee3809028a6870e4555ab01e; preserve original thirteen-migration discovery assertion and explicitly discover the additive lifecycle migration."
+  },
+  "backend/tests/Database/NotificationPreferenceTest.php": {
+    "before": "62ba251367fc0eb70a31978892246550fa6de67919d67109ee8a3f27b3114e6a",
+    "after": "e99728c57d4b30de7af2cf7e3ec7dd564b47465e6638b35c0a75c884e454fea2",
+    "reason": "PR51: reviewed DBA handoff bad5d430ee4ed1efee3809028a6870e4555ab01e; preserve original thirteen-migration discovery assertion and explicitly discover the additive lifecycle migration."
+  },
+  ".github/workflows/pages.yml": {
+    "before": "e3e48258445fa3e66920af1bf1ff26814ae968ac62c3bd3d86fd1c64e9d7cebc",
+    "after": "765eae92e47c8ed89b7b983a09f323dc5cb63dd7c2a3bca829ccd0b45f2abb6a",
+    "reason": "PR51: Add isolated PR51 map browser regression and evidence upload; retain every original CI gate. PR51: Add isolated PR51 map browser regression and evidence upload; retain every original CI gate. PR51 integration: P1: append portable General Feedback and Node regressions, retaining every original combined gate. PR51 integration: P1: append portable General Feedback and Node regressions, retaining every original combined gate."
+  },
+  "UX-CONTRACT.md": {
+    "before": "5bfedf961acaa11b35fb36a9cd5d06be0bca1222d985b9a8675c327cbbc9ba6a",
+    "after": "4741e7ebc749e70a4e13ab24b3810faa638eb987f438c42ea652007542dee968",
+    "reason": "PR51: Document the ratified server-declared map scope boundary without changing visual tokens."
+  },
+  "assets/js/adapters/api.js": {
+    "before": "31df146d9cc59cfa9f63b2db216ac975019f1b954fcd85d5a7b9363eea62e7fd",
+    "after": "074d4a1e5af26125f528cb7a5aaa4b005b9a4f24b70d25c52a9733e83611c073",
+    "reason": "PR51: Expose gated lifecycle methods and preserve boolean capability values in shared facade."
+  },
+  "assets/js/adapters/domains.js": {
+    "before": "70a46a42dfb35146e8821534a1d929fa9a91e0c0657638856ebc433647ca01b3",
+    "after": "be6a42c487957609956de2d3ded2df6aac2bb1b441cb9064378e0135e9ee1b11",
+    "reason": "PR51: Select lifecycle capability only through the explicit isolated composition option."
+  },
+  "assets/js/adapters/operational-registration.js": {
+    "before": "1e9c2e4a0c94fb8663ed4c809965b3c26436424193494d64af035f5d032a0d80",
+    "after": "ae06a61018eafee245202803475e55eb3d8735aa48bb7288ae1bf4214dd3b847",
+    "reason": "PR51: Thread the explicit isolated General Feedback capability option through shared composition."
+  },
+  "assets/js/adapters/p2-registration.js": {
+    "before": "4f329bbf9d980bca7aa0436df59345150ed4c3127bfab17fb483b9bb8097aafe",
+    "after": "88442548b3f13c9730dfa68937c866df44aa849bae4eff726e1f09a9a139b175",
+    "reason": "PR51: Keep official historical feedback metrics complete and default lifecycle capability closed. PR51: Keep official historical feedback metrics complete and default lifecycle capability closed. PR51 integration: P1: expose lifecycle command transport only in the explicitly admitted isolated profile; preserve complete official reads. PR51 integration: P1: expose lifecycle command transport only in the explicitly admitted isolated profile; preserve complete official reads."
+  },
+  "assets/js/core/facilities.js": {
+    "before": "3914fd403b1da32e192aaf8edf881c081870e56c7d82904b5417cb794b6d91c8",
+    "after": "f992ef26034fb663996d6ff8a361efb1753bb97acbfc853bf2bd0ec332b7db07",
+    "reason": "PR51: Use explicit demo coverage/owner declarations; preserve scope in immutable destination snapshots. PR51: Use explicit demo coverage/owner declarations; preserve scope in immutable destination snapshots."
+  },
+  "assets/js/core/map.js": {
+    "before": "8c6b23dc0ecf1649e89df9b93654869d123feef68cefe50250d307fbe75779d9",
+    "after": "0a57a329681531290bdd215cd0de0ba5bc37af6b42ba621f4f419b6a47a2c1f1",
+    "reason": "PR51: Require exact declared artwork, retain percentage edge coordinates and reject absent/invalid pins. PR51: Require exact declared artwork, retain percentage edge coordinates and reject absent/invalid pins."
+  },
+  "assets/js/data/seed.js": {
+    "before": "597716a1561f87a0b47ec3f6ae9da9697565ce3aba31feb4bdffbc17fbdfd8c5",
+    "after": "b6159ca09d47a41dbf66204ed0f68e5d74ce3ce3cf1769fb77308cfdb9dd719a",
+    "reason": "PR51: Declare map_scope and shared referral manager explicitly in fictional demo fixtures only."
+  },
+  "assets/js/pages/captain-dashboard.js": {
+    "before": "3c60b8b9ff755a10634fc41f1575efe6adf543b5fd0fd24bb895ba2b980a0d2c",
+    "after": "c3f22f75003bb2b0ddd4a462301bf40d4dcacafb9bb2f2baeaf0c7e3b2873f73",
+    "reason": "PR51: Route existing map consumer through the server-scoped shared map boundary; preserve screen behavior and visual style."
+  },
+  "assets/js/pages/facility-location.js": {
+    "before": "d14efdbb10c56246a7397b88d5850b32f999b77b3632fee1c66fa69109598368",
+    "after": "c7bd27d8b5ee5ba07edcb244cc16c0900f67f266c9db8537b22f2322bd782458",
+    "reason": "PR51: Use scoped renderer and coverage readiness, preserving keyboard picking and destination availability."
+  },
+  "assets/js/pages/official-alert.js": {
+    "before": "0b03beb9154897e9b7bc078bd805ee21e1832a6875ae9516f40686a5f5ea931f",
+    "after": "3ad03e39af2f73f9a5f11253703bf4fe14634edeb385fb958dae0aad57ac8bbe",
+    "reason": "PR51: Route existing map consumer through the server-scoped shared map boundary; preserve screen behavior and visual style."
+  },
+  "assets/js/pages/official-operational-dashboard.js": {
+    "before": "9b037fbfcf3593e12f7e0075e747dfb2fc8b0fc599fccb0a71c1be7bb315a06e",
+    "after": "d8c7576be49c0c24f534020c61fd5d6d16a68e99915688f3cc6e199f7f685373",
+    "reason": "PR51: Use scoped map boundary and carry actual facility scope/owner into marker filtering."
+  },
+  "assets/js/pages/resident-map.js": {
+    "before": "5a794e59dc171cc7ff8a8b36c3429521f818391f1c2159e207c7021545abb215",
+    "after": "13b6c65176f38a1d7308abffe90f332e2738e3194e7ed516a83f5d4e1ab6306f",
+    "reason": "PR51: Use actual barangay reference name and coverage invalidation without changing resident workflow."
+  },
+  "assets/js/pages/resident-profile.js": {
+    "before": "e0e8041ce6046a0ff97252b2c628dfa67a805775a49acc16f405fbd6e6806a9f",
+    "after": "d0e0805631500be8c903caadd0d9c53394fd317fe98d9308613da9da7d475acc",
+    "reason": "PR51: Route existing map consumer through the server-scoped shared map boundary; preserve screen behavior and visual style."
+  },
+  "assets/js/pages/resident-report.js": {
+    "before": "2688937cefc7c8b5d489b339c566a11dc4528765e077ade7c4c47b271ecd7ef5",
+    "after": "016d0d26944776478e6b86a21da4fe94f9d01f8abacf54a28881d6eab2522f20",
+    "reason": "PR51: Remove invented midpoint from missing household coordinates in SOS confirmation map."
+  },
+  "assets/js/pages/resident-shared.js": {
+    "before": "6ffce82b9caa3a6d6dd38bfbd1eeb38313faf2d878e6f0dd485917d3124f97f5",
+    "after": "b3e242689934960addf46c4f5b8562a47c0d601ebfc42e55acbef954c4c2bfa3",
+    "reason": "PR51: Route existing map consumer through the server-scoped shared map boundary; preserve screen behavior and visual style."
+  },
+  "assets/js/pages/secretary-dashboard.js": {
+    "before": "81630ef0ed68a5de9a3356d28c57e19ca44cc383c4e5becb5bafdf0be99c3102",
+    "after": "065ae2d233c4bb4a957f127ff069dca19aa2ad1a071910fffe6c58f515f4e2c3",
+    "reason": "PR51: Route existing map consumer through the server-scoped shared map boundary; preserve screen behavior and visual style."
+  },
+  "backend/app/Http/Controllers/Identity/AdministrationController.php": {
+    "before": "34af513dfa9ff9c78a3e12ce905e0c732bf59f4d4da89f54a3017cf310e19c95",
+    "after": "9296a16273de1c6058ff24a16a90e69da979a1d955a26a0a7477f9e92ee627e5",
+    "reason": "PR51: Publish declared map_scope and compute compatibility availability only for the recognized artwork."
+  },
+  "backend/tests/Support/prepare-browser-database.php": {
+    "before": "f6ca01d4cfc686492ec02d9c37909ffd887456910ee25668574c0101c12b212b",
+    "after": "76cb2cc5b5657d81940fecdeba97dc4867a9c5abff378c9375402a4bf589759b",
+    "reason": "PR51: Admit one additional explicitly named fresh map-browser schema; keep refusal of preexisting targets."
+  },
+  "assets/js/pages/resident-components.js": {
+    "before": "e9a2d963c21f0f12fdf7ca3f21e0680a0431407c64920714801c732f22aed999",
+    "after": "6a3efc624edd6b5a536d9cdf0ff85b6c8cca996b491636824569278495905920",
+    "reason": "PR51: Declare the existing illustrated artwork explicitly in the standalone fictional component example."
+  },
+  "scripts/stage-backend-frontend.mjs": {
+    "before": "98ec13105031e902f73fbb5337d43df1590163d6440e604840f6b85ed3e34d93",
+    "after": "bf09401fc134c94aafd5d84a9600c868b0a34929de5bf0981b19b932074530b7",
+    "reason": "PR51: Gate opt-in lifecycle staging on exact reviewed schema/domain admission while preserving private-root and artifact isolation checks."
+  },
+  "tests/browser/workflow-runtime.mjs": {
+    "before": "7821ea60ef7e489157b0e917e4aa4190052abb1d61f6d5a9f7cac53e4879f51c",
+    "after": "f5f94f91a862efe8f0599ab49e00abb8e8b3d005a7f5d0ac2f2910d578df1ad8",
+    "reason": "PR51: Thread explicit isolated lifecycle test option into original runtime without changing any original assertion."
+  },
+  "backend/app/Http/Controllers/Identity/OperationalReferencesController.php": {
+    "before": "706379bcca160a5e30bd5e6cd4ba0cb9841465d6ece73220e7cc60ad8f301ee6",
+    "after": "3d182ce7b590dbf5698bffe4843bc8a2ceb413acdea71ee0356a907d13577ce9",
+    "reason": "PR51: Hide inactive resident directory detail without changing internal historical destination references or official monitoring. PR51 integration: P1: apply active-only resident facility list and revision projection without changing internal historical references."
+  },
+  "assets/js/core/store.js": {
+    "before": "635cbaecbcfb1109a28b65de0d93acbd54f1a71ff9f4555df041bd151dd12a80",
+    "after": "957e4d30fbc6fbe6035502f341cb0ec0ec70d51e6a7e691bf868b916c7f3ff87",
+    "reason": "PR51: Support barangay reference invalidation and read-only compatibility for explicit legacy fictional demo artwork metadata; never reset data or invoke it in backend mode."
+  },
+  "assets/js/pages/official-feedback-model.js": {
+    "before": "1c9fd0dac1467e6ee719fd25d812a6f7998055590cbf00b4573d6d6b0ec1660d",
+    "after": "f7e1ec1c5008d9d7d22d4a54cfd9e3a219fb56c03605c44aab30d0bbf99d052d",
+    "reason": "PR51 integration: P2 c919306: active general queue and historical metrics use submitted time."
+  },
+  "assets/js/adapters/communications.js": {
+    "before": "cab35eb907928b3f3fbfa2454f329d77b66b1f41fdbaecee3a8fd055994c59c9",
+    "after": "47544aabba8a2f45921443198f569038151e7678d60d80bba29531ee02b04edc",
+    "reason": "PR51 integration: P2 c919306: original-intent review/archive transport; no domain substitution."
+  },
+  "assets/js/pages/official-feedback.js": {
+    "before": "9703d1ff110af37709f4957a81c38700612331773949d8a8da3693c3cdc0b6a4",
+    "after": "a8a1ead6a59c1d6a868b4b2888b9c57fb55200c35ccbc30e27c56b4fcb7dadfa",
+    "reason": "PR51 integration: P2 c919306: gated original confirmations, retained retry identity and archive selection/history behavior."
+  },
+  "backend/app/Http/Controllers/P2/CivicController.php": {
+    "before": "fa8172d44488ed8b6e19696ec3444d674d22e788e861daa3027831210eee0f0a",
+    "after": "38f05d932bd9b0ddf30ee73381a93eca0211d69cddcc5b066dcf5152cda16aea",
+    "reason": "PR51 integration: P2 c919306: reviewed scoped lifecycle routes and archive read selector."
+  },
+  "backend/app/Services/Civic/CivicService.php": {
+    "before": "3a7714bd05af8e55799b10b42541d140820b01983619db4e86534609f61b89bc",
+    "after": "a4b900561469800dc52c1fc5e4ec9258fb098fd5a0c916f241c68e2e9fc2b571",
+    "reason": "PR51 integration: P2 c919306: authorized person-before-source review/archive, atomic audit/receipt, no lifecycle outbox."
+  },
+  "backend/app/Services/P2/Persistence/RelationalStore.php": {
+    "before": "79e1158229d0b9749cd2afd0357c37b25ba144c7e0fc150ed67db47f9fb5e96b",
+    "after": "bc86552cd229b8a4c3f3295a9f8ac47444aa4cfa25c6d4fc098dac69bdbc1791",
+    "reason": "PR51 integration: P2 c919306: admit the DBA-reviewed lifecycle fields in the relational DTO."
+  },
+  "backend/routes/communications.php": {
+    "before": "8b1be3804e14e06401e2d0710b00458fd0ca4bb4e7f97cdb4be23143a623399b",
+    "after": "ccbb718868cbbf6025ed602e8e0809410886c2e063507f97ab4605c68aaa3425",
+    "reason": "PR51 integration: P2 c919306: append reviewed lifecycle endpoints under original middleware."
+  },
+  "backend/tests/P2/browser-civic.mjs": {
+    "before": "005d5734a90622cbb321e830987681a3afdcd77745ea9e77f6e5ebd8d2d12920",
+    "after": "227c420b5e10d50688235ca9d7a3d6c2f32943b7a32fb4fcdc178223c6b27b94",
+    "reason": "PR51 integration: P2 c919306: expand original civic workflow assertions and explicitly request admitted lifecycle staging. P2 5aaceb9: test helper uses the existing structured query option; original403 and no-effects assertions retained; no transport relaxation."
+  },
+  "backend/tests/P2/civic-fixture.php": {
+    "before": "d99498fe05403e53e9bc45d30cb8b0d020ab36670c22968c9e6b2b3d5a0af871",
+    "after": "6b00ca185cd6dbdfc1f2c022c1c33bbde1133c52d42f79a84f7d9e0103f69fb0",
+    "reason": "PR51 integration: P2 c919306: expose lifecycle metadata only in the existing guarded disposable browser fixture."
+  },
+  "tests/p2-communications-forms.mjs": {
+    "before": "923e506a1a9768b339849df1ca0a020c737f6d53d1f14d4a446778870fb2fa91",
+    "after": "de3a07eac35185c8c20250fb660d627f8de1f419b1d7db028c5a33d772e2bc12",
+    "reason": "PR51 integration: P2 c919306: retain original assertions and add actual-page intent/cancellation regressions."
+  }
+}

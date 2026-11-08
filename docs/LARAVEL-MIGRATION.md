@@ -1,6 +1,6 @@
 # Laravel migration plan
 
-Documentation only: this frontend contains no PHP, SQL or backend server.
+Historical migration plan. The November 2 P1 [foundation](backend/FOUNDATION.md) now supplies a Laravel scaffold and shared session/transport boundary. Database models, migrations and persistent domain workflows still await their assigned reviewed slices; the older proposed routes below are superseded where the new [API matrix](backend/API-MATRIX.md) differs.
 
 The facility endpoints, MySQL fields, validation, ownership and policies are specified in [FACILITIES-API.md](FACILITIES-API.md). Facility management currently uses the browser demo API; production authorization and cross-device synchronization remain Laravel responsibilities.
 

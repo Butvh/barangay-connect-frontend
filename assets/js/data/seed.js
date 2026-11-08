@@ -15,9 +15,9 @@ export function createSeed() {
   return {
     version: 1, revision: 0, updated_at: '2026-10-04T14:20:00+08:00',
     barangays: [
-      { id: 1, name: 'Barangay Sampaguita', map_image: 'assets/img/maps/sampaguita.png' },
-      { id: 2, name: 'Barangay Dalisay', map_image: null },
-      { id: 3, name: 'Barangay Pag-asa', map_image: null },
+      { id: 1, name: 'Barangay Sampaguita', map_scope: 'sampaguita', map_image: 'assets/img/maps/sampaguita.png' },
+      { id: 2, name: 'Barangay Dalisay', map_scope: null, map_image: null },
+      { id: 3, name: 'Barangay Pag-asa', map_scope: null, map_image: null },
     ],
     users: [user(1, 'Ana Reyes', 'ana.reyes@example.com', 'secretary'), user(2, 'Carlo Mendoza', 'carlo.mendoza@example.com', 'responder'), user(3, 'Ramon Bautista', 'ramon.bautista@example.com', 'rescuer'), user(4, 'Maria Santos', 'maria.santos@example.com', 'resident', 1), user(5, 'Jose Dela Cruz', 'jose.dela.cruz@example.com', 'resident', 2), user(6, 'Luis Garcia', 'luis.garcia@example.com', 'tanod'), user(7, 'Roberto Aquino', 'roberto.aquino@example.com', 'captain')],
     households: [{ id: 1, barangay_id: 1, address: '14 Riverside Street', map_x: 67, map_y: 53 }, { id: 2, barangay_id: 1, address: '8 Mabini Street', map_x: 43, map_y: 44 }],
@@ -25,7 +25,7 @@ export function createSeed() {
       { id: 1, user_id: 4, document_type: 'Proof of residence', file_name: 'maria-proof-of-residence.pdf', review_status: 'Approved', submitted_at: '2026-10-01T09:00:00+08:00', deadline_at: '2026-10-08T09:00:00+08:00', reviewed_by: 1, reviewed_at: '2026-10-02T10:00:00+08:00', rejection_reason: '' },
       { id: 2, user_id: 5, document_type: 'Proof of residence', file_name: 'jose-proof-of-residence.pdf', review_status: 'Pending', submitted_at: '2026-10-04T09:00:00+08:00', deadline_at: '2026-10-11T09:00:00+08:00', reviewed_by: null, reviewed_at: null, rejection_reason: '' },
     ],
-    facilities: [{ id: 1, type: 'EvacuationCenter', name: 'Sampaguita Elementary School', address: 'School Road, Barangay Sampaguita', capacity: 250, contact: '', barangay_id: 1, map_x: 35, map_y: 25 }, { id: 2, type: 'Hospital', name: 'Dalisay District Hospital', address: 'Hospital Road', capacity: null, contact: '(02) 8000-0000', barangay_id: null, map_x: 77, map_y: 22 }],
+    facilities: [{ id: 1, type: 'EvacuationCenter', name: 'Sampaguita Elementary School', address: 'School Road, Barangay Sampaguita', capacity: 250, contact: '', barangay_id: 1, map_scope: 'sampaguita', map_x: 35, map_y: 25 }, { id: 2, type: 'Hospital', name: 'Dalisay District Hospital', address: 'Hospital Road', capacity: null, contact: '(02) 8000-0000', barangay_id: null, managed_by_barangay_id: 1, map_scope: 'sampaguita', map_x: 77, map_y: 22 }],
     emergency_alerts: [
       alert(1042, 'Flood', 'Riverside Street', 2, 'Pending', '2026-10-04T14:10:00+08:00', { resident_id: 4, household_id: 1, map_x: 67, map_y: 53, description: 'Floodwater is rising along Riverside Street. Two residents need evacuation assistance.' }),
       alert(1038, 'Other', 'Mabini Street', 1, 'Rescue in progress', '2026-10-04T13:45:00+08:00', { description: 'Fallen tree obstructing Mabini Street.', acknowledged_by: 1, acknowledged_at: '2026-10-04T13:47:00+08:00', assigned_responder_id: 2, assigned_rescuer_id: 3, map_x: 43, map_y: 44 }),

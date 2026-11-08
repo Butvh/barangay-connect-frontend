@@ -1,0 +1,246 @@
+{
+  "role": "DBA",
+  "integration_reference": "https://github.com/Butvh/barangay-connect-frontend/pull/51",
+  "product_base": "b00d944789dada39a356ebb6497da0aae4d74049",
+  "base_tree": "d95c1e4434202f99f623fec8ab731ba72421d19a",
+  "contract": "542876273b513fb7a7c23ccb9e22af27407d4043",
+  "role_branch": "codex/dba-pr51-schema-acceptance-20261108",
+  "source_scope": "b00d944 plus the five explicit DBA files; P1 must integrate and declare patches before a clean final candidate exists",
+  "files": {
+    "backend/app/Models/CommunityFeedback.php": {
+      "before_canonical_sha256": "bdaad41428d3d2b9163651f1694dd1d41cda9b1e1ffdca309bdb1016bf948d36",
+      "after_canonical_sha256": "3d2c543f6f5e376ceeff4ecbb4ddb87f5c2d29e31c1926a746516945a1905fb4",
+      "tested_raw_sha256": "3d2c543f6f5e376ceeff4ecbb4ddb87f5c2d29e31c1926a746516945a1905fb4"
+    },
+    "backend/database/migrations/2026_11_08_000100_add_general_feedback_lifecycle.php": {
+      "before_canonical_sha256": null,
+      "after_canonical_sha256": "4ed9c0650ecffb9f984753584595bdf33df83753cc43a77a0a6d81798695fe82",
+      "tested_raw_sha256": "4ed9c0650ecffb9f984753584595bdf33df83753cc43a77a0a6d81798695fe82"
+    },
+    "backend/tests/Database/GeneralFeedbackLifecycleTest.php": {
+      "before_canonical_sha256": null,
+      "after_canonical_sha256": "1c8e40d14dc60b210fab788a3a95a84134ce56c52df41ada92dda3b3197464b9",
+      "tested_raw_sha256": "1c8e40d14dc60b210fab788a3a95a84134ce56c52df41ada92dda3b3197464b9"
+    },
+    "backend/tests/Database/IncidentPhotoProposalTest.php": {
+      "before_canonical_sha256": "a35afccdafadf67dcf797bf67329f2699cc9b12dfc70886d87f3dd27830ff526",
+      "after_canonical_sha256": "0e1162f4c40e75cfef6ad14d9821b0e269892fd75628d29bd3a68ccd43ffd780",
+      "tested_raw_sha256": "0e1162f4c40e75cfef6ad14d9821b0e269892fd75628d29bd3a68ccd43ffd780"
+    },
+    "backend/tests/Database/NotificationPreferenceTest.php": {
+      "before_canonical_sha256": "62ba251367fc0eb70a31978892246550fa6de67919d67109ee8a3f27b3114e6a",
+      "after_canonical_sha256": "e99728c57d4b30de7af2cf7e3ec7dd564b47465e6638b35c0a75c884e454fea2",
+      "tested_raw_sha256": "e99728c57d4b30de7af2cf7e3ec7dd564b47465e6638b35c0a75c884e454fea2"
+    }
+  },
+  "original_migrations": {
+    "count": 13,
+    "all_unchanged": true,
+    "canonical_hashes": {
+      "backend/database/migrations/2026_11_02_000100_create_identity_and_staffing.php": "593d0f1548b86c9e01595e85dc539100b69510f442780332fbb245e6fff49ae4",
+      "backend/database/migrations/2026_11_02_000200_create_verification_and_directory.php": "18d96f6875f112b3c90c013c0238f91c4667e5af108f8e907bc288261053c4af",
+      "backend/database/migrations/2026_11_02_000300_create_incident_records.php": "09c8a963dd0a8f83743fae17c08bb083255fe612f7b0ff8b750f92322ba6b102",
+      "backend/database/migrations/2026_11_02_000400_create_civic_and_security_records.php": "9ef7552cdff1ccc315c0f4c460117114fc38fbea8437e1fd29eff76415b19827",
+      "backend/database/migrations/2026_11_02_000500_create_delivery_ledger.php": "789406138767507a63e0f72b37f83e078403f7b913a5288fdaa0b8b849dc890b",
+      "backend/database/migrations/2026_11_02_000600_create_framework_tables.php": "1a01201193f0a330059dfb0cd979766bf43431317623e14fa7de454e195471b4",
+      "backend/database/migrations/2026_11_03_000100_add_user_auth_version.php": "9ca5e41b2b31ad4030aed222766cb5bef83bba610637c7a7b8923de55bb97cf1",
+      "backend/database/migrations/2026_11_03_000200_add_versioned_delivery_contract.php": "f6b77c01c8cb04d2d7c1fcd8007fcb5205c0a4552d31131fb8b3eafa2f27ba55",
+      "backend/database/migrations/2026_11_04_000100_create_incident_photo_metadata.php": "d6943a1621e56cf5b59dfb726fdc7a08a68efba7484f290bdceac3da72d97664",
+      "backend/database/migrations/2026_11_04_000200_create_notification_preferences.php": "af339a3b31a55d8c8635ed65c66b715ab771b92305f1f074299e76af6aeb672d",
+      "backend/database/migrations/2026_11_04_000300_create_sms_authorization_evidence.php": "b47daaba8a5ed48223386e2c207acc3d9df7b505cf36577fcdb484aa277fe4e4",
+      "backend/database/migrations/2026_11_05_000100_widen_facility_display_fields.php": "c4db7bde82d10a7baa5a8c96ac6737ea18c6632e43498e8f28485527b5c96eed",
+      "backend/database/migrations/2026_11_05_000200_create_facility_history.php": "5d2b5409c2d0856cc22281c16567d5014d26a94945de4c45589c9533bf6220e2"
+    },
+    "inventory_sha256": "6a53c14ad87fab1991e08b5471d203baefedcfd64db494ed89e7d5d4214384e9"
+  },
+  "baseline_snapshot": {
+    "fingerprints": 868,
+    "upstream_owner_files": 279,
+    "explicit_patches": 28,
+    "dirty": false,
+    "manifest_sha256": "37c4f938be02bc13852e4c20950bf890b591eddf3bf29aaf5dabe8fa4e3342b5",
+    "manifest_device_specific": true,
+    "composer_lock_canonical_sha256": "81e2a301eeb78957ff457dfc861d95886a194a59b79f5592d429a43c1b32ab0c"
+  },
+  "runtime": {
+    "php": "8.5.12",
+    "mysql": "8.4.13",
+    "phpunit": "12.5.43",
+    "node": "24.22.1"
+  },
+  "schema": {
+    "target": "NEW-disposable-cli-schema-f",
+    "mysql": "8.4.13",
+    "tables": 43,
+    "foreign_keys": 69,
+    "migrations": 14,
+    "schema_sha256": "3c5f198ccc3c0b355e55d3fe66c298a4fd9607710b540afd2ca6fd82690276ea",
+    "feedback_foreign_keys": [
+      {
+        "CONSTRAINT_NAME": "feedback_archive_actor_scope_fk",
+        "COLUMN_NAME": "archived_by",
+        "REFERENCED_TABLE_NAME": "users",
+        "REFERENCED_COLUMN_NAME": "id"
+      },
+      {
+        "CONSTRAINT_NAME": "feedback_archive_actor_scope_fk",
+        "COLUMN_NAME": "barangay_id",
+        "REFERENCED_TABLE_NAME": "users",
+        "REFERENCED_COLUMN_NAME": "barangay_id"
+      },
+      {
+        "CONSTRAINT_NAME": "feedback_review_actor_scope_fk",
+        "COLUMN_NAME": "reviewed_by",
+        "REFERENCED_TABLE_NAME": "users",
+        "REFERENCED_COLUMN_NAME": "id"
+      },
+      {
+        "CONSTRAINT_NAME": "feedback_review_actor_scope_fk",
+        "COLUMN_NAME": "barangay_id",
+        "REFERENCED_TABLE_NAME": "users",
+        "REFERENCED_COLUMN_NAME": "barangay_id"
+      }
+    ],
+    "queue_index": [
+      "barangay_id",
+      "kind",
+      "archived_at",
+      "submitted_at",
+      "id"
+    ],
+    "fixture_substitute_for_recording": false
+  },
+  "independent_results": {
+    "database": {
+      "command": "php vendor/phpunit/phpunit/phpunit -c phpunit.combined.xml --testsuite Database --log-junit <private-evidence>",
+      "exit": 0,
+      "log_sha256": "2d8019572c9e9fe57361a9fb62dd3e2561af679e2d4f4d3b5ee7b337a165e446",
+      "tests": 147,
+      "assertions": 558,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0,
+      "lifecycle_cases": 17
+    },
+    "framework_migrate": {
+      "command": "php backend/artisan migrate --force --no-interaction; NEW disposable target only",
+      "exit": 0,
+      "log_sha256": "a56c8ca15922aeab468b05f84eaa7c738e7cc05badd5df08cfd4afe99e1efdbf"
+    },
+    "unused_rollback": {
+      "command": "php backend/artisan migrate:rollback --step=1 --force --no-interaction; NEW disposable target only",
+      "exit": 0,
+      "log_sha256": "d1b1c27ee8f335befc46166aef06ac47b4ba8c22bfd86512fe8a3e2429cfb5e9"
+    },
+    "framework_reapply": {
+      "command": "php backend/artisan migrate --force --no-interaction",
+      "exit": 0,
+      "log_sha256": "b85db53ad13adac413645eb64c766d0e7c337e1e12d19afe78b6a9e3093dec28"
+    },
+    "format": {
+      "command": "php vendor/laravel/pint/builds/pint --test <five DBA PHP files>",
+      "exit": 0,
+      "log_sha256": "cd1a94fc2cf6a965b86e1a4809d6c7fb9148b1ee374e1010ed2ac96ff4876ec2"
+    },
+    "composer_validate": {
+      "command": "php composer.phar validate --strict --no-check-publish",
+      "exit": 0,
+      "log_sha256": "617d39e3b4752168f63039991b7e1efaca11e54a1f5a9153d93b0d4efe91fe05"
+    },
+    "composer_platform": {
+      "command": "php composer.phar check-platform-reqs",
+      "exit": 0,
+      "log_sha256": "56610046ed5a6577bdf60de706a72a8f9512feef93dfa627bd6cf0352972794f"
+    },
+    "baseline_database": {
+      "command": "php vendor/phpunit/phpunit/phpunit -c phpunit.combined.xml --testsuite Database; NEW empty direct-migration fixture",
+      "exit": 0,
+      "log_sha256": "c7637466b15a5effc34c93f65cea4aadeffcec2504fbe357665d3896e6932b72",
+      "tests": 130,
+      "assertions": 486,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    "baseline_sql": {
+      "command": "php backend/tests/P2/sql.php",
+      "exit": 0,
+      "log_sha256": "643a973cc6a27747dbef4adbcb0632bd4087ea454d18dbf515227ed22f8c01fc",
+      "passes": 53,
+      "actual_service_capacity2_and_capacity1": true,
+      "completion_release_and_reuse": true,
+      "full_original_browser_execution": false
+    },
+    "baseline_lock": {
+      "command": "php backend/tests/Review/p2-lock-order.php",
+      "exit": 0,
+      "log_sha256": "98cade85e812119d89dd2655c37d5af967730f30fdd955515b66de9e655c69ae",
+      "late_user_ids": [],
+      "workers_committed": 2,
+      "response_rows": 1,
+      "victim_count": 0,
+      "lock_order_accepted": true,
+      "universal_deadlock_freedom_claim": false
+    },
+    "baseline_audit": {
+      "command": "php vendor/phpunit/phpunit/phpunit -c phpunit.combined.xml tests/Feature/IntegratedAuditTest.php",
+      "exit": 0,
+      "log_sha256": "274554bdcf7eac70b3294c5ee80e197c45d0ba7b4551fda862bfcde6ccd6212b",
+      "tests": 8,
+      "assertions": 86,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0,
+      "actual_in_app_receipts_and_replay": true,
+      "real_provider_calls": 0
+    },
+    "baseline_source_before": {
+      "command": "node scripts/verify-integration.mjs",
+      "exit": 0,
+      "log_sha256": "2878e981cd5c6a3f4963e011936fb9d3c67f859ba35180f058ec73dc6b7c7fa8"
+    },
+    "baseline_source_after": {
+      "command": "node scripts/verify-integration.mjs",
+      "exit": 0,
+      "log_sha256": "2878e981cd5c6a3f4963e011936fb9d3c67f859ba35180f058ec73dc6b7c7fa8"
+    }
+  },
+  "preserved_nonpasses": [
+    {
+      "name": "composer-install",
+      "exit": 1,
+      "cause": "sandbox network/cache-write setup failure; exact locked retry passed",
+      "log_sha256": "bd6632e0624b108a68fd51083c9f47a7e88389ca8c9726ab9b8af43c17b584fa"
+    },
+    {
+      "name": "database",
+      "tests": 130,
+      "assertions": 485,
+      "failures": 1,
+      "cause": "DBA pre-migrated a schema for a direct-migration suite; unexpected migrations repository table. Original test unchanged and fresh empty target rerun passed.",
+      "log_sha256": "57cc70fcd48c45b07d7d5884e5c388bc9df96ec24fbf8d4c5f64dd57e9c8732b"
+    },
+    {
+      "name": "database-schema",
+      "tests": 147,
+      "assertions": 554,
+      "failures": 2,
+      "cause": "two original tests assumed total count 13; now preserve the 13 original files separately and explicitly assert discovery of additive file 14. No domain assertion removed.",
+      "log_sha256": "9b3c4aeca93caaefa6b3091ebeca29c2c6f2cbbd11e94a7bd7287d3789cc3ee6"
+    }
+  ],
+  "limits": [
+    "Schema checkpoint is ready for P1 integration; not final frozen PR51 acceptance.",
+    "Actual P2 General Feedback service races and original UI are P2/P1 integration dependencies; DBA has not executed those unshared services.",
+    "Role-change test uses a labelled persistence-only appointment simulation; final actual staff command/race remains required.",
+    "No map migration/backfill or retained source correction was performed.",
+    "Lanz-Windows/current private recording profile requires custodian verification and actual archive handoff. Actual recording capture/transfer/restore/gallery are BLOCKED/NOT RUN, not certified by fictional backup tests.",
+    "No shared/retained schema was migrated/reset/reseeded, no merge/teammate push or external messaging/worker activation."
+  ],
+  "verdicts": {
+    "schema_dependency": "READY for P1 review/integration; genuine database tests pass",
+    "final_frozen_candidate": "PENDING P1 freeze and independent affected acceptance",
+    "actual_recording_capture_transfer": "BLOCKED actual current profile/capture/private handoff; custodian/device and mechanism confirmed",
+    "different_target_restore_gallery_privacy": "NOT RUN until actual archive and separately protected restoration material are available"
+  }
+}

@@ -22,3 +22,6 @@
 .verification-history small{display:block;margin-top:4px;color:var(--text-secondary)}
 .verification-history li p{margin:4px 0;font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
 .verification-correction{white-space:pre-wrap;overflow-wrap:anywhere}
+.private-document-link{display:inline-flex;align-items:center;min-height:calc(var(--s12) - var(--s1));max-width:100%;overflow-wrap:anywhere}
+.incident-photo-grid{display:grid;gap:var(--s4);max-width:100%}.incident-photo-grid figure{margin:0}.incident-photo-grid img{display:block;max-width:100%;max-height:calc(var(--s16) * 5);object-fit:contain;margin:auto}
+.notification-preference-choice{display:flex;align-items:center;gap:var(--s2);min-height:calc(var(--s12) - var(--s1))}

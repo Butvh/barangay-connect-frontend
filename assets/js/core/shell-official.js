@@ -1,4 +1,5 @@
 import { Auth } from './auth.js';
+import { signOutTo } from './sign-out.js';
 import { Api } from './api.js';
 import { UI } from './ui.js';
 import { Icons } from './icons.js';
@@ -20,7 +21,16 @@ export const Shell = { official({ role = Auth.roleOf(Auth.current()), active = '
   drawer.querySelector('[data-close-drawer]').addEventListener('click', () => UI.closeDialog(drawer));
   drawer.addEventListener('close', () => trigger.setAttribute('aria-expanded', 'false'));
   const media = matchMedia('(min-width:768px)'); media.addEventListener('change', () => { if (media.matches && drawer.open) UI.closeDialog(drawer); });
-  host.querySelectorAll('[data-sign-out]').forEach(button => button.addEventListener('click', () => { Auth.logout(); location.assign('login.html'); }));
+  let signingOut = false;
+  host.querySelectorAll('[data-sign-out]').forEach(button => button.addEventListener('click', async () => {
+    if (signingOut) return;
+    signingOut = true;
+    host.querySelectorAll('[data-sign-out]').forEach(item => item.disabled = true);
+    if (!await signOutTo('login.html')) {
+      signingOut = false;
+      host.querySelectorAll('[data-sign-out]').forEach(item => item.disabled = false);
+    }
+  }));
   const center = mountNotificationCenter(panel, { bell, onClose: () => UI.closeDialog(panel), onOpen: async record => {
     UI.closeDialog(panel); bell.focus();
     const alertLink = /^official-alert\.html\?id=(\d+)$/.exec(record.link);

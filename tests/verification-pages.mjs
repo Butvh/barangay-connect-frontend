@@ -30,6 +30,9 @@ async function run() {
       if (specifier.endsWith('shared.js')) values = shared;
       else if (specifier.endsWith('shell-official.js')) values = { Shell: { official: () => f.main } };
       else if (specifier.endsWith('verification-history.js')) values = await import('../assets/js/pages/verification-history.js');
+      else if (specifier.endsWith('form-validation.js')) values = await import('../assets/js/core/form-validation.js');
+      else if (specifier.endsWith('private-documents.js')) values = await import('../assets/js/core/private-documents.js');
+      else if (specifier.endsWith('submission-intent.js')) values = await import('../assets/js/adapters/submission-intent.js');
       else values = model;
       return new vm.SyntheticModule(Object.keys(values), function () { for (const [key, value] of Object.entries(values)) this.setExport(key, value); }, { context });
     });
@@ -101,6 +104,18 @@ async function run() {
     await f.event('#documents', 'submit'); assert.equal(calls.length, 0); assert.match(errors.at(-1), /both/);
     await choose('#proof', good('corrected-proof.pdf')); await f.event('#documents', 'submit');
     assert.equal(calls.length, 1); assert.equal(calls[0].verification_id, 2); assert.equal(calls[0].expected_revision, 1); assert.equal(calls[0].file_name, 'corrected-id.pdf; corrected-proof.pdf'); assert.equal(f.location.href, 'resident-verification.html');
+  });
+  await check('Expired and rejected verification reapply as a new application instead of posting replacement documents to the closed record', async () => {
+    for (const status of ['Expired', 'Rejected']) {
+      const f = surface(), calls = [];
+      f.location = { search: '?resubmit=1', href: '' };
+      const shared = { Auth: { requireRole() {}, current: () => ({ id: 5, barangay_id: 1 }) }, Api: { barangays: { list: async () => [] }, verification: { list: async () => [{ ...base, review_status: status, revision: 4 }], submit: async (id, input) => calls.push(input) } }, UI, e: UI.escape, icon: Icons.svg, heading: () => '', field: () => '', tile: () => '', link: () => '', dialog: () => '', busy: async (_, action) => action() };
+      await page('register', shared, f);
+      for (const selector of ['#valid-id', '#proof']) await f.event(selector, 'change', { target: { files: [{ name: 'new-proof.pdf', type: 'application/pdf', size: 42 }], value: '' } });
+      await f.event('#documents', 'submit'); assert.equal(calls.length, 1);
+      assert.equal(Object.hasOwn(calls[0], 'verification_id'), false, status + ' must start a new application');
+      assert.equal(Object.hasOwn(calls[0], 'expected_revision'), false);
+    }
   });
   console.log(`${passed} verification page regression tests passed.`);
 }

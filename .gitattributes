@@ -1,0 +1,3 @@
+# Laravel's formatter requires LF on every developer platform.
+backend/**/*.php text eol=lf
+backend/artisan text eol=lf

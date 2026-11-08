@@ -1,6 +1,8 @@
 import { Auth, Api, Store, UI, Fmt, e, dialog, pagination, live } from './official-shared.js';
 import { Icons } from '../core/icons.js?v=feedback-summary-1';
 import { Shell } from '../core/shell-official.js';
+import { Config } from '../core/config.js';
+import { createFormSubmission } from '../adapters/p2-form-intent.js';
 import { FEEDBACK_TYPES, FEEDBACK_STATUSES, feedbackText, feedbackPage, feedbackStats, feedbackRequestId } from './official-feedback-model.js?v=feedback-summary-1';
 
 let user;
@@ -44,8 +46,52 @@ if (user) {
   function renderDetail(row) {
     if (!row) { detail.innerHTML = '<p>Select a submission to read its details.</p>'; return; }
     const general = row.type === 'general';
-    detail.innerHTML = `<h2 tabindex="-1">${general ? 'General Feedback' : e(feedbackText(row))}</h2><p class="official-feedback-meta"><span>${Icons.svg('user', { size: 20 })}${e(row.resident?.full_name || 'Not provided')}</span><span>${Icons.svg('calendar', { size: 20 })}${e(Fmt.dateTime(row.created_at))}</span></p>${general ? `<hr class="divider">${rating(row)}<p class="official-long-copy">${e(row.comment)}</p>` : `<hr class="divider"><div class="stack-sm"><small>Status</small>${UI.badge(row.status)}</div><hr class="divider"><div class="stack-sm"><h3>Details</h3><p class="official-long-copy">${e(row.description)}</p><small>Category: ${e(row.category)}<br>Location: ${e(row.location || 'Not provided')}</small></div><hr class="divider"><div class="stack-sm"><small>Assigned Tanod</small><p>${row.assigned_tanod ? `Tanod ${e(row.assigned_tanod.full_name)}` : 'Unassigned'}</p></div>${row.status !== 'Resolved' ? `<div class="stack-sm" data-actions>${row.status === 'Pending' ? `<button type="button" class="btn btn-primary" data-assign${stale || saving ? ' disabled' : ''}>${Icons.svg('users', { size: 20 })}Assign Tanod</button>` : ''}<button type="button" class="btn" data-resolve${stale || saving ? ' disabled' : ''}>${Icons.svg('check', { size: 20 })}Mark resolved</button></div>` : '<p>Resolved feedback is read-only.</p>'}`}<div class="banner banner-error" role="alert" data-action-error hidden></div>`;
+    detail.innerHTML = `<h2 tabindex="-1">${general ? 'General Feedback' : e(feedbackText(row))}</h2><p class="official-feedback-meta"><span>${Icons.svg('user', { size: 20 })}${e(row.resident?.full_name || 'Not provided')}</span><span>${Icons.svg('calendar', { size: 20 })}${e(Fmt.dateTime(row.created_at))}</span></p>${general ? `<hr class="divider">${rating(row)}<p class="official-long-copy">${e(row.comment)}</p>${generalControls(row)}` : `<hr class="divider"><div class="stack-sm"><small>Status</small>${UI.badge(row.status)}</div><hr class="divider"><div class="stack-sm"><h3>Details</h3><p class="official-long-copy">${e(row.description)}</p><small>Category: ${e(row.category)}<br>Location: ${e(row.location || 'Not provided')}</small></div><hr class="divider"><div class="stack-sm"><small>Assigned Tanod</small><p>${row.assigned_tanod ? `Tanod ${e(row.assigned_tanod.full_name)}` : 'Unassigned'}</p></div>${row.status !== 'Resolved' ? `<div class="stack-sm" data-actions>${row.status === 'Pending' ? `<button type="button" class="btn btn-primary" data-assign${stale || saving ? ' disabled' : ''}>${Icons.svg('users', { size: 20 })}Assign Tanod</button>` : ''}<button type="button" class="btn" data-resolve${stale || saving ? ' disabled' : ''}>${Icons.svg('check', { size: 20 })}Mark resolved</button></div>` : '<p>Resolved feedback is read-only.</p>'}`}<div class="banner banner-error" role="alert" data-action-error hidden></div>`;
     detail.querySelector('[data-assign]')?.addEventListener('click', () => assign(row)); detail.querySelector('[data-resolve]')?.addEventListener('click', () => resolve(row));
+    detail.querySelector('[data-review]')?.addEventListener('click', () => generalAction(row, 'review'));
+    detail.querySelector('[data-archive]')?.addEventListener('click', () => generalAction(row, 'archive'));
+  }
+  const generalReady = () => !Config.DEMO_MODE && Api.feedback.generalLifecycleAvailable === true && typeof Api.feedback.review === 'function' && typeof Api.feedback.archive === 'function';
+  const generalIntents = new Map();
+  function generalControls(row) {
+    const disabled = stale || saving || !generalReady() || row.archived_at;
+    return `<hr class="divider"><div class="stack-sm" data-general-actions><button type="button" class="btn btn-primary" data-review${disabled || row.reviewed_at ? ' disabled' : ''}>${row.reviewed_at ? 'Reviewed' : 'Mark reviewed'}</button><button type="button" class="btn" data-archive${disabled ? ' disabled' : ''}>Archive</button></div>${!generalReady() ? '<p>This workflow is awaiting reviewed backend integration.</p>' : ''}`;
+  }
+  async function generalAction(row, action) {
+    if (saving || stale || !generalReady() || row.archived_at || (action === 'review' && row.reviewed_at)) return;
+    const cacheKey = `${row.id}:${action}`;
+    if (!generalIntents.has(cacheKey)) generalIntents.set(cacheKey, { submission: createFormSubmission({ auth: Auth, revision: row.revision ?? null }), uncertain: false, rejected: false });
+    const pending = generalIntents.get(cacheKey), { submission } = pending, label = action === 'review' ? 'Mark reviewed' : 'Archive';
+    const beforeClose = async () => {
+      if (saving) return false;
+      // Only an uncertain submitted command needs its original retry identity.
+      // Cancelling an unused/definitely rejected form explicitly discards it.
+      if (!pending.uncertain) { submission.discard(); generalIntents.delete(cacheKey); }
+      if (pending.rejected) await load();
+      return true;
+    };
+    const el = dialog(action === 'review' ? 'Mark feedback reviewed?' : 'Archive feedback?', `<div class="stack"><p>${action === 'review' ? 'Record that this General Feedback has been reviewed.' : 'Remove this General Feedback from the active list. The original rating, comment and resident history will be retained.'}</p><div class="banner banner-error" role="alert" data-save-error hidden></div><div class="actions"><button type="button" class="btn" data-cancel>Cancel</button><button type="button" class="btn btn-primary" data-confirm>${label}</button></div></div>`, { beforeClose });
+    el.querySelector('[data-cancel]').addEventListener('click', async () => { if (await beforeClose()) UI.closeDialog(el); });
+    el.querySelector('[data-confirm]').addEventListener('click', async () => {
+      if (saving || pending.rejected) return;
+      saving = true; el.setAttribute('aria-busy', 'true'); el.querySelectorAll('button').forEach(button => button.disabled = true);
+      try {
+        await submission.submit({}, (observed, intent) => Api.feedback[action](row.id, observed, intent));
+        generalIntents.delete(cacheKey);
+        if (action === 'archive') states.general.id = null;
+        UI.closeDialog(el); await load(); UI.toast(action === 'review' ? 'Feedback marked reviewed.' : 'Feedback archived.');
+      } catch (err) {
+        pending.rejected = ['AUTH', 'FORBIDDEN', 'VALIDATION', 'CONFLICT', 'INVALID_STATE', 'NOT_FOUND'].includes(err.code);
+        pending.uncertain = !pending.rejected;
+        const box = el.querySelector('[data-save-error]'); box.textContent = err.message; box.hidden = false; box.tabIndex = -1; box.focus();
+        if (pending.rejected) { box.textContent += ' Close this panel and review the refreshed record before starting a new action.'; el.querySelector('[data-cancel]').textContent = 'Close and refresh'; }
+        // Keep this dialog and its opening intent/revision for a lost-reply retry.
+      } finally {
+        saving = false; el.removeAttribute('aria-busy'); el.querySelectorAll('button').forEach(button => button.disabled = false); render();
+        el.querySelector('[data-confirm]').disabled = pending.rejected;
+        if (!el.open) detail.querySelector('h2')?.focus();
+      }
+    });
   }
   function render() {
     if (!loaded) return;
@@ -65,15 +111,19 @@ if (user) {
   function actionError(err) { const box = detail.querySelector('[data-action-error]'); if (!box) { UI.toast(err.message, 'error'); return; } box.textContent = err.message; box.hidden = false; box.tabIndex = -1; box.focus(); }
   async function assign(row) {
     if (saving || stale) return;
+    const submission = createFormSubmission({ auth: Auth, revision: row.revision ?? null });
     const el = dialog('Assign Tanod', '<div class="stack" data-assignment><p>Loading the barangay Tanod…</p></div>', { beforeClose: () => !saving });
     try {
-      // This prototype has one seeded Tanod (DATA-MODEL.md), not a staff directory.
-      const tanod = await Api.users.get(6); if (!el.open) return;
-      if (!tanod.is_tanod || tanod.barangay_id !== user.barangay_id) throw new Error('No Tanod is available in this barangay.');
-      const body = el.querySelector('[data-assignment]'); body.innerHTML = `<p>Assign this ${row.type} to a barangay Tanod. The resident will receive an update.</p><div class="field"><label for="feedback-tanod">Tanod</label><select class="select" id="feedback-tanod"><option value="${tanod.id}">Tanod ${e(tanod.full_name)}</option></select></div><div class="banner banner-error" role="alert" data-save-error hidden></div><div class="actions"><button type="button" class="btn" data-cancel>Cancel</button><button type="button" class="btn btn-primary" data-save>Assign Tanod</button></div>`;
+      // Preserve the demo fixture; backend options come from the scoped service.
+      const options = Config.DEMO_MODE ? { feedback_revision: row.revision, tanods: [await Api.users.get(6)].filter(p => p.is_tanod && p.barangay_id === user.barangay_id) } : await Api.feedback.assignmentOptions(row.id);
+      if (!el.open) return;
+      submission.assertCurrent();
+      if (!Config.DEMO_MODE && options.feedback_revision !== row.revision) throw new Error('This feedback changed. Close this panel, review it and reopen.');
+      if (!options.tanods.length) throw new Error('No Tanod is available in this barangay.');
+      const body = el.querySelector('[data-assignment]'); body.innerHTML = `<p>Assign this ${row.type} to a barangay Tanod. The resident will receive an update.</p><div class="field"><label for="feedback-tanod">Tanod</label><select class="select" id="feedback-tanod">${options.tanods.map(tanod => `<option value="${tanod.id}">Tanod ${e(tanod.full_name)}</option>`).join('')}</select></div><div class="banner banner-error" role="alert" data-save-error hidden></div><div class="actions"><button type="button" class="btn" data-cancel>Cancel</button><button type="button" class="btn btn-primary" data-save>Assign Tanod</button></div>`;
       body.querySelector('[data-cancel]').addEventListener('click', () => UI.closeDialog(el));
       body.querySelector('[data-save]').addEventListener('click', async () => { if (saving) return; saving = true; el.setAttribute('aria-busy', 'true'); el.querySelectorAll('button,select').forEach(c => c.disabled = true);
-        try { await Api.feedback.assignTanod(row.id, Number(body.querySelector('select').value)); UI.closeDialog(el); await load(); UI.toast('Feedback assigned to Tanod.'); detail.querySelector('h2')?.focus(); }
+        try { const tanodId = Number(body.querySelector('select').value); if (!options.tanods.some(p => p.id === tanodId)) throw new Error('Choose an available local Tanod.'); await submission.submit({ tanod_id: tanodId }, observed => Api.feedback.assignTanod(row.id, observed.tanod_id, Config.DEMO_MODE ? undefined : { expected_revision: observed.expected_revision })); UI.closeDialog(el); await load(); UI.toast('Feedback assigned to Tanod.'); detail.querySelector('h2')?.focus(); }
         catch (err) { const box = body.querySelector('[data-save-error]'); box.textContent = err.message; box.hidden = false; box.tabIndex = -1; box.focus(); await load(); }
         finally { saving = false; el.removeAttribute('aria-busy'); el.querySelectorAll('button,select').forEach(c => c.disabled = false); render(); if (!el.open) detail.querySelector('h2')?.focus(); }
       });
@@ -81,7 +131,8 @@ if (user) {
   }
   async function resolve(row) {
     if (saving || stale) return; saving = true;
-    try { if (!await UI.confirm({ title: 'Mark feedback resolved?', text: `Mark this ${row.type} as resolved? The resident will receive an update and this record will become read-only.`, confirmLabel: 'Mark resolved' })) return; await Api.feedback.resolve(row.id); await load(); UI.toast('Feedback marked resolved.'); detail.querySelector('h2')?.focus(); }
+    const submission = createFormSubmission({ auth: Auth, revision: row.revision ?? null });
+    try { if (!await UI.confirm({ title: 'Mark feedback resolved?', text: `Mark this ${row.type} as resolved? The resident will receive an update and this record will become read-only.`, confirmLabel: 'Mark resolved' })) return; await submission.submit({}, observed => Api.feedback.resolve(row.id, observed)); await load(); UI.toast('Feedback marked resolved.'); detail.querySelector('h2')?.focus(); }
     catch (err) { await load(); actionError(err); }
     finally { saving = false; detail.querySelectorAll('[data-actions] button').forEach(button => button.disabled = stale); }
   }

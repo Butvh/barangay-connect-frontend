@@ -1,6 +1,7 @@
-import { ApiError, copy, delay, zonedISO } from './config.js';
+import { Config, ApiError, copy, delay, zonedISO } from './config.js';
+import { createBackendApi } from '../adapters/api.js';
 import { Store } from './store.js';
-import { Auth, publicUser } from './auth.js';
+import { Auth, Http, publicUser } from './auth.js';
 import { assertRole, assertBarangay, assertOwner, assertReadAlert, canReadAlert, requireUser, roleOf, isOfficial } from './permissions.js';
 import { transition, ALERT_TYPES, ALERT_STATUSES, RESPONSE_TYPES } from './alertMachine.js';
 import { announcementStatus, announcementPublishedAt } from './announcements.js';
@@ -426,5 +427,5 @@ export function createApi({ store = Store, auth = Auth, wait = delay, clock = st
   };
   return Object.freeze(api);
 }
-export const Api = createApi();
+export const Api = Config.DEMO_MODE ? createApi() : createBackendApi({ http: Http, auth: Auth });
 export default Api;

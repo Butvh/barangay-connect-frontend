@@ -1,0 +1,128 @@
+{
+  "runtime_commit": "80b64ac28c3fcddb304e0e60e1d016338dc45d71",
+  "runtime_git_tree": "8489e200621c8fcf0d116ead5e11f6dc6e183a8e",
+  "owner_pins": {
+    "p1": "7369fe93f81a09e4ba490b684d8fa35f0bfd8a1a",
+    "dba": "bf2c5e800bbd9bb996e3070554bbcfdcc4d4169e",
+    "p2": "429490a8da8a0b25d6ee95f018833a1646c1def9"
+  },
+  "linux_ci": {
+    "url": "https://github.com/Butvh/barangay-connect-frontend/actions/runs/42455966616",
+    "synthetic_checkout": "bf948a2d28917fec8ee46b5ab9d8c66cf60c4d77",
+    "same_runtime_tree": true,
+    "required_jobs": [
+      "check",
+      "backend",
+      "combined"
+    ],
+    "all_passed": true,
+    "deploy": "skipped",
+    "combined_tests": 392,
+    "assertions": 2195,
+    "skips": 0
+  },
+  "windows": {
+    "combined_tests": 392,
+    "assertions": 2194,
+    "skips": 1,
+    "skip_reason": "OS cannot create the existing private-photo symlink fixture; Linux CI covers it.",
+    "failures": 0,
+    "portable_p2": 52,
+    "p2_adapter_tests": 43,
+    "cli_tests": 11,
+    "artifact_tests": 13,
+    "sql_logged_passes": 53,
+    "actual_rescuer_race": true,
+    "actual_lock_order_accepted": true,
+    "late_user_ids": [],
+    "focused_audit_session_tests": 26,
+    "focused_assertions": 156
+  },
+  "browser": {
+    "scenarios": 52,
+    "screenshots": 57,
+    "reports": [
+      {
+        "report": "n",
+        "checks": 5,
+        "screenshots": 18,
+        "sha256": "d1d5a5115e06cc109e9519a4c4bd12ac18eb14a52290a6fff3c1dfcb62bb18ae"
+      },
+      {
+        "report": "n",
+        "checks": 5,
+        "screenshots": 7,
+        "sha256": "3ab92f788c0731b015e0f95c2b756ae9fb5ae53a7afe60b16c644d8c2df50cd0"
+      },
+      {
+        "report": "n",
+        "checks": 2,
+        "screenshots": 2,
+        "sha256": "8df16e582c8412f6ddbd4bc83acc7382c6935adc755a0f930550b1b717c2adc4"
+      },
+      {
+        "report": "n",
+        "checks": 5,
+        "screenshots": 4,
+        "sha256": "74e8e2a3dcb3b117499451c7093178f9c583d6e76f1c02678ee52ff28f17893a"
+      },
+      {
+        "report": "n",
+        "checks": 3,
+        "screenshots": 4,
+        "sha256": "c6bc0427bd55a9baf434926f3374e19f96be94657366494f46aad9a6133322da"
+      },
+      {
+        "report": "n",
+        "checks": 10,
+        "screenshots": 4,
+        "sha256": "195737f82d4ea1986699c0baffbb9e1eb8c7a2c44bf5017bb9846e420c130971"
+      },
+      {
+        "report": "n",
+        "checks": 11,
+        "screenshots": 3,
+        "sha256": "0d71c1f1a00e442b2864c0b224e77ae43020327517aa8839a3ef65300de92f4d"
+      },
+      {
+        "report": "n",
+        "checks": 1,
+        "screenshots": 2,
+        "sha256": "00dd102045bfb31b022e124a1b2120c2ba9e1157ba3f226f64456efa7b60deb9"
+      },
+      {
+        "report": "n",
+        "checks": 7,
+        "screenshots": 7,
+        "sha256": "39b09a257c3a0a36b80bf73e0c6ef468a1e834b1f203c25c6a4020f10a49caaa"
+      },
+      {
+        "report": "n",
+        "checks": 3,
+        "screenshots": 6,
+        "sha256": "971b876e80e6ebee040db06bbc71c800a429fc0981db2b7049887a6b7750ad78"
+      }
+    ]
+  },
+  "evidence_sha256": {
+    "final4-junit.xml": "be41d110076e4cd3b5ffc5313be97d4c5f89e1aeea2b8fe68595b95020fa3fd9",
+    "combined4-phpunit.log": "9bbc04b32fce565cfabd235eb05bf0657041c184a91203dea22afd0a34324e76",
+    "p2-sql4.log": "415eaf7f04d832c29155bf5584136192b5960c2d45a3b6e9191b37adc7ac28c2",
+    "dba-lock-review3.log": "7ac283516fcefa390096394d4afc11e5a2d99670443f7881bc5e51b687b6820e",
+    "review-validation-red2.log": "84ac73d2bf8cb7a91fcc2bf5170d695c7b36aedd655fe671b253a6379232f152",
+    "review-php-green2.log": "c175684448d9f7be759f9ae1bfec59db754489d7d96110abe0fe6b8ae17162ce",
+    "review-cli-final.log": "2747252d97562301e67cb3e64c52e1317350d76b17e0ba6c39e5ffc556231ccc",
+    "artifact-final2.log": "de53be99407233e8cb0951d47f7d8a8c7f7c88c1d6aa832ceceafb332797aebd",
+    "ci-combined-80b64ac.log": "652dd3f075dbf5b0f5ad479a1034a277e2e7b2fc1c03c09933844cf962dfec2f"
+  },
+  "not_accepted": [
+    "Independent owner approvals of the integration candidate",
+    "Actual retained recording backup and different-target restore",
+    "Real provider/handset delivery or Make activation",
+    "Production deployment",
+    "General-feedback review/archive commands"
+  ],
+  "real_provider_calls": 0,
+  "recording_dataset_modified": false,
+  "main_merged": false
+}

@@ -1,7 +1,7 @@
 import { facilityActive, facilityLocated } from '../core/facilities.js';
 import { Auth, Api, UI, Icons, Fmt, e, roleLabel, typeIcon, alertName, victims, facts, facilityType, facilityDetail, dialog, live, destination } from './official-shared.js';
 import { Shell } from '../core/shell-official.js';
-import { BCMap } from '../core/map.js';
+import { BCMap, currentMapScope } from '../core/scoped-map.js';
 import { ALERT_STATUSES, ALERT_TYPES, canTransition } from '../core/alertMachine.js';
 import { resolveAlert } from './official-alert-actions.js';
 import { assignAlert } from './official-assignment.js';
@@ -17,7 +17,7 @@ if (user) {
   main.classList.add('official-map-page');
   const options = (values, current) => values.map(([value, label]) => `<option value="${e(value)}"${current === value ? ' selected' : ''}>${e(label)}</option>`).join('');
   function filterBody(prefix) {
-    return `<div class="official-section"><div class="field"><label for="${prefix}-status">Status</label><select class="select" id="${prefix}-status" data-filter="status">${options([['', 'All statuses'], ...ALERT_STATUSES.map(v => [v, v])], filters.status)}</select></div><div class="field"><label for="${prefix}-type">Disaster type</label><select class="select" id="${prefix}-type" data-filter="type">${options([['', 'All disaster types'], ...ALERT_TYPES.map(v => [v, v])], filters.type)}</select></div><div class="field"><label for="${prefix}-facility">Facilities</label><select class="select" id="${prefix}-facility" data-filter="facility">${options([['', 'All facilities'], ['EvacuationCenter', 'Evacuation centers'], ['Hospital', 'Hospitals'], ['none', 'Hide facilities']], filters.facility)}</select></div><small>Marker layers</small><button type="button" class="chip" data-layer="households" aria-pressed="${filters.households}">${Icons.svg('house', { size: 20 })}<span>Households · ${filters.households ? 'Shown' : 'Hidden'}</span></button><small>Households linked to the available alerts and complaints.</small><button type="button" class="chip" data-layer="complaints" aria-pressed="${filters.complaints}"${role !== 'secretary' ? ' disabled title="Only the Secretary can view complaints."' : ''}>${Icons.svg('message-square', { size: 20 })}<span>Complaints · ${filters.complaints ? 'Shown' : 'Hidden'}</span></button>${role !== 'secretary' ? '<small>Complaints are available to the Secretary.</small>' : ''}<button type="button" class="btn btn-ghost" data-reset-filters>Reset filters</button></div>`;
+    return `<div class="official-section"><div class="field"><label for="${prefix}-status">Status</label><select class="select" id="${prefix}-status" data-filter="status">${options([['', 'All statuses'], ...ALERT_STATUSES.map(v => [v, v])], filters.status)}</select></div><div class="field"><label for="${prefix}-type">Disaster type</label><select class="select" id="${prefix}-type" data-filter="type">${options([['', 'All disaster types'], ...ALERT_TYPES.map(v => [v, v])], filters.type)}</select></div><div class="field"><label for="${prefix}-facility">Facilities</label><select class="select" id="${prefix}-facility" data-filter="facility">${options([['', 'All facilities'], ['EvacuationCenter', 'Evacuation centers'], ['Hospital', 'Hospitals'], ['none', 'Hide facilities']], filters.facility)}</select></div><small>Marker layers</small><button type="button" class="chip" data-layer="households" aria-pressed="${filters.households}">${Icons.svg('house', { size: 20 })}<span>Households · ${filters.households ? 'Shown' : 'Hidden'}</span></button><small>Households linked to the available alerts and complaints.</small><button type="button" class="chip" data-layer="complaints" aria-pressed="${filters.complaints}"${!['secretary', 'captain'].includes(role) ? ' disabled title="Only the Secretary and Captain can view complaints."' : ''}>${Icons.svg('message-square', { size: 20 })}<span>Complaints · ${filters.complaints ? 'Shown' : 'Hidden'}</span></button>${!['secretary', 'captain'].includes(role) ? '<small>Complaints are available to the Secretary and Captain.</small>' : ''}<button type="button" class="btn btn-ghost" data-reset-filters>Reset filters</button></div>`;
   }
   function legend() {
     return `<div class="official-section"><small>Map markers: Pending red pulse; Acknowledged amber; Responding and Rescue in progress teal; Resolved gray. Each marker also has an icon and a status label.</small><div class="actions">${ALERT_STATUSES.map(s => UI.badge(s)).join('')}</div><div class="official-map-key">${[['hospital', 'Hospital'], ['school', 'Evacuation Center'], ['house', 'Household'], ['building-2', 'Barangay hall'], ['message-square', 'Complaint']].map(([icon, label]) => `<span>${Icons.svg(icon, { size: 20 })}${label}</span>`).join('')}</div><small>Illustrated map · Approximate locations · No routing</small></div>`;
@@ -72,9 +72,9 @@ if (user) {
     markerList.querySelector('div').innerHTML = projection.markers.map(m => `<button type="button" class="btn" data-select-marker="${e(m.id)}">${e(m.label)}</button>`).join('');
     if (markerFocus) [...canvas.querySelectorAll('[data-marker]')].find(b => b.dataset.marker === markerFocus)?.focus({ preventScroll: true });
     if (listFocus) [...markerList.querySelectorAll('[data-select-marker]')].find(b => b.dataset.selectMarker === listFocus)?.focus({ preventScroll: true });
-    main.querySelector('[data-map-count]').textContent = `${projection.alertCount} ${projection.alertCount === 1 ? 'alert' : 'alerts'} shown`;
+    main.querySelector('[data-map-count]').textContent = `${projection.alertCount - projection.unplacedAlerts} of ${projection.alertCount} alerts pinned`;
     main.querySelector('[data-map-empty]').hidden = projection.alertCount !== 0;
-    const unplaced = main.querySelector('[data-unplaced]'); unplaced.hidden = !projection.unplacedComplaints; unplaced.textContent = `${projection.unplacedComplaints} complaints have no matching household location and are not pinned.`;
+    const unplaced = main.querySelector('[data-unplaced]'); const notices = []; if (projection.unplacedAlerts) notices.push(`${projection.unplacedAlerts} alerts have no map pin.`); if (projection.unplacedFacilities) notices.push(`${projection.unplacedFacilities} facilities have no map pin. Edit a facility to pin its verified location.`); if (projection.unplacedComplaints) notices.push(`${projection.unplacedComplaints} complaints have no matching household location.`); unplaced.hidden = !notices.length; unplaced.textContent = notices.join(' ');
     document.querySelectorAll('[data-filter]').forEach(field => { field.value = filters[field.dataset.filter]; });
     document.querySelectorAll('[data-layer]').forEach(button => { const key = button.dataset.layer; button.setAttribute('aria-pressed', String(filters[key])); button.querySelector('span').textContent = `${key === 'households' ? 'Households' : 'Complaints'} · ${filters[key] ? 'Shown' : 'Hidden'}`; });
   }
@@ -95,15 +95,15 @@ if (user) {
   async function load() {
     const request = ++version;
     try {
-      const [alerts, facilities, complaints] = await Promise.all([Api.alerts.list(), Api.facilities.list(), ['secretary', 'captain'].includes(role) ? Api.feedback.list({ type: 'complaint' }) : Promise.resolve([])]);
+      const [alerts, facilities, complaints, mapContext] = await Promise.all([Api.alerts.list(), Api.facilities.list(), ['secretary', 'captain'].includes(role) ? Api.feedback.list({ type: 'complaint' }) : Promise.resolve([]), currentMapScope()]);
       const people = await Promise.all([...new Set(complaints.map(c => c.resident_id))].map(id => Api.users.get(id)));
       if (request !== version) return;
-      data = { alerts, facilities, complaints, households: [...alerts.map(a => a.household), ...people.map(p => p.household)].filter(Boolean) }; loaded = true; error.hidden = true; update();
+      data = { alerts, facilities, complaints, mapContext, households: [...alerts.map(a => a.household), ...people.map(p => p.household)].filter(Boolean) }; loaded = true; error.hidden = true; update();
       main.querySelectorAll('[data-open-facilities]').forEach(button => { button.disabled = false; button.removeAttribute('title'); });
     } catch (err) { if (request !== version) return; error.querySelector('.grow').textContent = loaded ? `The map could not refresh. Displayed records may be out of date. ${err.message}` : `Unable to load map monitoring. ${err.message}`; error.hidden = false; if (!loaded) { canvas.innerHTML = UI.empty({ icon: 'map', title: 'Map unavailable', text: 'Use Try again to reload the map.' }); summary.innerHTML = '<h2>Alert summary</h2><p>Map data is unavailable.</p>'; } }
     finally { if (request === version) canvas.removeAttribute('aria-busy'); }
   }
   main.querySelector('[data-retry]').addEventListener('click', load);
-  live(['facilities','alerts', 'feedback', 'users'], load)();
+  live(['facilities','alerts', 'feedback', 'users', 'barangays'], load)();
   window.addEventListener('pagehide', event => { if (!event.persisted) { version++; mapView?.destroy(); } }, { once: true });
 }

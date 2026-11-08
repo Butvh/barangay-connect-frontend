@@ -19,9 +19,347 @@ jobs:
           node-version: '22'
       - run: node scripts/check.mjs
       - run: node scripts/run-tests.mjs
+      - run: node --test tests/integration-snapshot.mjs
+      - run: node tests/frontend-artifact.mjs
+      - run: node scripts/stage-frontend.mjs
+      - run: node tests/backend-artifact.mjs
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: barangay_connect_test
+          MYSQL_ROOT_PASSWORD: ephemeral-ci-only
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s --health-timeout=5s --health-retries=10
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      APP_ENV: testing
+      APP_KEY: 'base64:MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE='
+      APP_DEBUG: 'false'
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: barangay_connect_test
+      DB_USERNAME: root
+      DB_PASSWORD: ephemeral-ci-only
+      MYSQL_INTEGRATION: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: mbstring, dom, fileinfo, pdo_mysql, gd
+          coverage: none
+          tools: composer:v2
+      - run: composer validate --strict
+      - run: cp .env.example .env
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - run: composer check-platform-reqs
+      - run: composer audit --locked --no-interaction
+      - run: php artisan test --compact --display-warnings --fail-on-warning
+      - run: vendor/bin/pint --test
+  combined:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: bc_dba_p1_compat
+          MYSQL_ROOT_PASSWORD: ephemeral-ci-only
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s --health-timeout=5s --health-retries=10
+    env:
+      APP_ENV: testing
+      APP_KEY: 'base64:MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE='
+      APP_DEBUG: 'false'
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: bc_dba_p1_compat
+      DB_USERNAME: root
+      DB_PASSWORD: ephemeral-ci-only
+      DB_TEST_DISPOSABLE: '1'
+      DB_TEST_HOST: 127.0.0.1
+      DB_TEST_PORT: 3306
+      DB_TEST_DATABASE: bc_dba_p1_compat
+      DB_TEST_USERNAME: root
+      DB_TEST_PASSWORD: ephemeral-ci-only
+      MYSQL_TEST_BIN: /usr/bin
+      MYSQL_INTEGRATION: '1'
+      P1_COMBINED_TESTS: '1'
+      PDFINFO_BINARY: /usr/bin/pdfinfo
+      SMS_ENABLED: 'false'
+      MAKE_ENABLED: 'false'
+      P2_MODULES_ENABLED: 'false'
+      OUTBOX_DISPATCH_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: mbstring, dom, fileinfo, pdo_mysql, gd
+          coverage: none
+          tools: composer:v2
+      - name: Verify MySQL backup clients
+        run: |
+          command -v mysql
+          command -v mysqldump
+          mysql --version
+      - name: Install bounded private PDF inspector
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y poppler-utils
+          test -x "$PDFINFO_BINARY"
+      - run: node scripts/prepare-integration.mjs
+      - name: Install shared locked test runtime in private snapshot
+        working-directory: ${{ env.SNAPSHOT_DIR }}/backend
+        run: |
+          cp .env.example .env
+          composer validate --strict
+          composer install --no-interaction --prefer-dist --no-progress
+          composer check-platform-reqs
+          composer audit --locked --no-interaction
+      - name: P1 and unchanged DBA suites on genuine MySQL
+        working-directory: ${{ env.SNAPSHOT_DIR }}/backend
+        run: php vendor/phpunit/phpunit/phpunit -c phpunit.combined.xml --display-warnings --fail-on-warning --log-junit combined-junit.xml
+      - name: Full combined PHP evidence
+        if: ${{ always() && env.SNAPSHOT_DIR != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: combined-php-junit
+          path: ${{ env.SNAPSHOT_DIR }}/backend/combined-junit.xml
+          if-no-files-found: error
+      - name: Pinned P2 contract suite
+        if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
+        working-directory: ${{ env.SNAPSHOT_DIR }}
+        run: |
+          php backend/tests/P2/run.php
+          php backend/tests/P2/general-feedback.php
+      - name: P2 adapters through shared transport and original frontend gates
+        if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
+        working-directory: ${{ env.SNAPSHOT_DIR }}
+        run: |
+          node --experimental-vm-modules --experimental-default-type=module --test tests/p2-adapters.mjs tests/p2-foundation-adapters.mjs tests/p2-form-intents.mjs tests/p2-report-forms.mjs tests/p2-official-forms.mjs tests/p2-location-forms.mjs tests/p2-photo-upload.mjs tests/p2-photo-form.mjs tests/p2-resident-photos.mjs tests/p2-communications-forms.mjs tests/general-feedback.mjs
+          node --test backend/tests/P2/rehearsal.test.mjs
+          node scripts/run-tests.mjs
+          node --experimental-default-type=module tests/operational-registration.mjs
+          node scripts/check.mjs
+          node tests/frontend-artifact.mjs
+          node tests/backend-artifact.mjs
+      - name: Stage private frontend for independent browser checks
+        if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
+        working-directory: ${{ env.SNAPSHOT_DIR }}
+        run: node scripts/stage-backend-frontend.mjs
+      - name: Live private public-root and disabled-module boundaries
+        if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
+        working-directory: ${{ env.SNAPSHOT_DIR }}
+        run: node --experimental-default-type=module tests/backend-live.mjs
+      - name: Read-only format check of all owners
+        if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
+        working-directory: ${{ env.SNAPSHOT_DIR }}/backend
+        run: vendor/bin/pint --test
+      - name: Original identity UI on real browser cookies and DBA rows
+        if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
+        working-directory: ${{ env.SNAPSHOT_DIR }}
+        run: |
+          BROWSER_RUNTIME="$RUNNER_TEMP/bc-browser-runtime"
+          mkdir -p "$BROWSER_RUNTIME"
+          cp tests/browser/package.json tests/browser/package-lock.json "$BROWSER_RUNTIME/"
+          npm ci --prefix "$BROWSER_RUNTIME" --ignore-scripts --no-fund
+          npm audit --prefix "$BROWSER_RUNTIME" --omit=optional
+          node "$BROWSER_RUNTIME/node_modules/playwright/cli.js" install --with-deps chromium
+          P1_BROWSER_MODULE="$BROWSER_RUNTIME/node_modules/playwright/index.mjs" node tests/browser/identity.mjs
+      - name: Identity browser evidence
+        if: ${{ always() && env.SNAPSHOT_DIR != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: p1-identity-browser
+          path: ${{ env.SNAPSHOT_DIR }}/tests/browser/evidence
+          if-no-files-found: ignore
+      - name: Cross-owner shared writer and handler acceptance
+        if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
+        working-directory: ${{ env.SNAPSHOT_DIR }}/backend
+        run: P2_TEST_BINDINGS=true IDENTITY_ENABLED=true DBA_TEST_AUTOLOAD="$PWD/vendor/autoload.php" php tests/Compatibility/check-shared-contracts.php
+      - name: Pinned P2 production SQL HTTP and race suites
+        if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
+        working-directory: ${{ env.SNAPSHOT_DIR }}
+        run: |
+          php backend/tests/Support/prepare-p2-database.php p2_test_integration
+          DB_DATABASE=p2_test_integration DB_TEST_DATABASE=p2_test_integration php backend/artisan migrate --force --no-interaction
+          DB_DATABASE=p2_test_integration DB_TEST_DATABASE=p2_test_integration IDENTITY_ENABLED=true P2_TEST_BINDINGS=true php backend/tests/P2/sql.php
+      - name: Actual P2 source events through the DBA fake-only production-adapter probe
+        if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
+        working-directory: ${{ env.SNAPSHOT_DIR }}
+        run: |
+          for mode in positive missing revoked wrong_purpose; do
+            REPORT="$RUNNER_TEMP/p2-produced-$mode.json"
+            P2_SOURCE_FIXTURE=1 php backend/tests/P2/producer-fixture.php "$mode" > "$REPORT"
+            P2_TEST_BINDINGS=true IDENTITY_ENABLED=true DBA_TEST_AUTOLOAD="$PWD/backend/vendor/autoload.php" php backend/tests/Compatibility/check-produced-delivery.php --fixture-report="$REPORT"
+          done
+      - name: DBA unchanged actual-service lock review
+        if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
+        working-directory: ${{ env.SNAPSHOT_DIR }}
+        run: DB_DATABASE=p2_test_integration DB_TEST_DATABASE=p2_test_integration IDENTITY_ENABLED=true P2_TEST_BINDINGS=true php backend/tests/Review/p2-lock-order.php
+      - name: Original operational pages on actual browser sessions and MySQL
+        if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
+        working-directory: ${{ env.SNAPSHOT_DIR }}
+        run: P1_BROWSER_MODULE="$RUNNER_TEMP/bc-browser-runtime/node_modules/playwright/index.mjs" node tests/browser/operations.mjs
+      - name: Operational browser evidence
+        if: ${{ always() && env.SNAPSHOT_DIR != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: p1-operational-browser
+          path: ${{ env.SNAPSHOT_DIR }}/tests/browser/evidence/operations
+          if-no-files-found: ignore
+      - name: Original administration read and form readiness on actual sessions
+        if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
+        working-directory: ${{ env.SNAPSHOT_DIR }}
+        run: P1_BROWSER_MODULE="$RUNNER_TEMP/bc-browser-runtime/node_modules/playwright/index.mjs" node tests/browser/administration.mjs
+      - name: Administration readiness evidence
+        if: ${{ always() && env.SNAPSHOT_DIR != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: p1-administration-readiness
+          path: ${{ env.SNAPSHOT_DIR }}/tests/browser/evidence/administration
+          if-no-files-found: ignore
+      - name: Original positive account verification and consent workflows
+        if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
+        working-directory: ${{ env.SNAPSHOT_DIR }}
+        run: |
+          P1_BROWSER_MODULE="$RUNNER_TEMP/bc-browser-runtime/node_modules/playwright/index.mjs" node tests/browser/administration-workflows.mjs
+          P1_BROWSER_MODULE="$RUNNER_TEMP/bc-browser-runtime/node_modules/playwright/index.mjs" node tests/browser/expiry-recovery-workflows.mjs
+      - name: Prepare separate original personnel and facility browser schema
+        if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
+        working-directory: ${{ env.SNAPSHOT_DIR }}
+        run: |
+          php backend/tests/Support/prepare-browser-database.php bc_dba_p1_admin_browser
+          DB_DATABASE=bc_dba_p1_admin_browser DB_TEST_DATABASE=bc_dba_p1_admin_browser php backend/artisan migrate --force --no-interaction
+          DB_DATABASE=bc_dba_p1_admin_browser DB_TEST_DATABASE=bc_dba_p1_admin_browser P1_BROWSER_MODULE="$RUNNER_TEMP/bc-browser-runtime/node_modules/playwright/index.mjs" node tests/browser/personnel-facility-workflows.mjs
+      - name: Positive administration workflow evidence
+        if: ${{ always() && env.SNAPSHOT_DIR != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: p1-administration-workflows
+          path: ${{ env.SNAPSHOT_DIR }}/tests/browser/evidence/administration-workflows
+          if-no-files-found: ignore
+      - name: Positive personnel facility and report evidence
+        if: ${{ always() && env.SNAPSHOT_DIR != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: p1-personnel-facility-workflows
+          path: ${{ env.SNAPSHOT_DIR }}/tests/browser/evidence/personnel-facility-workflows
+          if-no-files-found: ignore
+      - name: Original recovery and verification expiry evidence
+        if: ${{ always() && env.SNAPSHOT_DIR != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: p1-expiry-recovery-workflows
+          path: ${{ env.SNAPSHOT_DIR }}/tests/browser/evidence/expiry-recovery-workflows
+          if-no-files-found: ignore
+      - name: Original optional private photo and session-generation acceptance
+        if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
+        working-directory: ${{ env.SNAPSHOT_DIR }}
+        run: |
+          php backend/tests/Support/prepare-browser-database.php bc_dba_p1_photo_browser
+          DB_DATABASE=bc_dba_p1_photo_browser DB_TEST_DATABASE=bc_dba_p1_photo_browser php backend/artisan migrate --force --no-interaction
+          DB_DATABASE=bc_dba_p1_photo_browser DB_TEST_DATABASE=bc_dba_p1_photo_browser P1_BROWSER_MODULE="$RUNNER_TEMP/bc-browser-runtime/node_modules/playwright/index.mjs" node tests/browser/photo-workflows.mjs
+      - name: Private photo workflow evidence
+        if: ${{ always() && env.SNAPSHOT_DIR != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: p1-photo-workflows
+          path: ${{ env.SNAPSHOT_DIR }}/tests/browser/evidence/photo-workflows
+          if-no-files-found: ignore
+      - name: Unchanged P2 opening-session browser suite
+        if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
+        working-directory: ${{ env.SNAPSHOT_DIR }}
+        run: DB_DATABASE=bc_dba_p1_photo_browser DB_TEST_DATABASE=bc_dba_p1_photo_browser P1_BROWSER_MODULE="$RUNNER_TEMP/bc-browser-runtime/node_modules/playwright/index.mjs" node backend/tests/P2/browser-opening-session.mjs
+      - name: P2 opening-session browser evidence
+        if: ${{ always() && env.SNAPSHOT_DIR != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: p2-opening-session
+          path: ${{ env.SNAPSHOT_DIR }}/tests/browser/evidence/p-two-opening-session
+          if-no-files-found: ignore
+      - name: Original P2 civic browser suite on a separate fresh schema
+        if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
+        working-directory: ${{ env.SNAPSHOT_DIR }}
+        run: |
+          php backend/tests/Support/prepare-browser-database.php bc_dba_p1_civic_ci
+          export DB_DATABASE=bc_dba_p1_civic_ci DB_TEST_DATABASE=bc_dba_p1_civic_ci
+          php backend/artisan migrate --force --no-interaction
+          export APP_BASE_PATH="$PWD/backend" P1_BROWSER_MODULE="$RUNNER_TEMP/bc-browser-runtime/node_modules/playwright/index.mjs"
+          export P2_CANDIDATE_P1="$GITHUB_SHA"
+          export P2_CANDIDATE_DBA="$(node -p 'require("./docs/backend/integration-lock.json").dba')"
+          export P2_CANDIDATE_P2="$(node -p 'require("./docs/backend/integration-lock.json").p2')"
+          node backend/tests/P2/rehearsal.mjs civic
+      - name: P2 civic browser evidence
+        if: ${{ always() && env.SNAPSHOT_DIR != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: p2-civic-browser
+          path: ${{ env.SNAPSHOT_DIR }}/tests/browser/evidence/p-two-civic
+          if-no-files-found: ignore
+      - name: PR51 declared map scope on actual original pages
+        if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
+        working-directory: ${{ env.SNAPSHOT_DIR }}
+        run: |
+          php backend/tests/Support/prepare-browser-database.php bc_dba_p1_pr51_map_browser
+          export DB_DATABASE=bc_dba_p1_pr51_map_browser DB_TEST_DATABASE=bc_dba_p1_pr51_map_browser
+          php backend/artisan migrate --force --no-interaction
+          P1_BROWSER_MODULE="$RUNNER_TEMP/bc-browser-runtime/node_modules/playwright/index.mjs" node tests/browser/pr51-map-scope.mjs
+          P1_BROWSER_MODULE="$RUNNER_TEMP/bc-browser-runtime/node_modules/playwright/index.mjs" node tests/browser/pr51-demo-map.mjs
+      - name: PR51 map scope browser evidence
+        if: ${{ always() && env.SNAPSHOT_DIR != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr51-map-scope-browser
+          path: |
+            ${{ env.SNAPSHOT_DIR }}/tests/browser/evidence/pr-one-map-scope
+            ${{ env.SNAPSHOT_DIR }}/tests/browser/evidence/pr-one-demo-map
+          if-no-files-found: ignore
+      - name: Original final integration browser audit and actual in-app receipt
+        if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
+        working-directory: ${{ env.SNAPSHOT_DIR }}
+        run: |
+          php backend/tests/Support/prepare-browser-database.php bc_dba_p1_final_audit
+          export DB_DATABASE=bc_dba_p1_final_audit DB_TEST_DATABASE=bc_dba_p1_final_audit
+          php backend/artisan migrate --force --no-interaction
+          P1_BROWSER_MODULE="$RUNNER_TEMP/bc-browser-runtime/node_modules/playwright/index.mjs" node tests/browser/integration-audit.mjs
+      - name: Original final audit browser evidence
+        if: ${{ always() && env.SNAPSHOT_DIR != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: p1-final-integration-audit
+          path: ${{ env.SNAPSHOT_DIR }}/tests/browser/evidence/integration-audit
+          if-no-files-found: ignore
+      - name: Verify owner source preservation
+        if: ${{ always() && env.SNAPSHOT_DIR != '' }}
+        working-directory: ${{ env.SNAPSHOT_DIR }}
+        run: node scripts/verify-integration.mjs
+      - name: Reviewed source fingerprint evidence
+        if: ${{ always() && env.SNAPSHOT_DIR != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-source-fingerprints
+          path: ${{ env.SNAPSHOT_DIR }}/integration-manifest.json
+          if-no-files-found: error
   deploy:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-    needs: check
+    needs: [check, backend, combined]
     runs-on: ubuntu-latest
     permissions:
       pages: write
@@ -32,9 +370,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
+      - run: node scripts/stage-frontend.mjs
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: .frontend-dist
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4

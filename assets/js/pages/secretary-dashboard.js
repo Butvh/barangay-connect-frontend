@@ -1,5 +1,5 @@
 import { Auth, Api, Store, UI, Icons, Fmt, e, dialog, live, errorView, alertName, victims } from './official-shared.js';
-import { BCMap } from '../core/map.js';
+import { BCMap } from '../core/scoped-map.js';
 import { nextAnnouncementExpiry } from '../core/announcements.js';
 import { announcementAuthor, composeAnnouncement, readAnnouncement } from './official-announcement-actions.js';
 import { secretaryDashboard } from './official-dashboard-model.js?v=secretary-dashboard-1';
