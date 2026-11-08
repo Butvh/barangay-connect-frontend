@@ -339,8 +339,8 @@
   },
   "backend/tests/P2/browser-civic.mjs": {
     "before": "005d5734a90622cbb321e830987681a3afdcd77745ea9e77f6e5ebd8d2d12920",
-    "after": "23204cd1a74cdf330ffd53c9f2bed2f58fe1c5418a227b636ab955d2fc134181",
-    "reason": "PR51 integration: P2 c919306: expand original civic workflow assertions and explicitly request admitted lifecycle staging."
+    "after": "227c420b5e10d50688235ca9d7a3d6c2f32943b7a32fb4fcdc178223c6b27b94",
+    "reason": "PR51 integration: P2 c919306: expand original civic workflow assertions and explicitly request admitted lifecycle staging. P2 5aaceb9: test helper uses the existing structured query option; original403 and no-effects assertions retained; no transport relaxation."
   },
   "backend/tests/P2/civic-fixture.php": {
     "before": "d99498fe05403e53e9bc45d30cb8b0d020ab36670c22968c9e6b2b3d5a0af871",
