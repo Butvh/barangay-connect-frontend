@@ -312,12 +312,15 @@ jobs:
           export DB_DATABASE=bc_dba_p1_pr51_map_browser DB_TEST_DATABASE=bc_dba_p1_pr51_map_browser
           php backend/artisan migrate --force --no-interaction
           P1_BROWSER_MODULE="$RUNNER_TEMP/bc-browser-runtime/node_modules/playwright/index.mjs" node tests/browser/pr51-map-scope.mjs
+          P1_BROWSER_MODULE="$RUNNER_TEMP/bc-browser-runtime/node_modules/playwright/index.mjs" node tests/browser/pr51-demo-map.mjs
       - name: PR51 map scope browser evidence
         if: ${{ always() && env.SNAPSHOT_DIR != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: pr51-map-scope-browser
-          path: ${{ env.SNAPSHOT_DIR }}/tests/browser/evidence/pr-one-map-scope
+          path: |
+            ${{ env.SNAPSHOT_DIR }}/tests/browser/evidence/pr-one-map-scope
+            ${{ env.SNAPSHOT_DIR }}/tests/browser/evidence/pr-one-demo-map
           if-no-files-found: ignore
       - name: Verify owner source preservation
         if: ${{ always() && env.SNAPSHOT_DIR != '' }}

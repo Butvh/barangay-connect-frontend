@@ -164,8 +164,8 @@
   },
   ".github/workflows/pages.yml": {
     "before": "e3e48258445fa3e66920af1bf1ff26814ae968ac62c3bd3d86fd1c64e9d7cebc",
-    "after": "bcd112d3f5c11b8f9722493ff2f8e08e563387b1c1c05f9f8a3be3586049b54b",
-    "reason": "PR51: Add isolated PR51 map browser regression and evidence upload; retain every original CI gate."
+    "after": "ba13b91eecf5c5f91ceb06a2f8fdbfead8e712ee4eb59e4ab2fc52aa310d36f4",
+    "reason": "PR51: Add isolated PR51 map browser regression and evidence upload; retain every original CI gate. PR51: Add isolated PR51 map browser regression and evidence upload; retain every original CI gate."
   },
   "UX-CONTRACT.md": {
     "before": "5bfedf961acaa11b35fb36a9cd5d06be0bca1222d985b9a8675c327cbbc9ba6a",
@@ -286,5 +286,10 @@
     "before": "8b431d7cb51dff74ea0e11186815fbbda8004cbc18dcf8a5552efc39f51dfc92",
     "after": "2ec589725b6dfcf15da63b0830efe2d971b8cd433bc29df5f94f8afc883045f2",
     "reason": "PR51: Keep resident selectable reference directory active-only; retain internal scoped single-facility history resolution."
+  },
+  "assets/js/core/store.js": {
+    "before": "635cbaecbcfb1109a28b65de0d93acbd54f1a71ff9f4555df041bd151dd12a80",
+    "after": "957e4d30fbc6fbe6035502f341cb0ec0ec70d51e6a7e691bf868b916c7f3ff87",
+    "reason": "PR51: Support barangay reference invalidation and read-only compatibility for explicit legacy fictional demo artwork metadata; never reset data or invoke it in backend mode."
   }
 }

@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import { mapScopeFor, mapCoordinates, scopedMarkers } from '../assets/js/core/map-scope.js';
 import { createSeed } from '../assets/js/data/seed.js';
 import { createFacility, updateFacility, facilitySnapshot, facilityActive } from '../assets/js/core/facilities.js';
+import { createStore, memoryStorage } from '../assets/js/core/store.js';
 
 test('coverage selects exact declared artwork independently of IDs, names and generic flags', () => {
   assert.equal(mapScopeFor({ id: 99, name: 'Other name', map_scope: 'sampaguita' }, 99).supported, true);
@@ -50,4 +51,31 @@ test('real source-reference availability preserves inactive status without affec
   assert.equal(facilityActive({is_active:false}),false);
   assert.equal(facilityActive({is_active:true}),true);
   assert.equal(facilityActive({}),true);
+});
+test('legacy fictional demo reads explicit artwork metadata without resetting or writing browser data', () => {
+  const db=createSeed(), storage=memoryStorage();
+  for (const area of db.barangays) delete area.map_scope;
+  for (const facility of db.facilities) { delete facility.map_scope; delete facility.managed_by_barangay_id; }
+  db.emergency_alerts[0].description='Preserve this existing fictional draft';
+  const raw=JSON.stringify(db); storage.setItem('legacy-demo',raw);
+  const store=createStore({storage,key:'legacy-demo',eventTarget:null});
+  const projected=store.read();
+  assert.equal(projected.barangays[0].map_scope,'sampaguita');
+  assert.equal(projected.barangays[1].map_scope,null);
+  assert.equal(projected.facilities[1].managed_by_barangay_id,1);
+  assert.equal(projected.facilities[1].map_scope,'sampaguita');
+  assert.equal(projected.emergency_alerts[0].description,db.emergency_alerts[0].description);
+  assert.equal(storage.getItem('legacy-demo'),raw);
+  assert.equal(typeof store.subscribe('barangays',()=>{}),'function');
+  store.destroy();
+});
+test('explicit missing or unknown demo coverage is never overridden by an old artwork path', () => {
+  for (const scope of [null,'unknown-artwork']) {
+    const db=createSeed(),storage=memoryStorage(); db.barangays[0].map_scope=scope;
+    storage.setItem('explicit-demo',JSON.stringify(db));
+    const store=createStore({storage,key:'explicit-demo',eventTarget:null});
+    assert.equal(store.read().barangays[0].map_scope,scope);
+    assert.equal(mapScopeFor(store.read().barangays[0],1).supported,false);
+    store.destroy();
+  }
 });
