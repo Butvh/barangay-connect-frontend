@@ -136,5 +136,17 @@
     "before": "82e15dedc2b4f39e2fcc1a0fc4d17f354c740bb6efe1c860af86de0bf77c384c",
     "after": "6f8c18c3b5b7a8beab1f523e2352c4d4e5fd4d256942fac534ee9485beb5642c",
     "reason": "Explicit portal intent and server-side effective-role boundary"
+  },
+  "backend/tests/P2/rehearsal.mjs": {
+    "owner": "p2",
+    "before": "68648a5307e7d876659dbe7a65534b3c4406d902c382e40c32178e9d13aea83f",
+    "after": "16781f593c5efd46a23b607577ea9c3a328acfa5fdbcd596765c58971c15637e",
+    "reason": "Retain original source-admission refusal checks and support separately fingerprinted integrated candidate execution"
+  },
+  "backend/tests/P2/rehearsal.test.mjs": {
+    "owner": "p2",
+    "before": "c7ee1b58fb22ac94b46d1bac781d419a1910ef7855809050365d6e9cbb3047c7",
+    "after": "3462effe5c5a4b6a23ad902d691c0a1d30f171f1a9e1d7b2ea9717e801d4aba6",
+    "reason": "Retain original source-admission refusal checks and support separately fingerprinted integrated candidate execution"
   }
 }

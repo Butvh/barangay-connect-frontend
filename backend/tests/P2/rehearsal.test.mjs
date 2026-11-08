@@ -16,6 +16,13 @@ const manifest = { ...pins, dirty: false, p1Hashes: { 'scripts/check.mjs': 'a'.r
 const env = { APP_ENV: 'testing', SMS_ENABLED: 'false', MAKE_ENABLED: 'false', OUTBOX_DISPATCH_ENABLED: 'false' };
 const sql = { ...env, DB_CONNECTION: 'mysql', DB_HOST: '127.0.0.1', DB_TEST_HOST: '127.0.0.1', DB_PORT: '3307', DB_TEST_PORT: '3307', DB_DATABASE: 'p2_test_rehearsal', DB_TEST_DATABASE: 'p2_test_rehearsal', DB_USERNAME: 'root', DB_TEST_USERNAME: 'root', DB_TEST_DISPOSABLE: '1', MYSQL_INTEGRATION: '1', P1_COMBINED_TESTS: '1' };
 
+test('integrated candidates retain exact owner pins but use the actual candidate commit for execution', () => {
+  const candidate = '4'.repeat(40);
+  const integrated = { kind: 'integrated-audit-candidate-v1', ...pins, candidate, dirty: false, hashes: { 'scripts/check.mjs': 'a'.repeat(64) } };
+  assert.equal(rehearsalPlan(integrated, { ...pins, p1: candidate }, 'preflight', env)[0].args[0], 'scripts/verify-integration.mjs');
+  assert.throws(() => rehearsalPlan(integrated, pins, 'preflight', env), /matching exact candidate pins/);
+});
+
 test('preflight always uses the real P1 verifier and required static check, with no DB commands', () => {
   assert.equal(typeof rehearsalPlan, 'function');
   assert.deepEqual(rehearsalPlan(manifest, pins, 'preflight', env), [

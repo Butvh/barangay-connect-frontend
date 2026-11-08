@@ -13,9 +13,10 @@ const requireValue = (condition, message) => { if (!condition) throw new Error(m
 // The actual unchanged P1 verifier and production entry points remain required.
 export function rehearsalPlan(manifest, expected, phase, env) {
   requireValue(['preflight', 'node', 'sql', ...Object.keys(browserFiles)].includes(phase), 'Choose preflight, node, sql, operations, photos, opening or civic.');
-  for (const owner of ['p1', 'dba', 'p2']) requireValue(/^[a-f0-9]{40}$/.test(expected[owner] || '') && manifest[owner] === expected[owner], 'Provide matching exact candidate pins for ' + owner + '.');
+  const integrated = manifest.kind === 'integrated-audit-candidate-v1';
+  for (const owner of ['p1', 'dba', 'p2']) requireValue(/^[a-f0-9]{40}$/.test(expected[owner] || '') && (integrated && owner === 'p1' ? manifest.candidate : manifest[owner]) === expected[owner], 'Provide matching exact candidate pins for ' + owner + '.');
   requireValue(manifest.dirty === false, 'Use a clean P1-admitted candidate.');
-  for (const files of [manifest.p1Hashes, manifest.ownerHashes?.dba, manifest.ownerHashes?.p2]) requireValue(files && Object.keys(files).length > 0, 'Missing owner source fingerprints.');
+  for (const files of integrated ? [manifest.hashes] : [manifest.p1Hashes, manifest.ownerHashes?.dba, manifest.ownerHashes?.p2]) requireValue(files && Object.keys(files).length > 0, 'Missing owner source fingerprints.');
   requireValue(env.APP_ENV === 'testing', 'Use the testing environment.');
   for (const name of ['SMS_ENABLED', 'MAKE_ENABLED', 'OUTBOX_DISPATCH_ENABLED']) requireValue(env[name] === 'false', 'Keep ' + name + '=false.');
   const plan = [step('node', 'scripts/verify-integration.mjs'), step('node', 'scripts/check.mjs')];
@@ -40,7 +41,7 @@ async function main() {
   const plan = rehearsalPlan(manifest, expected, phase, process.env);
   const ownPath = 'backend/tests/P2/rehearsal.mjs';
   const digest = createHash('sha256').update(await readFile(resolve(root, ownPath))).digest('hex');
-  requireValue(manifest.ownerHashes.p2[ownPath] === digest, 'This runner must be included in the owner-admitted composition; do not copy it over a frozen manifest.');
+  requireValue((manifest.kind === 'integrated-audit-candidate-v1' ? manifest.hashes?.[ownPath] : manifest.ownerHashes?.p2?.[ownPath]) === digest, 'This runner must be included in the owner-admitted composition; do not copy it over a frozen manifest.');
   if (!['preflight', 'node'].includes(phase)) {
     requireValue(process.env.APP_BASE_PATH && await realpath(process.env.APP_BASE_PATH) === await realpath(resolve(root, 'backend')), 'APP_BASE_PATH must be this exact candidate backend.');
     if (process.env.DBA_TEST_AUTOLOAD) requireValue(await realpath(process.env.DBA_TEST_AUTOLOAD) === await realpath(resolve(root, 'backend/vendor/autoload.php')), 'DBA_TEST_AUTOLOAD must use this candidate vendor runtime.');
