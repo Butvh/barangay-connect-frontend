@@ -169,6 +169,10 @@ final class CivicService extends Module
     public function feedback(Actor $a, array $options = []): array
     {
         $a->allow(['resident', 'captain', 'secretary']);
+        if (array_key_exists('archive', $options) && ! $a->administrator()) {
+            throw new Problem('FORBIDDEN', 'Archive filters are only available to officials.');
+        }
+        $archive = Rules::choice($options['archive'] ?? ($a->administrator() ? 'active' : 'all'), ['active', 'all', 'only'], 'archive');
         $where = ['barangay_id' => $a->barangayId];
         if (isset($options['resident_id'])) {
             if ($a->role === 'resident' && (int) $options['resident_id'] !== $a->id) {
@@ -179,7 +183,7 @@ final class CivicService extends Module
         if ($a->role === 'resident') {
             $where['resident_id'] = $a->id;
         }
-        $rows = array_filter($this->store->select('community_feedback', $where), fn ($r) => (! isset($options['type']) || $r['type'] === $options['type']) && (! isset($options['status']) || $r['status'] === $options['status']) && (! isset($options['rating']) || $r['rating'] === (int) $options['rating']) && (! isset($options['q']) || str_contains(mb_strtolower(($r['title'] ?? '').' '.($r['description'] ?? '').' '.($r['comment'] ?? '')), mb_strtolower($options['q']))));
+        $rows = array_filter($this->store->select('community_feedback', $where), fn ($r) => ($archive === 'all' || ($archive === 'only' ? $r['type'] === 'general' && ($r['archived_at'] ?? null) !== null : $r['type'] !== 'general' || ($r['archived_at'] ?? null) === null)) && (! isset($options['type']) || $r['type'] === $options['type']) && (! isset($options['status']) || $r['status'] === $options['status']) && (! isset($options['rating']) || $r['rating'] === (int) $options['rating']) && (! isset($options['q']) || str_contains(mb_strtolower(($r['title'] ?? '').' '.($r['description'] ?? '').' '.($r['comment'] ?? '')), mb_strtolower($options['q']))));
         usort($rows, fn ($x, $y) => strcmp($y['submitted_at'], $x['submitted_at']));
         if (($options['sort'] ?? 'newest') === 'oldest') {
             $rows = array_reverse($rows);
@@ -194,7 +198,9 @@ final class CivicService extends Module
         $r = $this->row('community_feedback', $id, $a);
         if ($a->role === 'resident' && $r['resident_id'] !== $a->id) {
             throw new Problem('NOT_FOUND', 'This feedback is unavailable.');
-        } $r['resident'] = Rules::publicPerson($this->references($a)->person($r['resident_id'], $a->barangayId));
+        }
+        $r += ['reviewed_by' => null, 'reviewed_at' => null, 'archived_by' => null, 'archived_at' => null];
+        $r['resident'] = Rules::publicPerson($this->references($a)->person($r['resident_id'], $a->barangayId));
         $r['assigned_tanod'] = $r['assigned_tanod_id'] ? Rules::publicPerson($this->references($a)->person($r['assigned_tanod_id'], $a->barangayId)) : null;
 
         return $r;
@@ -255,6 +261,48 @@ final class CivicService extends Module
     public function resolveFeedback(Actor $a, int $id, array $in): array
     {
         return $this->feedbackChange($a, $id, $in, false);
+    }
+
+    public function reviewFeedback(Actor $a, int $id, array $in, string $key): array
+    {
+        return $this->generalFeedbackChange($a, $id, $in, $key, 'review');
+    }
+
+    public function archiveFeedback(Actor $a, int $id, array $in, string $key): array
+    {
+        return $this->generalFeedbackChange($a, $id, $in, $key, 'archive');
+    }
+
+    private function generalFeedbackChange(Actor $a, int $id, array $in, string $key, string $action): array
+    {
+        $a->allow(['captain', 'secretary']);
+        Rules::only($in, ['expected_revision']);
+
+        // One receipt namespace binds the original key to action AND resource.
+        // once() locks/revalidates the actor before reading the receipt; the
+        // nested resource transaction joins it without any late person locks.
+        return $this->once($a, 'generalFeedbackLifecycle', ['action' => $action, 'id' => $id, ...$in], $key,
+            fn () => $this->store->transaction(['feedback:'.$id], function () use ($a, $id, $in, $action) {
+                $row = $this->row('community_feedback', $id, $a);
+                if ($row['type'] !== 'general') {
+                    throw new Problem('INVALID_STATE', 'Only general feedback can use this workflow.');
+                }
+                Rules::revision($row, $in);
+                if (($row['archived_at'] ?? null) !== null || ($action === 'review' && ($row['reviewed_at'] ?? null) !== null)) {
+                    throw new Problem('INVALID_STATE', 'This feedback cannot use that action.');
+                }
+                $at = ($this->clock)();
+                if ($action === 'archive' && ($row['reviewed_at'] ?? null) !== null && Rules::time($at) < Rules::time($row['reviewed_at'])) {
+                    throw new Problem('INVALID_STATE', 'Archive time cannot precede the recorded review.');
+                }
+                $prefix = $action === 'review' ? 'reviewed' : 'archived';
+                $this->store->update('community_feedback', $id, [$prefix.'_by' => $a->id, $prefix.'_at' => $at, 'revision' => $row['revision'] + 1]);
+                $this->audit($a, 'feedback', $id, 'General feedback '.$prefix, ['revision' => $row['revision'] + 1]);
+
+                // Internal administration only; no feedback.updated event or
+                // resident/outbox/SMS audience is created for this workflow.
+                return $this->feedbackItem($a, $id);
+            }), fn ($resource) => $this->feedbackItem($a, $resource));
     }
 
     private function feedbackChange(Actor $a, int $id, array $in, bool $assign): array

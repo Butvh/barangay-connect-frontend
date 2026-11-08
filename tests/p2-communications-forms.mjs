@@ -27,14 +27,14 @@ function element() {
   for (const key of ['title', 'content', 'expires_at', 'reason', 'q', 'status', 'sort']) value.elements[key] = { value: key === 'sort' ? 'newest' : '', addEventListener() {}, setAttribute() {}, removeAttribute() {} };
   return value;
 }
-async function page(file, { demo = false, role = 'secretary', feedback = [], formData = {}, search = '', transport = async () => ({ data: { id: 1 } }), confirm = async () => true } = {}) {
+async function page(file, { demo = false, role = 'secretary', feedback = [], lifecycleAvailable = true, formData = {}, search = '', transport = async () => ({ data: { id: 1 } }), confirm = async () => true } = {}) {
   let actor = { id: 2, barangay_id: 1, role, full_name: 'Fixture', session_observation: 'opening' };
   const main = element(), dialogs = [], errors = [], api = createCommunications({ request: transport });
   const rating = element(); rating.dataset.rating = '4';
   main.querySelectorAll = selector => selector === '[data-rating]' ? [rating] : [];
   const auth = { current: () => actor, roleOf: u => u.role, requireRole() {} };
   const ui = { ...UI, tabs() {}, confirm, toast(message) { errors.push(message); }, closeDialog(el) { el.open = false; } };
-  const shared = { Auth: auth, Api: { ...api, subscribe: () => () => {}, feedback: { ...api.feedback, list: async () => feedback } }, UI: ui, Fmt, Icons, e: UI.escape,
+  const shared = { Auth: auth, Api: { ...api, subscribe: () => () => {}, feedback: { ...api.feedback, generalLifecycleAvailable: lifecycleAvailable, list: async () => feedback } }, UI: ui, Fmt, Icons, e: UI.escape,
     Store: { now: () => '2026-11-06T08:00:00Z' }, icon: Icons.svg, heading: () => '', tile: () => '', field: () => '', textarea: () => '', link: () => '',
     verificationFor: async () => ({ review_status: 'Approved' }), busy: async (el, work) => work(), pagination: () => '', live: (_, load) => load,
     dialog() { const el = element(); dialogs.push(el); return el; },
@@ -54,6 +54,62 @@ async function page(file, { demo = false, role = 'secretary', feedback = [], for
   return { module: module.namespace, main, dialogs, errors, location, rating, reauthenticate() { actor = { ...actor, session_observation: 'new-login' }; } };
 }
 const event = { preventDefault() {} };
+
+for (const action of ['review', 'archive']) test(`original General Feedback ${action} confirmation retries one original intent and rejects changed identity`, async () => {
+  const calls = [], row = { id: 12, type: 'general', comment: 'Complete comment', rating: 4, revision: 3, created_at: '2026-11-06T08:00:00Z' };
+  const p = await page('official-feedback.js', { search: '?type=general', feedback: [row], transport: async (path, options) => { calls.push([path, structuredClone(options)]); throw { code: 'NETWORK', message: 'lost reply' }; } });
+  const detail = p.main.querySelector('#feedback-general').querySelector('aside');
+  assert.match(detail.innerHTML, /data-review/);
+  assert.match(detail.innerHTML, /data-archive/);
+  await detail.querySelector(`[data-${action}]`).events.click();
+  assert.equal(calls.length, 0, 'Opening the confirmation must not mutate');
+  const el = p.dialogs.at(-1);
+  assert.ok(el, 'Use existing confirmation dialog');
+  await el.querySelector('[data-confirm]').events.click();
+  await el.querySelector('[data-confirm]').events.click();
+  assert.equal(calls.length, 2);
+  assert.equal(calls[0][0], `/feedback/12/${action}`);
+  assert.equal(calls[0][1].body.expected_revision, 3);
+  assert.ok(calls[0][1].headers['Idempotency-Key']);
+  assert.deepEqual(calls[0], calls[1]);
+  p.reauthenticate();
+  await el.querySelector('[data-confirm]').events.click();
+  assert.equal(calls.length, 2);
+});
+test('General Feedback cancellation and unavailable binding never send writes', async () => {
+  const row = { id: 12, type: 'general', comment: 'Preserve me', rating: 4, revision: 3, created_at: '2026-11-06T08:00:00Z' };
+  for (const available of [true, false]) {
+    const p = await page('official-feedback.js', { search: '?type=general', feedback: [row], lifecycleAvailable: available, transport: async () => { throw Error('Unexpected request'); } });
+    const detail = p.main.querySelector('#feedback-general').querySelector('aside');
+    await detail.querySelector('[data-archive]').events.click();
+    if (available) {
+      await p.dialogs.at(-1).querySelector('[data-cancel]').events.click();
+      assert.equal(p.dialogs.at(-1).open, false);
+    } else {
+      assert.equal(p.dialogs.length, 0);
+      assert.match(detail.innerHTML, /awaiting.*integration/i);
+    }
+  }
+});
+test('cancelling an unused archive intent then reviewing permits archive with the newly observed revision', async () => {
+  const row = { id: 12, type: 'general', comment: 'Complete comment', rating: 4, revision: 0, created_at: '2026-11-06T08:00:00Z' }, calls = [];
+  const p = await page('official-feedback.js', { search: '?type=general', feedback: [row], transport: async (path, options) => {
+    calls.push([path, structuredClone(options)]);
+    row.revision++;
+    if (path.endsWith('/review')) row.reviewed_at = '2026-11-06T08:00:00Z';
+    return { data: { ...row } };
+  } });
+  const detail = p.main.querySelector('#feedback-general').querySelector('aside');
+  await detail.querySelector('[data-archive]').events.click();
+  await p.dialogs.at(-1).querySelector('[data-cancel]').events.click();
+  await detail.querySelector('[data-review]').events.click();
+  await p.dialogs.at(-1).querySelector('[data-confirm]').events.click();
+  await detail.querySelector('[data-archive]').events.click();
+  await p.dialogs.at(-1).querySelector('[data-confirm]').events.click();
+  assert.equal(calls.length, 2);
+  assert.equal(calls[0][1].body.expected_revision, 0);
+  assert.equal(calls[1][1].body.expected_revision, 1, 'An unsubmitted cancelled intent must not hold an obsolete revision');
+});
 
 test('original publish dialog retries the exact key/body and refuses changed draft or session', async () => {
   const calls = [], p = await page('official-announcement-actions.js', { transport: async (_, options) => { calls.push(structuredClone(options)); throw { code: 'NETWORK', message: 'lost reply' }; } });

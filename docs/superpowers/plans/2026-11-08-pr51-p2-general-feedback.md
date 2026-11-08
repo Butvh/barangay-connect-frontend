@@ -21,12 +21,19 @@
 ## Tasks
 
 - [x] Inspect verified PR51 head, existing source, DBA proposal and repository instructions; preserve work and create isolated P2 branch.
-- [ ] Publish P2 proposed contract and confirm P1/DBA ratification; record schema/registration dependency checkpoints.
-- [ ] Prepare failing real-service portable, HTTP/SQL, adapter and model/UI regressions; label preparation versus acceptance honestly.
-- [ ] After ratification, add minimal CivicService commands, guarded reads and DTO mapping. Verify portable RED/GREEN, rollback, receipt/source checks and locks.
-- [ ] After DBA schema handoff, run actual MySQL/HTTP and independent-process races without creating substitute columns or temporary application migrations.
-- [ ] Add owned communications methods and original selected-detail actions using P1's agreed interfaces; maintain retries/cancel/selection and archived-summary semantics.
+- [x] Publish P2 proposed contract and confirm ratification5428762; DBA bad5d43 integrated2911d80; P1 capability/staging agreed in PR51.
+- [x] Prepare failing real-service portable, HTTP/SQL, adapter and model/UI regressions; label preparation versus acceptance honestly.
+- [x] Add minimal CivicService commands, guarded reads and DTO mapping; portable13 RED/GREEN plus original52.
+- [x] Consume unchanged DBA schema and run actual MySQL/HTTP and independent-process races:6 tests/169 assertions. No substitute migration/model.
+- [x] Add owned communications and original selected-detail actions; new+original JS27 pass after fresh review cancellation correction. Browser acceptance still awaits P1 admission.
 - [ ] Run original P2 contracts/adapter/SQL/lock/civic and emergency regressions, syntax/style/static checks. Keep unsupported paths disabled until genuine integration succeeds.
 - [ ] Publish P2 branch, exact commits/dependencies and evidence in PR51; no competing integration PR or integration-branch push.
 - [ ] Rehearse P1's frozen candidate independently when available. Keep acceptance pending if dependency/candidate has not been published.
 - [ ] Verify recording-custodian handoff prerequisites privately and report access dependency without disclosing keys/paths/SQL/objects.
+
+## Execution ledger
+
+- Ratification5428762 permits owned product work; schema bad5d43 consumed only after P1 integrated it at2911d80. Product/role starting base remains b00; original baseline fingerprints unchanged.
+- Service task: portable13 RED (missing workflows) -> GREEN, original52 remain green. One receipt namespace binds action/resource/revision.
+- UI task: seven feature regressions RED -> GREEN. Fresh review found unused cancelled intent retained an obsolete revision; actual reproduction RED0!=1 -> explicit discard/close recovery GREEN; JS27 pass. No deferred finding.
+- SQL task: first connection attempts could not reach the stopped/recovering isolated MySQL runtime. Preserved initialized data; restart only. Test bootstrap/empty-lock-observer defects corrected without changing product gates/helper; six real service/controller/race cases now169 assertions green. Full original suites running; no final candidate claim.

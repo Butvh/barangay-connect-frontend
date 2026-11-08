@@ -19,7 +19,7 @@ const php = process.env.PHP_BINARY || 'php';
 const cli = (...args) => execFileSync(php, [resolve(root, 'backend/tests/P2/civic-fixture.php'), ...args], { cwd: root, env, windowsHide: true }).toString();
 const records = JSON.parse(cli('prepare')); // Credentials exist only in caller memory.
 const state = () => JSON.parse(cli('state'));
-await stageBackendFrontend({ root, operationalTest: true, administrationTest: true });
+await stageBackendFrontend({ root, operationalTest: true, administrationTest: true, generalFeedbackTest: true });
 const socket = createServer(); socket.listen(0, '127.0.0.1'); await once(socket, 'listening');
 const port = socket.address().port; await new Promise(resolve => socket.close(resolve));
 const origin = `http://127.0.0.1:${port}`;
@@ -48,7 +48,7 @@ async function http(who, path, { method = 'GET', body } = {}) {
   return who.page.evaluate(async ({ path, method, body }) => {
     const { Http } = await import('/frontend/assets/js/core/auth.js');
     try { return { status: 200, data: await Http.request(path, { method, ...(body === undefined ? {} : { body }),
-      ...(method === 'POST' && ['announcements', 'feedback'].includes(path) ? { headers: { 'Idempotency-Key': crypto.randomUUID() } } : {}) }) }; }
+      ...(method === 'POST' && (['announcements', 'feedback'].includes(path) || /^feedback\/\d+\/(review|archive)$/.test(path)) ? { headers: { 'Idempotency-Key': crypto.randomUUID() } } : {}) }) }; }
     catch (error) { return { status: error.status, code: error.code }; }
   }, { path, method, body });
 }
@@ -223,6 +223,52 @@ try {
     await resident.page.evaluate(async () => { const { Auth } = await import('/frontend/assets/js/core/auth.js'); await Auth.refresh(); }); await fresh.close();
     await noEffects(async () => { await resident.page.locator('#submit-feedback').click(); await resident.page.getByText('Your session changed. Reopen the form.', { exact: true }).waitFor(); });
     assert.equal(writes, 0); resident.page.off('request', watch);
+  });
+  await check('General lifecycle original confirmations cancel without writes, then retry a lost committed review with one receipt', async () => {
+    await selected(captain, 'general', general);
+    await captain.page.locator('[data-review]:enabled').click();
+    let dialog = captain.page.getByRole('dialog', { name: 'Mark feedback reviewed?', exact: true });
+    await noEffects(async () => { await dialog.locator('[data-cancel]').click(); });
+    const lost = await dropOnce(captain.page, `feedback/${general}/review`);
+    await captain.page.locator('[data-review]:enabled').click();
+    dialog = captain.page.getByRole('dialog', { name: 'Mark feedback reviewed?', exact: true });
+    await dialog.locator('[data-confirm]').click(); await dialog.locator('[data-save-error]:visible').waitFor();
+    const committed = state(), row = committed.feedback.find(r => r.id === general);
+    assert.equal(row.reviewed_by, records.people.captain.id); assert.ok(row.reviewed_at); assert.equal(row.status, null); assert.equal(row.revision, 1);
+    await dialog.locator('[data-confirm]').click(); await dialog.waitFor({ state: 'detached' });
+    await captain.page.locator('[data-review]:disabled').waitFor(); await captain.page.waitForLoadState('networkidle');
+    lost.assertRetry(); await lost.close(); assert.deepEqual(state().hashes, committed.hashes);
+  });
+  await check('General archive retains ratings/full comments and resident history, synchronizes active selection and rejects stale/wrong authority', async () => {
+    await selected(captain, 'general', general); await selected(secretary, 'general', general);
+    const summary = await secretary.page.locator('.official-feedback-stats').innerText(), original = state().feedback.find(r => r.id === general);
+    await captain.page.locator('[data-archive]:enabled').click();
+    const staleDialog = captain.page.getByRole('dialog', { name: 'Archive feedback?', exact: true });
+    await secretary.page.locator('[data-archive]:enabled').click();
+    const archive = secretary.page.getByRole('dialog', { name: 'Archive feedback?', exact: true });
+    await archive.locator('[data-confirm]').click(); await archive.waitFor({ state: 'detached' });
+    await secretary.page.locator(`[data-record="${general}"]`).waitFor({ state: 'detached' }); await secretary.page.waitForLoadState('networkidle');
+    assert.equal(await secretary.page.locator('.official-feedback-stats').innerText(), summary);
+    const saved = state().feedback.find(r => r.id === general);
+    assert.equal(saved.archived_by, records.people.secretary.id); assert.equal(saved.rating, original.rating); assert.equal(saved.comment, original.comment); assert.equal(saved.status, null);
+    await noEffects(async () => {
+      const response = captain.page.waitForResponse(r => r.url().endsWith(`/feedback/${general}/archive`) && r.request().method() === 'POST');
+      await staleDialog.locator('[data-confirm]').click(); assert.equal((await response).status(), 409); await staleDialog.locator('[data-save-error]:visible').waitFor();
+      for (const who of [resident, operator]) assert.equal((await http(who, `feedback/${general}/archive`, { method: 'POST', body: { expected_revision: 2 } })).status, 403);
+      assert.equal((await http(foreign, `feedback/${general}/review`, { method: 'POST', body: { expected_revision: 2 } })).status, 404);
+      assert.equal((await http(resident, 'feedback?archive=all')).status, 403);
+    });
+    await staleDialog.locator('[data-cancel]').click();
+    const ownHistory = (await http(resident, 'feedback')).data;
+    assert.ok(ownHistory.some(r => r.id === general && r.comment === original.comment && r.rating === original.rating));
+    const independent = await newFeedback(resident, 'general', 'Independent unreviewed archive preserves this full comment.');
+    await selected(captain, 'general', independent); await captain.page.locator('[data-archive]:enabled').click();
+    const unreviewed = captain.page.getByRole('dialog', { name: 'Archive feedback?', exact: true }); await unreviewed.locator('[data-confirm]').click(); await unreviewed.waitFor({ state: 'detached' });
+    assert.equal(state().feedback.find(r => r.id === independent).reviewed_at, null);
+    general = await newFeedback(resident, 'general', 'Secretary review and responsive layout full comment.');
+    await selected(secretary, 'general', general); await secretary.page.locator('[data-review]:enabled').click();
+    const reviewed = secretary.page.getByRole('dialog', { name: 'Mark feedback reviewed?', exact: true }); await reviewed.locator('[data-confirm]').click(); await reviewed.waitFor({ state: 'detached' });
+    assert.equal(state().feedback.find(r => r.id === general).reviewed_by, records.people.secretary.id);
   });
   await check('Original general detail fits measured desktop/tablet/mobile widths and its category tab accepts focus', async () => {
     report.viewports = [];

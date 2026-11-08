@@ -42,7 +42,7 @@ if ($mode === 'prepare') {
     exit;
 }
 if ($mode === 'state') {
-    echo json_encode(['hashes' => civicDatabaseState(), 'feedback' => $db->table('community_feedback')->orderBy('id')->get(['id', 'kind as type', 'status', 'revision', 'rating', 'comment', 'description', 'assigned_tanod_id']),
+    echo json_encode(['hashes' => civicDatabaseState(), 'feedback' => $db->table('community_feedback')->orderBy('id')->get(['id', 'kind as type', 'status', 'revision', 'rating', 'comment', 'description', 'assigned_tanod_id', 'reviewed_by', 'reviewed_at', 'archived_by', 'archived_at']),
         'announcements' => $db->table('announcements')->orderBy('id')->get(['id', 'title', 'status', 'revision']), 'history' => $db->table('announcement_history')->orderBy('id')->get(['announcement_id', 'action', 'reason'])], JSON_THROW_ON_ERROR);
     exit;
 }

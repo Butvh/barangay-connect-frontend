@@ -52,7 +52,7 @@ final class CivicController extends P2Controller
 
     public function feedback(Request $r)
     {
-        return $this->listing($this->civic->feedback($this->actor($r), $this->query($r, ['q', 'type', 'status', 'rating', 'resident_id', 'sort'])));
+        return $this->listing($this->civic->feedback($this->actor($r), $this->query($r, ['q', 'type', 'status', 'rating', 'resident_id', 'sort', 'archive'])));
     }
 
     public function feedbackItem(Request $r, string $id)
@@ -78,5 +78,15 @@ final class CivicController extends P2Controller
     public function resolveFeedback(Request $r, string $id)
     {
         return $this->data($this->civic->resolveFeedback($this->actor($r), $this->id($id), $this->body($r)));
+    }
+
+    public function reviewFeedback(Request $r, string $id)
+    {
+        return $this->data($this->civic->reviewFeedback($this->actor($r), $this->id($id), $this->body($r), $this->key($r)));
+    }
+
+    public function archiveFeedback(Request $r, string $id)
+    {
+        return $this->data($this->civic->archiveFeedback($this->actor($r), $this->id($id), $this->body($r), $this->key($r)));
     }
 }
