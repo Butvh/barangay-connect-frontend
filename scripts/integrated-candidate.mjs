@@ -67,7 +67,9 @@ export async function composeIntegratedCandidate({ root, destination }) {
 }
 
 export async function verifyIntegratedCandidate(root, manifest) {
-  await verifyCandidateBaseline(root);
+  // Composition checked Git's pinned upstream blobs. The exported snapshot has no
+  // .git directory: verify every frozen candidate byte, including its baseline
+  // and patch declarations, without requiring access to a developer checkout.
   for (const [name, expected] of Object.entries(manifest.hashes)) {
     if (hash(await source(root, name)) !== expected) throw new Error('Candidate changed after snapshot: ' + name);
   }
