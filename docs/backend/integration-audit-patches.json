@@ -179,8 +179,8 @@
   },
   ".github/workflows/pages.yml": {
     "before": "e3e48258445fa3e66920af1bf1ff26814ae968ac62c3bd3d86fd1c64e9d7cebc",
-    "after": "15f13f5dd9d35e84a2c441e0cd5fdc628939e463cb551806414e2482abaab853",
-    "reason": "Delegated P1/P2/DBA security and actual Linux validation: minimal Composer advisory remediation and original Linux CI evidence; immutable source baseline retained.",
+    "after": "2db4a5befcff4e4da53da45e7ea5861ee8d49f1d2371fa2c27a33322ec6690f9",
+    "reason": "Delegated security/Linux validation: preserve original suites, audit both minimally patched locks, assert original Linux symlink coverage and verify disposable setup rejects with nonzero status.",
     "owner": "p1"
   },
   "UX-CONTRACT.md": {
@@ -275,8 +275,9 @@
   },
   "backend/tests/Support/prepare-browser-database.php": {
     "before": "f6ca01d4cfc686492ec02d9c37909ffd887456910ee25668574c0101c12b212b",
-    "after": "76cb2cc5b5657d81940fecdeba97dc4867a9c5abff378c9375402a4bf589759b",
-    "reason": "PR51: Admit one additional explicitly named fresh map-browser schema; keep refusal of preexisting targets."
+    "after": "fb44a4bbdf1fdc37b98ac13fa02c52f7a314c91182863f4203be03a9f8dafdab",
+    "reason": "Observed original Linux guard rejection returned exit0 and continued into migration; catch standalone setup failures with nonzero exit, retain fresh-only CREATE and all existing opt-ins, admit only the existing final browser target.",
+    "owner": "p1"
   },
   "assets/js/pages/resident-components.js": {
     "before": "e9a2d963c21f0f12fdf7ca3f21e0680a0431407c64920714801c732f22aed999",
@@ -389,5 +390,11 @@
     "before": "3083a4db416749d3743ad98cd649c8fd2f11b862b04726b5185df7dfad82ef0e",
     "after": "8fa0a68c01068e4419db1d2566b3ffddbb86dc63626ccf5628d71a8b805bbb50",
     "reason": "Delegated P1/P2/DBA security and actual Linux validation: minimal Composer advisory remediation and original Linux CI evidence; immutable source baseline retained."
+  },
+  "backend/tests/Support/prepare-p2-database.php": {
+    "owner": "p1",
+    "before": "b9af43e0b8240ca654103d443465c827a9f37f44d6867f40653a3d414451ae74",
+    "after": "2eed81c706774c2f3b647180ada2ee87b1b482d63e3e99944e080fd1e3e2a4d3",
+    "reason": "Local actual-helper regressions reproduced the browser-observed standalone exception exit0 defect in P2 preparation; catch bootstrap/guard/CREATE failures with exit1, retain every original allowlisted P2 target, disposable check and fresh-only CREATE."
   }
 }

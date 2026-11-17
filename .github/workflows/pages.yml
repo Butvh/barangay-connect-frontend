@@ -133,6 +133,9 @@ jobs:
           composer check-platform-reqs
           composer audit --locked --no-interaction --format=json > composer-security-audit.json
           composer audit --locked --no-interaction --format=json --working-dir=tests/ci > composer-harness-security-audit.json
+      - name: Disposable schema setup fails closed
+        working-directory: ${{ env.SNAPSHOT_DIR }}
+        run: node --test tests/disposable-database-guard.mjs
       - name: P1 and unchanged DBA suites on genuine MySQL
         working-directory: ${{ env.SNAPSHOT_DIR }}/backend
         run: php vendor/phpunit/phpunit/phpunit -c phpunit.combined.xml --display-warnings --fail-on-warning --log-junit combined-junit.xml
