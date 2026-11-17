@@ -131,10 +131,85 @@ jobs:
           composer validate --strict
           composer install --no-interaction --prefer-dist --no-progress
           composer check-platform-reqs
-          composer audit --locked --no-interaction
+          composer audit --locked --no-interaction --format=json > composer-security-audit.json
+          composer audit --locked --no-interaction --format=json --working-dir=tests/ci > composer-harness-security-audit.json
       - name: P1 and unchanged DBA suites on genuine MySQL
         working-directory: ${{ env.SNAPSHOT_DIR }}/backend
         run: php vendor/phpunit/phpunit/phpunit -c phpunit.combined.xml --display-warnings --fail-on-warning --log-junit combined-junit.xml
+      - name: Linux schema and security coverage evidence
+        working-directory: ${{ env.SNAPSHOT_DIR }}/backend
+        run: |
+          cat > "$RUNNER_TEMP/p0-schema.php" <<'PHP'
+          <?php
+          require getcwd().'/vendor/autoload.php';
+          $app = require getcwd().'/bootstrap/app.php';
+          $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+          $db = Illuminate\Support\Facades\DB::connection('mysql');
+          $name = $db->getDatabaseName();
+          if (! $app->environment('testing') || getenv('DB_TEST_DISPOSABLE') !== '1' || getenv('P1_COMBINED_TESTS') !== '1' ||
+              $name !== 'bc_dba_p1_compat' || $name !== getenv('DB_TEST_DATABASE') ||
+              $db->getConfig('host') !== '127.0.0.1' || (string) $db->getConfig('port') !== '3306' ||
+              $db->selectOne('SELECT DATABASE() AS db')->db !== $name ||
+              ! str_starts_with($db->selectOne('SELECT VERSION() AS v')->v, '8.4.')) {
+              throw new LogicException('Refusing unconfirmed inventory target.');
+          }
+          // This runner-only schema must be absent; never drop or reuse a target.
+          $db->statement('CREATE DATABASE bc_dba_p1_security_inventory CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci');
+          $app['config']->set('database.connections.mysql.database', 'bc_dba_p1_security_inventory');
+          $app['config']->set('database.connections.mysql.url', null);
+          Illuminate\Support\Facades\DB::purge('mysql');
+          $db = Illuminate\Support\Facades\DB::connection('mysql');
+          $name = $db->getDatabaseName();
+          if ($name !== 'bc_dba_p1_security_inventory' || $db->selectOne('SELECT DATABASE() AS db')->db !== $name) {
+              throw new LogicException('Inventory connection did not select the fresh schema.');
+          }
+          if (Illuminate\Support\Facades\Artisan::call('migrate', ['--database' => 'mysql', '--force' => true, '--no-interaction' => true]) !== 0) {
+              throw new RuntimeException('Inventory migration failed.');
+          }
+          $count = fn ($table) => $db->table('information_schema.'.$table)->where('table_schema', $name)->count();
+          echo json_encode(['mysql' => $db->selectOne('SELECT VERSION() AS v')->v,
+              'utc' => $db->selectOne('SELECT @@SESSION.time_zone AS tz')->tz,
+              'tables' => $count('tables'),
+              'foreign_keys' => $db->table('information_schema.table_constraints')->where('constraint_schema', $name)->where('constraint_type', 'FOREIGN KEY')->count(),
+              'triggers' => $db->table('information_schema.triggers')->where('trigger_schema', $name)->count(),
+              'migration_records' => $db->table('migrations')->count(),
+              'innodb_flush_log_at_trx_commit' => $db->selectOne('SELECT @@GLOBAL.innodb_flush_log_at_trx_commit AS v')->v,
+              'sync_binlog' => $db->selectOne('SELECT @@GLOBAL.sync_binlog AS v')->v], JSON_THROW_ON_ERROR);
+          PHP
+          php "$RUNNER_TEMP/p0-schema.php" > linux-schema-evidence.json
+          export VALIDATED_TREE="$(git -C "$GITHUB_WORKSPACE" rev-parse 'HEAD^{tree}')"
+          python3 - <<'PY'
+          import json, os, platform, subprocess, xml.etree.ElementTree as ET
+          from pathlib import Path
+          doc = ET.parse('combined-junit.xml').getroot()
+          suite = doc.find('testsuite')
+          cases = [c for c in doc.iter('testcase') if c.get('name') == 'test_object_is_never_overwritten_and_symlink_is_rejected' and c.get('class') == 'Tests\\Unit\\PrivatePhotoPathTest']
+          passed = len(cases) == 1 and all(cases[0].find(tag) is None for tag in ['skipped', 'failure', 'error'])
+          data = {'sha': os.environ['GITHUB_SHA'], 'tree': os.environ['VALIDATED_TREE'],
+              'run_url': os.environ['GITHUB_SERVER_URL']+'/'+os.environ['GITHUB_REPOSITORY']+'/actions/runs/'+os.environ['GITHUB_RUN_ID'],
+              'os': platform.system(), 'php': subprocess.check_output(['php','-r','echo PHP_VERSION;'], text=True),
+              'node': subprocess.check_output(['node','--version'], text=True).strip(),
+              'composer': subprocess.check_output(['composer','--version','--no-ansi'], text=True).strip(),
+              'combined': suite.attrib, 'symlink_test_ran_and_passed': passed,
+              'schema': json.loads(Path('linux-schema-evidence.json').read_text()),
+              'lock_version': next(x['version'] for x in json.loads(Path('composer.lock').read_text())['packages'] if x['name'] == 'laravel/framework'),
+              'application_audit': json.loads(Path('composer-security-audit.json').read_text()),
+              'standalone_harness_audit': json.loads(Path('composer-harness-security-audit.json').read_text())}
+          Path('linux-security-evidence.json').write_text(json.dumps(data, indent=2)+'\n')
+          assert data['os'] == 'Linux' and passed, 'Original symlink security test must run and pass on actual Linux'
+          assert int(suite.get('errors', '0')) == 0 and int(suite.get('failures', '0')) == 0
+          PY
+      - name: Linux security evidence artifact
+        if: ${{ always() && env.SNAPSHOT_DIR != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: p0-linux-security-evidence
+          path: |
+            ${{ env.SNAPSHOT_DIR }}/backend/linux-security-evidence.json
+            ${{ env.SNAPSHOT_DIR }}/backend/linux-schema-evidence.json
+            ${{ env.SNAPSHOT_DIR }}/backend/composer-security-audit.json
+            ${{ env.SNAPSHOT_DIR }}/backend/composer-harness-security-audit.json
+          if-no-files-found: error
       - name: Full combined PHP evidence
         if: ${{ always() && env.SNAPSHOT_DIR != '' }}
         uses: actions/upload-artifact@v4

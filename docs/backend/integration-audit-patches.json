@@ -179,8 +179,9 @@
   },
   ".github/workflows/pages.yml": {
     "before": "e3e48258445fa3e66920af1bf1ff26814ae968ac62c3bd3d86fd1c64e9d7cebc",
-    "after": "2daab1dbf12312e612ef49f7dea9d50481cd17b57b217c3fee163f8d5570c5b8",
-    "reason": "Approved delegated P1/P2 P0 release admission and regression-driven boundary corrections; immutable owner baseline preserved."
+    "after": "15f13f5dd9d35e84a2c441e0cd5fdc628939e463cb551806414e2482abaab853",
+    "reason": "Delegated P1/P2/DBA security and actual Linux validation: minimal Composer advisory remediation and original Linux CI evidence; immutable source baseline retained.",
+    "owner": "p1"
   },
   "UX-CONTRACT.md": {
     "before": "5bfedf961acaa11b35fb36a9cd5d06be0bca1222d985b9a8675c327cbbc9ba6a",
@@ -376,5 +377,17 @@
     "before": "dc6583ae1b6eec1db91849198602fd0ba4b716aed9714de607984613e90ad64a",
     "after": "9b601dff8b55d7ae59554956f8b17512b2ea6545f7d0b06b6b78cf71a8c8de2d",
     "reason": "Approved delegated P1/P2 P0 release admission and regression-driven boundary corrections; immutable owner baseline preserved."
+  },
+  "backend/composer.lock": {
+    "owner": "p1",
+    "before": "81e2a301eeb78957ff457dfc861d95886a194a59b79f5592d429a43c1b32ab0c",
+    "after": "2dcd6db8afcdc21b6f0fbdff43799b213ddf5483e10e52a7a86a6a19790cb209",
+    "reason": "Delegated P1/P2/DBA security and actual Linux validation: minimal Composer advisory remediation and original Linux CI evidence; immutable source baseline retained."
+  },
+  "backend/tests/ci/composer.lock": {
+    "owner": "dba",
+    "before": "3083a4db416749d3743ad98cd649c8fd2f11b862b04726b5185df7dfad82ef0e",
+    "after": "8fa0a68c01068e4419db1d2566b3ffddbb86dc63626ccf5628d71a8b805bbb50",
+    "reason": "Delegated P1/P2/DBA security and actual Linux validation: minimal Composer advisory remediation and original Linux CI evidence; immutable source baseline retained."
   }
 }
