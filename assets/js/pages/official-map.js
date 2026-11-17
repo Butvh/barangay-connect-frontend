@@ -5,6 +5,7 @@ import { BCMap, currentMapScope } from '../core/scoped-map.js';
 import { ALERT_STATUSES, ALERT_TYPES, canTransition } from '../core/alertMachine.js';
 import { resolveAlert } from './official-alert-actions.js';
 import { assignAlert } from './official-assignment.js';
+import { Runtime } from '../core/runtime-config.js';
 import { monitoringMarkers } from './official-map-model.js';
 
 let user;
@@ -96,7 +97,9 @@ if (user) {
     const request = ++version;
     try {
       const [alerts, facilities, complaints, mapContext] = await Promise.all([Api.alerts.list(), Api.facilities.list(), ['secretary', 'captain'].includes(role) ? Api.feedback.list({ type: 'complaint' }) : Promise.resolve([]), currentMapScope()]);
-      const people = await Promise.all([...new Set(complaints.map(c => c.resident_id))].map(id => Api.users.get(id)));
+      // Backend profile reads are self-only. Authorized alert households already
+      // supply matching locations; other complaints remain explicitly unplaced.
+      const people = await Promise.all([...new Set(complaints.map(c => c.resident_id))].filter(id => Runtime.mode === 'demo' || id === user.id).map(id => Api.users.get(id)));
       if (request !== version) return;
       data = { alerts, facilities, complaints, mapContext, households: [...alerts.map(a => a.household), ...people.map(p => p.household)].filter(Boolean) }; loaded = true; error.hidden = true; update();
       main.querySelectorAll('[data-open-facilities]').forEach(button => { button.disabled = false; button.removeAttribute('title'); });

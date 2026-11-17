@@ -7,7 +7,17 @@ import { stageBackendFrontend } from '../scripts/stage-backend-frontend.mjs';
 const root = await mkdtemp(resolve(tmpdir(), 'bc-release-artifact-'));
 const names = ['backend/app/Providers/IntegrationServiceProvider.php', 'backend/config/integration.php',
   'backend/app/Http/Controllers/Identity/AdministrationController.php', 'assets/js/adapters/administrative-registration.js',
-  'assets/js/adapters/domains.js', 'assets/js/core/notification-preferences.js', 'scripts/stage-backend-frontend.mjs', 'backend/routes/api.php'];
+  'assets/js/adapters/domains.js', 'assets/js/core/notification-preferences.js', 'scripts/stage-backend-frontend.mjs', 'backend/routes/api.php', 'backend/app/Http/Controllers/P2/CivicController.php',
+  'backend/app/Providers/P2ServiceProvider.php', 'backend/app/Services/Identity/CurrentSmsConsent.php',
+  'backend/app/Services/Incidents/IncidentService.php', 'backend/app/Services/Civic/CivicService.php',
+  'backend/app/Services/P2/Module.php', 'backend/app/Services/P2/Persistence/TypedOutboxWriter.php',
+  'backend/app/Services/Messaging/SmsCurrentAuthorization.php', 'backend/app/Services/Messaging/OutboxDispatcher.php',
+  'backend/app/Services/Messaging/SmsDeliveryService.php', 'backend/routes/identity.php',
+  'backend/config/messaging.php', 'backend/config/database.php', 'backend/config/queue.php',
+  'assets/js/pages/resident-profile.js', 'assets/js/pages/official-profile.js',
+  'assets/js/adapters/operational-registration.js', 'assets/js/adapters/p2-registration.js',
+  'assets/js/adapters/operations.js', 'assets/js/adapters/communications.js',
+  'assets/js/adapters/reports.js', 'assets/js/adapters/p2-domains.js', 'assets/js/adapters/p2-form-intent.js'];
 const sha = bytes => createHash('sha256').update(bytes.toString().replace(/\r\n/g, '\n')).digest('hex');
 const admissionPath = 'docs/backend/pr51-p0-release-admission.json';
 try {
@@ -29,7 +39,14 @@ try {
     await walk();
     await writeFile(resolve(root, 'integration-manifest.json'), JSON.stringify({ kind: 'integrated-audit-candidate-v1', candidate: 'a'.repeat(40), dirty, hashes }));
   }
+  const missingAuthority = structuredClone(admission);
+  delete missingAuthority.requiredSources['backend/app/Services/Identity/CurrentSmsConsent.php'];
+  await pin(missingAuthority);
+  await assert.rejects(stageBackendFrontend({ root, releaseProfile: 'p0-v1' }), /incomplete/i);
   await pin(admission);
+  await writeFile(resolve(root, 'resident-unmanifested.html'), '<title>Unreviewed extra asset</title>');
+  await assert.rejects(stageBackendFrontend({ root, releaseProfile: 'p0-v1' }), /unmanifested/i);
+  await rm(resolve(root, 'resident-unmanifested.html'));
   const result = await stageBackendFrontend({ root, releaseProfile: 'p0-v1' });
   const runtime = await readFile(resolve(result.directory, 'assets/js/core/runtime-config.js'), 'utf8');
   assert.match(runtime, /releaseProfile: "p0-v1"/);
@@ -48,3 +65,4 @@ try {
   if (dirname(root) !== resolve(tmpdir()) || !basename(root).startsWith('bc-release-artifact-')) throw new Error('Unsafe fixture cleanup');
   await rm(root, { recursive: true, force: true });
 }
+

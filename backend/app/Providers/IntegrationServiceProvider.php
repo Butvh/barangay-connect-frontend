@@ -20,6 +20,9 @@ use App\Services\P2\Persistence\RelationalStore;
 use App\Services\P2\Persistence\TypedAuditRecorder;
 use App\Services\P2\Persistence\TypedOutboxWriter;
 use App\Services\Photos\PrivateIncidentPhotos;
+use App\Support\ApiProblem;
+use Illuminate\Routing\Events\RouteMatched;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\ServiceProvider;
 use LogicException;
@@ -121,6 +124,9 @@ final class IntegrationServiceProvider extends ServiceProvider
                 throw new LogicException('Release and isolated test selections cannot be mixed.');
             }
         }
+        if (config('integration.p2_requested')) {
+            throw new LogicException('Release cannot use the raw isolated P2 module selection.');
+        }
         if (getenv('P1_OPERATIONAL_BROWSER') === '1' || getenv('P2_TEST_HTTP') === '1') {
             throw new LogicException('Release cannot use an isolated HTTP harness selection.');
         }
@@ -130,6 +136,13 @@ final class IntegrationServiceProvider extends ServiceProvider
             config('database.connections.'.config('integration.connection').'.driver') !== 'mysql' ||
             config('database.connections.'.config('integration.connection').'.timezone') !== '+00:00') {
             throw new LogicException('Release requires actual v1 ports, v2 envelopes and one named UTC MySQL connection.');
+        }
+        if (config('integration.dispatch_enabled') &&
+            (config('queue.default') !== 'database' || config('queue.connections.database.driver') !== 'database' ||
+            (config('queue.connections.database.connection') ?? config('database.default')) !== config('integration.connection') ||
+            config('queue.connections.database.table') !== 'jobs' || config('queue.connections.database.after_commit') !== true ||
+            config('queue.connections.database.retry_after') <= 90)) {
+            throw new LogicException('Release dispatch requires the reviewed queue on the same named database after commit.');
         }
         $adapters = [
             'store_adapter' => RelationalStore::class,
@@ -174,6 +187,15 @@ final class IntegrationServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        if (config('integration.release_admitted')) {
+            // Route matching occurs after Laravel has loaded cached routes. A boot
+            // callback here would run before RouteServiceProvider's deferred load.
+            Event::listen(RouteMatched::class, function ($event): void {
+                if ($this->app->routesAreCached() && $event->route->uri() === 'api/v1/{module}/{remainder?}') {
+                    throw new ApiProblem('NOT_AVAILABLE', 503, 'Release route cache was built with a different profile. Rebuild configuration and routes together.');
+                }
+            });
+        }
         if (config('integration.dispatch_enabled')) {
             Schedule::job(new DispatchOutbox, 'messaging-control', 'database')
                 ->everyMinute()->withoutOverlapping();

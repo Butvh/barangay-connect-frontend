@@ -61,6 +61,13 @@ export function createAdministrativeFactories({ profileOnly = false } = {}) {
       ...Object.fromEntries(['appoint', 'reassign', 'remove'].map(action => [action, (value, body) => http.request('personnel/' + id(value) + '/' + action, { method: 'POST', body })])),
     }),
   };
+  if (profileOnly) {
+    const fullUsers = factories.users;
+    factories.users = context => {
+      const { register: _unavailable, ...selfProfile } = fullUsers(context);
+      return selfProfile;
+    };
+  }
   return Object.freeze(profileOnly ? Object.fromEntries(['users', 'barangays', 'account'].map(key => [key, factories[key]])) : factories);
 }
 

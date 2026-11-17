@@ -17,8 +17,18 @@ export async function stageBackendFrontend({ root = projectRoot, operationalTest
     const admission = JSON.parse(await readFile(resolve(root, admissionName), 'utf8'));
     if (admission.kind !== 'pr51-p0-release-admission-v1' || admission.profile !== releaseProfile || admission.baseCommit !== 'b60c0dddeff1a765c08cdec73ce45e4afdf26b43') throw new Error('Invalid reviewed release admission.');
     const required = ['backend/app/Providers/IntegrationServiceProvider.php', 'backend/config/integration.php',
-      'backend/app/Http/Controllers/Identity/AdministrationController.php', 'assets/js/adapters/administrative-registration.js',
-      'assets/js/adapters/domains.js', 'assets/js/core/notification-preferences.js', 'scripts/stage-backend-frontend.mjs', 'backend/routes/api.php'];
+  'backend/app/Http/Controllers/Identity/AdministrationController.php', 'assets/js/adapters/administrative-registration.js',
+  'assets/js/adapters/domains.js', 'assets/js/core/notification-preferences.js', 'scripts/stage-backend-frontend.mjs', 'backend/routes/api.php', 'backend/app/Http/Controllers/P2/CivicController.php',
+  'backend/app/Providers/P2ServiceProvider.php', 'backend/app/Services/Identity/CurrentSmsConsent.php',
+  'backend/app/Services/Incidents/IncidentService.php', 'backend/app/Services/Civic/CivicService.php',
+  'backend/app/Services/P2/Module.php', 'backend/app/Services/P2/Persistence/TypedOutboxWriter.php',
+  'backend/app/Services/Messaging/SmsCurrentAuthorization.php', 'backend/app/Services/Messaging/OutboxDispatcher.php',
+  'backend/app/Services/Messaging/SmsDeliveryService.php', 'backend/routes/identity.php',
+  'backend/config/messaging.php', 'backend/config/database.php', 'backend/config/queue.php',
+  'assets/js/pages/resident-profile.js', 'assets/js/pages/official-profile.js',
+  'assets/js/adapters/operational-registration.js', 'assets/js/adapters/p2-registration.js',
+  'assets/js/adapters/operations.js', 'assets/js/adapters/communications.js',
+  'assets/js/adapters/reports.js', 'assets/js/adapters/p2-domains.js', 'assets/js/adapters/p2-form-intent.js'];
     if (!required.every(name => Object.hasOwn(admission.requiredSources || {}, name))) throw new Error('Incomplete release dependency admission.');
     for (const [name, expected] of Object.entries(admission.requiredSources)) if (!/^[a-f0-9]{64}$/.test(expected) || manifest.hashes[name] !== expected) throw new Error('Release dependency changed: ' + name);
   }
@@ -52,6 +62,10 @@ export async function stageBackendFrontend({ root = projectRoot, operationalTest
   try { if ((await lstat(target)).isSymbolicLink()) throw new Error('Backend artifact cannot be a symbolic link'); }
   catch (error) { if (error.code !== 'ENOENT') throw error; }
   const artifact = await buildFrontendArtifact({ root });
+  if (releaseProfile !== null) {
+    const manifest = JSON.parse(await readFile(resolve(root, 'integration-manifest.json'), 'utf8'));
+    for (const name of artifact.files) if (!manifest.hashes[name]) throw new Error('Unmanifested release asset: ' + name);
+  }
   const files = artifact.files.filter(name => name !== 'assets/js/data/seed.js');
   await rm(target, { recursive: true, force: true });
   for (const name of files) {

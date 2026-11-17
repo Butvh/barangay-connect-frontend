@@ -163,6 +163,10 @@ jobs:
         if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
         working-directory: ${{ env.SNAPSHOT_DIR }}
         run: node scripts/stage-backend-frontend.mjs
+      - name: P0 release admission on actual caches
+        if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
+        working-directory: ${{ env.SNAPSHOT_DIR }}
+        run: node tests/backend-release-cache.mjs
       - name: Live private public-root and disabled-module boundaries
         if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
         working-directory: ${{ env.SNAPSHOT_DIR }}
@@ -182,6 +186,13 @@ jobs:
           npm audit --prefix "$BROWSER_RUNTIME" --omit=optional
           node "$BROWSER_RUNTIME/node_modules/playwright/cli.js" install --with-deps chromium
           P1_BROWSER_MODULE="$BROWSER_RUNTIME/node_modules/playwright/index.mjs" node tests/browser/identity.mjs
+      - name: P0 original self-consent release UI
+        if: ${{ !cancelled() && env.SNAPSHOT_DIR != '' }}
+        working-directory: ${{ env.SNAPSHOT_DIR }}
+        run: |
+          MYSQL_PWD="$DB_PASSWORD" mysql -h 127.0.0.1 -u root -e 'CREATE DATABASE bc_dba_p1_p0_release_browser'
+          DB_DATABASE=bc_dba_p1_p0_release_browser DB_TEST_DATABASE=bc_dba_p1_p0_release_browser php backend/artisan migrate --force --no-interaction
+          DB_DATABASE=bc_dba_p1_p0_release_browser DB_TEST_DATABASE=bc_dba_p1_p0_release_browser P1_BROWSER_MODULE="$RUNNER_TEMP/bc-browser-runtime/node_modules/playwright/index.mjs" node tests/browser/release-consent.mjs
       - name: Identity browser evidence
         if: ${{ always() && env.SNAPSHOT_DIR != '' }}
         uses: actions/upload-artifact@v4

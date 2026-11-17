@@ -6,6 +6,7 @@ namespace App\Http\Controllers\P2;
 
 use App\Contracts\P2\ReferenceData;
 use App\Services\Civic\CivicService;
+use App\Support\ApiProblem;
 use Illuminate\Http\Request;
 
 final class CivicController extends P2Controller
@@ -82,11 +83,19 @@ final class CivicController extends P2Controller
 
     public function reviewFeedback(Request $r, string $id)
     {
+        if (config('integration.release_admitted')) {
+            throw new ApiProblem('NOT_AVAILABLE', 503, 'General Feedback lifecycle is not admitted in this release profile.');
+        }
+
         return $this->data($this->civic->reviewFeedback($this->actor($r), $this->id($id), $this->body($r), $this->key($r)));
     }
 
     public function archiveFeedback(Request $r, string $id)
     {
+        if (config('integration.release_admitted')) {
+            throw new ApiProblem('NOT_AVAILABLE', 503, 'General Feedback lifecycle is not admitted in this release profile.');
+        }
+
         return $this->data($this->civic->archiveFeedback($this->actor($r), $this->id($id), $this->body($r), $this->key($r)));
     }
 }

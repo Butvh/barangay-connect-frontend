@@ -10,6 +10,7 @@ const http = { async request(path) {
   return { id: 5, verification: { id: 12, review_status: 'Approved', revision: 3 } };
 } };
 const factories = createAdministrativeFactories({ profileOnly: true });
+assert.equal(factories.users({ http, auth }).register, undefined);
 assert.deepEqual(Object.keys(factories).sort(), ['account', 'barangays', 'users']);
 const user = await factories.users({ http, auth }).get(5);
 assert.equal(user.verification.review_status, 'Approved');

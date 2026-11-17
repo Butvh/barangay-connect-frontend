@@ -29,8 +29,8 @@
   },
   "assets/js/pages/official-map.js": {
     "before": "7fb349d6e1db40cbc222482172a41453612c418c0e5f67c4a8be5b64e0cb8192",
-    "after": "5446e03b5387ba1ab69eb247899e3c2ba202bb3a5ba8761864868e66abad846b",
-    "reason": "Truthful map pin counts, Captain complaints access and resident facility visibility PR51: Resolve current server scope and refresh map projection on reference invalidation."
+    "after": "0ab06da6e639580aa168ea53b1d3050a42ffa3c0c028e5c07910524eea6c2a52",
+    "reason": "Approved delegated P1/P2 P0 release admission and regression-driven boundary corrections; immutable owner baseline preserved."
   },
   "assets/js/pages/register.js": {
     "owner": "p1",
@@ -94,7 +94,7 @@
   "scripts/run-tests.mjs": {
     "before": "f41c408fbbedc16f90c1abbb44117029f12ac12fbcabb706a1b6e8acf0eaaa96",
     "after": "3917d3f08d8838e76547b89a37ccf910bff3a7cf42364ca36c7f8354607c1d23",
-    "reason": "Approved November17 delegated-P1 P0 release/profile/consent registration; original owner baseline preserved."
+    "reason": "Approved delegated P1/P2 P0 release admission and regression-driven boundary corrections; immutable owner baseline preserved."
   },
   "scripts/verify-integration.mjs": {
     "owner": "p1",
@@ -179,8 +179,8 @@
   },
   ".github/workflows/pages.yml": {
     "before": "e3e48258445fa3e66920af1bf1ff26814ae968ac62c3bd3d86fd1c64e9d7cebc",
-    "after": "765eae92e47c8ed89b7b983a09f323dc5cb63dd7c2a3bca829ccd0b45f2abb6a",
-    "reason": "PR51: Add isolated PR51 map browser regression and evidence upload; retain every original CI gate. PR51: Add isolated PR51 map browser regression and evidence upload; retain every original CI gate. PR51 integration: P1: append portable General Feedback and Node regressions, retaining every original combined gate. PR51 integration: P1: append portable General Feedback and Node regressions, retaining every original combined gate."
+    "after": "2daab1dbf12312e612ef49f7dea9d50481cd17b57b217c3fee163f8d5570c5b8",
+    "reason": "Approved delegated P1/P2 P0 release admission and regression-driven boundary corrections; immutable owner baseline preserved."
   },
   "UX-CONTRACT.md": {
     "before": "5bfedf961acaa11b35fb36a9cd5d06be0bca1222d985b9a8675c327cbbc9ba6a",
@@ -195,7 +195,7 @@
   "assets/js/adapters/domains.js": {
     "before": "70a46a42dfb35146e8821534a1d929fa9a91e0c0657638856ebc433647ca01b3",
     "after": "b84779a5707eba5b3e4375111a0aa5d5359db2ce55c8399da1cb0913a5c48f75",
-    "reason": "Approved November17 delegated-P1 P0 release/profile/consent registration; original owner baseline preserved."
+    "reason": "Approved delegated P1/P2 P0 release admission and regression-driven boundary corrections; immutable owner baseline preserved."
   },
   "assets/js/adapters/operational-registration.js": {
     "before": "1e9c2e4a0c94fb8663ed4c809965b3c26436424193494d64af035f5d032a0d80",
@@ -270,7 +270,7 @@
   "backend/app/Http/Controllers/Identity/AdministrationController.php": {
     "before": "34af513dfa9ff9c78a3e12ce905e0c732bf59f4d4da89f54a3017cf310e19c95",
     "after": "98c135e450fe093170f3d03f264bbf94670b0924b8b69c0accfd0e97b59f2416",
-    "reason": "Approved November17 delegated-P1 P0 release/profile/consent registration; original owner baseline preserved."
+    "reason": "Approved delegated P1/P2 P0 release admission and regression-driven boundary corrections; immutable owner baseline preserved."
   },
   "backend/tests/Support/prepare-browser-database.php": {
     "before": "f6ca01d4cfc686492ec02d9c37909ffd887456910ee25668574c0101c12b212b",
@@ -284,8 +284,8 @@
   },
   "scripts/stage-backend-frontend.mjs": {
     "before": "98ec13105031e902f73fbb5337d43df1590163d6440e604840f6b85ed3e34d93",
-    "after": "344905d10880b48eed35ab159f58b0b482d5c57ccc9102fe6231719a87b89a10",
-    "reason": "Approved November17 delegated-P1 P0 release/profile/consent registration; original owner baseline preserved."
+    "after": "1e6d27921e3835d89f693319192cffb6f4405b5fa9b2c0eb027eb5e81f774451",
+    "reason": "Approved delegated P1/P2 P0 release admission and regression-driven boundary corrections; immutable owner baseline preserved."
   },
   "tests/browser/workflow-runtime.mjs": {
     "before": "7821ea60ef7e489157b0e917e4aa4190052abb1d61f6d5a9f7cac53e4879f51c",
@@ -319,8 +319,8 @@
   },
   "backend/app/Http/Controllers/P2/CivicController.php": {
     "before": "fa8172d44488ed8b6e19696ec3444d674d22e788e861daa3027831210eee0f0a",
-    "after": "38f05d932bd9b0ddf30ee73381a93eca0211d69cddcc5b066dcf5152cda16aea",
-    "reason": "PR51 integration: P2 c919306: reviewed scoped lifecycle routes and archive read selector."
+    "after": "7fc87bd3981f08b382dfd6fdd2e6f44da79d94eb016defeb679145a2b3e31c15",
+    "reason": "Approved delegated P1/P2 P0 release admission and regression-driven boundary corrections; immutable owner baseline preserved."
   },
   "backend/app/Services/Civic/CivicService.php": {
     "before": "3a7714bd05af8e55799b10b42541d140820b01983619db4e86534609f61b89bc",
@@ -354,27 +354,27 @@
   },
   "assets/js/adapters/administrative-registration.js": {
     "before": "b648383a6d8e987db9c0cf6d638e525b20f50031e18b2c92ebc00aa99a9a3b3e",
-    "after": "841be43dfb4bce678a7eda1ae9a71b3c1a976458d6e5600f874cfe3f71d22344",
-    "reason": "Approved November17 delegated-P1 P0 release/profile/consent registration; original owner baseline preserved."
+    "after": "b0d80584369b95726c868d378a0104829debe817a2e688a6f0c124bb11fe1e30",
+    "reason": "Approved delegated P1/P2 P0 release admission and regression-driven boundary corrections; immutable owner baseline preserved."
   },
   "assets/js/core/notification-preferences.js": {
     "before": "45bfe5fd8e8f84f66814f498080654fb3f0aa6090953875da4de4153e2f928e5",
     "after": "e5a59afe9ed6493a9a7e04b66560ee81084b79f631985495ecfb63d8be87f814",
-    "reason": "Approved November17 delegated-P1 P0 release/profile/consent registration; original owner baseline preserved."
+    "reason": "Approved delegated P1/P2 P0 release admission and regression-driven boundary corrections; immutable owner baseline preserved."
   },
   "backend/.env.example": {
     "before": "3944b17aceb18c4c2a3cc70a7410ddbfe03efa259b371ccc0ca6af872d96d967",
     "after": "dbc599c331a7102e8d32977e6e5e6bc5221f27555430b0a158b61090d907ba59",
-    "reason": "Approved November17 delegated-P1 P0 release/profile/consent registration; original owner baseline preserved."
+    "reason": "Approved delegated P1/P2 P0 release admission and regression-driven boundary corrections; immutable owner baseline preserved."
   },
   "backend/app/Providers/IntegrationServiceProvider.php": {
     "before": "e38180661cf44378ceea244f67ee6e72f69738fb8e859285d4ad28f761b0f0fa",
-    "after": "57a675ca5835a0817a14761a4250450745c36cfea2db792b0589ec275bcfd301",
-    "reason": "Approved November17 delegated-P1 P0 release/profile/consent registration; original owner baseline preserved."
+    "after": "661bfb9b600c13bbf182d88b713f0b1b0cb6635325d872a04bc0c25fd324f4e6",
+    "reason": "Approved delegated P1/P2 P0 release admission and regression-driven boundary corrections; immutable owner baseline preserved."
   },
   "backend/config/integration.php": {
     "before": "dc6583ae1b6eec1db91849198602fd0ba4b716aed9714de607984613e90ad64a",
-    "after": "6049b33c740fd8c07d21bcb71d0c2f045a87a6e97e652ca47690e2e7f69a7180",
-    "reason": "Approved November17 delegated-P1 P0 release/profile/consent registration; original owner baseline preserved."
+    "after": "9b601dff8b55d7ae59554956f8b17512b2ea6545f7d0b06b6b78cf71a8c8de2d",
+    "reason": "Approved delegated P1/P2 P0 release admission and regression-driven boundary corrections; immutable owner baseline preserved."
   }
 }

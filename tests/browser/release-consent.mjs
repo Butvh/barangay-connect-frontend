@@ -22,6 +22,7 @@ const server = spawn(php, ['-S', '127.0.0.1:' + port, '-t', resolve(root, 'backe
 const { chromium } = await import(pathToFileURL(env.P1_BROWSER_MODULE).href);
 let browser;
 const report = { checks: [], screenshots: [], testBindings: false, externalDelivery: false };
+let generalId;
 const evidence = resolve(root, 'tests/browser/evidence/release-consent');
 try {
   for (let i = 0; i < 100; i++) {
@@ -57,6 +58,27 @@ try {
     await form.getByText('SMS permission withdrawn.', { exact: true }).waitFor();
     const row = (await (await context.request.get(origin + '/' + route)).json()).data;
     assert.equal(row.state, 'revoked'); assert.equal(row.revision, 2);
+    if (key === 'resident') {
+      const csrf = (await (await context.request.get(origin + '/api/v1/auth/csrf')).json()).data.csrf_token;
+      for (const type of ['complaint', 'general']) {
+        const response = await context.request.post(origin + '/api/v1/feedback', { headers: { 'X-CSRF-TOKEN': csrf, 'Idempotency-Key': 'release-map-' + type },
+          data: type === 'general' ? { type, rating: 5, comment: 'Fictional release feedback' } : { type, category: 'Road', description: 'Fictional complaint', location: 'Unplaced fictional location' } });
+        assert.equal(response.ok(), true, await response.text());
+        if (type === 'general') generalId = (await response.json()).data.id;
+      }
+    } else {
+      await page.goto(origin + '/frontend/official-map.html?complaints=1');
+      await page.locator('#monitor-map:not([aria-busy])').waitFor();
+      assert.equal(await page.getByText('Map unavailable', { exact: true }).count(), 0, 'other resident complaint must not break the map');
+      assert.match(await page.locator('[data-unplaced]').textContent(), /complaints have no matching household/);
+      const csrf = (await (await context.request.get(origin + '/api/v1/auth/csrf')).json()).data.csrf_token;
+      for (const action of ['review', 'archive']) {
+        const denied = await context.request.post(origin + '/api/v1/feedback/' + generalId + '/' + action,
+          { headers: { 'X-CSRF-TOKEN': csrf, 'Idempotency-Key': 'release-excluded-' + key + '-' + action }, data: { expected_revision: 0 } });
+        assert.equal(denied.status(), 503);
+      }
+      await page.goto(profile);
+    }
     const file = key + '.png'; await page.screenshot({ path: resolve(evidence, file), fullPage: true }); report.screenshots.push(file);
     report.checks.push(key + ': original profile grant/revoke, stale revision, real CSRF, TEST flags off'); console.log('PASS release consent: ' + key);
     await context.close();

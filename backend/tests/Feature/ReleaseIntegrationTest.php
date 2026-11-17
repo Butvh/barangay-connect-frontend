@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Contracts\P2\Store;
+use App\Http\Controllers\P2\CivicController;
 use App\Models\OutboxEvent;
 use App\Models\Verification;
 use App\Providers\IntegrationServiceProvider;
@@ -16,6 +17,9 @@ use App\Services\Messaging\InAppNotificationHandler;
 use App\Services\P2\Actor;
 use App\Services\P2\Persistence\InAppHandler;
 use App\Services\P2\Persistence\RelationalStore;
+use App\Support\ApiProblem;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Support\CombinedMysql;
@@ -77,7 +81,7 @@ final class ReleaseIntegrationTest extends TestCase
         $this->assertEqualsCanonicalizing([$captain->id, $secretary->id], $event->recipients->pluck('recipient_id')->all());
         $this->assertSame([$captain->id], $event->recipients->where('sms', true)->pluck('recipient_id')->all());
         $notice = app(CivicService::class)->publish($this->actor($captain), ['title' => 'Release notice', 'content' => 'Fictional test.'], 'release-publication-once');
-        $publication = OutboxEvent::where('type', 'announcement.published.v2')->where('resource_id', $notice['id'])->sole();
+        $publication = OutboxEvent::where('type', 'announcement.published.v2')->where('resource_id', $notice['id'])->where('barangay_id', $captain->barangay_id)->sole();
         $this->assertSame([$resident->id], $publication->recipients->where('sms', true)->pluck('recipient_id')->all());
         Http::assertNothingSent();
     }
@@ -110,6 +114,36 @@ final class ReleaseIntegrationTest extends TestCase
         $this->postJson('/api/v1/auth/register', [])->assertStatus(503);
     }
 
+    public function test_release_general_lifecycle_is_denied_without_any_atomic_effect(): void
+    {
+        $this->register();
+        $resident = $this->sourceUser();
+        $captain = $this->sourceUser('captain', $resident->barangay_id);
+        $row = app(CivicService::class)->submitFeedback($this->actor($resident),
+            ['type' => 'general', 'rating' => 5, 'comment' => 'Preserve feedback.'], 'release-general-source');
+        foreach (['reviewFeedback', 'archiveFeedback'] as $method) {
+            $before = [];
+            foreach (['activity_logs', 'idempotency_requests', 'outbox_events'] as $table) {
+                $before[$table] = DB::table($table)->count();
+            }
+            $request = Request::create('/api/v1/feedback/'.$row['id'].'/review', 'POST', ['expected_revision' => 0]);
+            $request->headers->set('Content-Type', 'application/json');
+            $request->initialize([], [], [], [], [], ['CONTENT_TYPE' => 'application/json'], '{"expected_revision":0}');
+            $request->headers->set('Idempotency-Key', 'release-denied-'.$method);
+            $request->attributes->set('effective_identity', $this->actor($captain)->observedIdentity());
+            try {
+                app(CivicController::class)->$method($request, (string) $row['id']);
+                $this->fail('Release exposed an excluded lifecycle action.');
+            } catch (ApiProblem $error) {
+                $this->assertSame(503, $error->status);
+            }
+            foreach ($before as $table => $count) {
+                $this->assertSame($count, DB::table($table)->count());
+            }
+            $this->assertSame(0, (int) DB::table('community_feedback')->where('id', $row['id'])->value('revision'));
+        }
+    }
+
     #[DataProvider('unsafe')]
     public function test_release_rejects_unsafe_or_mixed_selection(array $configuration): void
     {
@@ -122,6 +156,9 @@ final class ReleaseIntegrationTest extends TestCase
     {
         return [
             [['integration.test_bindings' => true]],
+            [['integration.p2_requested' => true]],
+            [['integration.dispatch_enabled' => true, 'queue.default' => 'database', 'queue.connections.database.connection' => 'other']],
+            [['integration.dispatch_enabled' => true, 'queue.default' => 'database', 'queue.connections.database.after_commit' => false]],
             [['integration.consent_test_bindings' => true]],
             [['integration.admin_test_bindings' => true]],
             [['identity.enabled' => false]],
