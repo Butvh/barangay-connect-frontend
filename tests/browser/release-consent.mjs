@@ -79,6 +79,7 @@ try {
       }
       await page.goto(profile);
     }
+    await page.getByRole('form', { name: purpose }).getByText('SMS permission withdrawn.', { exact: true }).waitFor();
     const file = key + '.png'; await page.screenshot({ path: resolve(evidence, file), fullPage: true }); report.screenshots.push(file);
     report.checks.push(key + ': original profile grant/revoke, stale revision, real CSRF, TEST flags off'); console.log('PASS release consent: ' + key);
     await context.close();
