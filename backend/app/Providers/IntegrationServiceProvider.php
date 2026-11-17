@@ -14,7 +14,10 @@ use App\Services\Identity\CurrentSmsConsent;
 use App\Services\Identity\SmsDeliveryEligibility;
 use App\Services\Identity\SmsEligibilityReferences;
 use App\Services\Incidents\IncidentService;
+use App\Services\P2\Persistence\InAppHandler;
 use App\Services\P2\Persistence\IncidentPhotoPolicy;
+use App\Services\P2\Persistence\RelationalStore;
+use App\Services\P2\Persistence\TypedAuditRecorder;
 use App\Services\P2\Persistence\TypedOutboxWriter;
 use App\Services\Photos\PrivateIncidentPhotos;
 use Illuminate\Support\Facades\Schedule;
@@ -26,12 +29,20 @@ final class IntegrationServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        config(['integration.release_admitted' => false]);
+        $release = (bool) config('integration.release_enabled');
+        if (config('integration.sms_intent_enabled') && ! $release) {
+            throw new LogicException('Release SMS intent requires reviewed release admission.');
+        }
         $testBindings = (bool) config('integration.test_bindings');
+        if ($release) {
+            $this->selectReleaseAdapters();
+        }
         if ((config('integration.consent_test_bindings') || config('integration.admin_test_bindings') ||
             config('integration.photo_test_bindings') || config('integration.sms_intent_test_bindings')) && ! $testBindings) {
             throw new LogicException('Additional integration bindings require the reviewed disposable profile.');
         }
-        if ($testBindings || config('integration.p2_enabled')) {
+        if (! $release && ($testBindings || config('integration.p2_enabled'))) {
             $this->assertIsolatedBuild();
         }
         if ($testBindings) {
@@ -39,7 +50,7 @@ final class IntegrationServiceProvider extends ServiceProvider
                 config(['integration.'.$key => $adapter]);
             }
         }
-        if (! config('integration.p2_enabled') && ! $testBindings) {
+        if (! $release && ! config('integration.p2_enabled') && ! $testBindings) {
             if (config('integration.dispatch_enabled')) {
                 throw new LogicException('Outbox dispatch requires the reviewed module and handler bindings.');
             }
@@ -64,7 +75,7 @@ final class IntegrationServiceProvider extends ServiceProvider
             $this->bindReviewed($port, $key);
         }
         $this->app->register($provider);
-        if (config('integration.consent_test_bindings')) {
+        if ($release || config('integration.consent_test_bindings')) {
             $this->app->scoped(CurrentSmsConsent::class);
             $this->app->alias(CurrentSmsConsent::class, SmsEligibilityReferences::class);
             $this->app->alias(CurrentSmsConsent::class, SmsDeliveryEligibility::class);
@@ -73,22 +84,22 @@ final class IntegrationServiceProvider extends ServiceProvider
             $this->app->scoped(IncidentPhotoAuthorization::class, IncidentPhotoPolicy::class);
             $this->app->scoped(IncidentPhotos::class, PrivateIncidentPhotos::class);
         }
-        if (config('integration.sms_intent_test_bindings')) {
-            if (! config('integration.consent_test_bindings') || config('integration.outbox_adapter') !== TypedOutboxWriter::class) {
+        if (($release && config('integration.sms_intent_enabled')) || config('integration.sms_intent_test_bindings')) {
+            if ((! $release && ! config('integration.consent_test_bindings')) || config('integration.outbox_adapter') !== TypedOutboxWriter::class) {
                 throw new LogicException('Optional SMS intent requires the actual reviewed consent authority and typed writer.');
             }
             $this->app->scoped(OutboxWriter::class, fn () => new TypedOutboxWriter(allowSmsIntent: true));
         }
-        if (config('integration.photo_test_bindings') || config('integration.sms_intent_test_bindings')) {
+        if (($release && config('integration.sms_intent_enabled')) || config('integration.photo_test_bindings') || config('integration.sms_intent_test_bindings')) {
             $clock = static fn () => gmdate('Y-m-d\TH:i:s\Z');
             $dependencies = fn ($app) => [$app->make(Store::class), $app->make(ReferenceData::class),
                 $app->make(\App\Services\Audit\AuditRecorder::class), $app->make(\App\Services\Messaging\OutboxWriter::class), $clock];
-            $sms = fn ($app) => config('integration.sms_intent_test_bindings') ? $app->make(SmsEligibilityReferences::class) : null;
+            $sms = fn ($app) => (($release && config('integration.sms_intent_enabled')) || config('integration.sms_intent_test_bindings')) ? $app->make(SmsEligibilityReferences::class) : null;
             $this->app->scoped(IncidentService::class, fn ($app) => new IncidentService(
                 ...[...$dependencies($app), config('integration.photo_test_bindings') ? $app->make(IncidentPhotos::class) : null, $sms($app)]));
             $this->app->scoped(CivicService::class, fn ($app) => new CivicService(...[...$dependencies($app), $sms($app)]));
         }
-        if ($testBindings) {
+        if ($release || $testBindings) {
             $this->bindReviewed('App\\Services\\Messaging\\InAppNotificationHandler', 'notification_adapter');
         }
         if (config('integration.dispatch_enabled')) {
@@ -97,6 +108,43 @@ final class IntegrationServiceProvider extends ServiceProvider
                 ! class_exists('App\\Jobs\\Messaging\\DispatchOutbox')) {
                 throw new LogicException('Reviewed database queue/dispatcher configuration is required.');
             }
+        }
+        if ($release) {
+            config(['integration.release_admitted' => true, 'integration.p2_enabled' => true]);
+        }
+    }
+
+    private function selectReleaseAdapters(): void
+    {
+        foreach (['test_bindings', 'admin_test_bindings', 'photo_test_bindings', 'consent_test_bindings', 'sms_intent_test_bindings'] as $flag) {
+            if (config('integration.'.$flag)) {
+                throw new LogicException('Release and isolated test selections cannot be mixed.');
+            }
+        }
+        if (getenv('P1_OPERATIONAL_BROWSER') === '1' || getenv('P2_TEST_HTTP') === '1') {
+            throw new LogicException('Release cannot use an isolated HTTP harness selection.');
+        }
+        if (! config('identity.enabled') || config('integration.contract_version') !== 1 ||
+            config('integration.event_envelope_version') !== 2 ||
+            config('database.default') !== config('integration.connection') ||
+            config('database.connections.'.config('integration.connection').'.driver') !== 'mysql' ||
+            config('database.connections.'.config('integration.connection').'.timezone') !== '+00:00') {
+            throw new LogicException('Release requires actual v1 ports, v2 envelopes and one named UTC MySQL connection.');
+        }
+        $adapters = [
+            'store_adapter' => RelationalStore::class,
+            'reference_adapter' => \App\Services\P2\Persistence\ReferenceData::class,
+            'audit_adapter' => TypedAuditRecorder::class,
+            'outbox_adapter' => TypedOutboxWriter::class,
+            'notification_adapter' => InAppHandler::class,
+        ];
+        foreach ($adapters as $key => $class) {
+            if (config('integration.'.$key) !== null && config('integration.'.$key) !== $class) {
+                throw new LogicException('Release cannot replace a reviewed adapter with another implementation.');
+            }
+        }
+        foreach ($adapters as $key => $class) {
+            config(['integration.'.$key => $class]);
         }
     }
 

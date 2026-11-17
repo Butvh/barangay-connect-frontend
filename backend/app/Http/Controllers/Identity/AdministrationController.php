@@ -20,9 +20,9 @@ final class AdministrationController extends Controller
 {
     public function __construct(private IdentityReferences $identity) {}
 
-    private function service(string $class): object
+    private function service(string $class, bool $releaseSelf = false): object
     {
-        if (! config('integration.admin_test_bindings')) {
+        if (! config('integration.admin_test_bindings') && ! ($releaseSelf && config('integration.release_admitted'))) {
             throw new ApiProblem('NOT_AVAILABLE', 503, 'Administration integration is awaiting reviewed acceptance.');
         }
 
@@ -36,7 +36,7 @@ final class AdministrationController extends Controller
 
     public function barangays()
     {
-        $this->service(ResidentRegistration::class);
+        $this->service(ResidentRegistration::class, true);
 
         return $this->response(DB::connection(config('integration.connection'))->table('barangays')->orderBy('id')->get(['id', 'name', 'map_scope'])
             ->map(fn ($row) => ['id' => (int) $row->id, 'name' => $row->name, 'map_scope' => $row->map_scope, 'map_available' => MapCoverage::supported($row->map_scope)])->all());
@@ -54,17 +54,17 @@ final class AdministrationController extends Controller
 
     public function profile(Request $request)
     {
-        return $this->response($this->service(ProfileAdministration::class)->get($this->identity->current($request)));
+        return $this->response($this->service(ProfileAdministration::class, true)->get($this->identity->current($request)));
     }
 
     public function updateProfile(Request $request)
     {
-        return $this->response($this->service(ProfileAdministration::class)->update($this->identity->current($request), $request->all()));
+        return $this->response($this->service(ProfileAdministration::class, true)->update($this->identity->current($request), $request->all()));
     }
 
     public function household(Request $request)
     {
-        return $this->response($this->service(ProfileAdministration::class)->get($this->identity->current($request))['household']);
+        return $this->response($this->service(ProfileAdministration::class, true)->get($this->identity->current($request))['household']);
     }
 
     public function updateHousehold(Request $request)
@@ -78,12 +78,12 @@ final class AdministrationController extends Controller
         $revision = $input['expected_revision'];
         unset($input['expected_revision']);
 
-        return $this->response($this->service(ProfileAdministration::class)->update($actor, $input, $revision)['household']);
+        return $this->response($this->service(ProfileAdministration::class, true)->update($actor, $input, $revision)['household']);
     }
 
     public function security(Request $request)
     {
-        $this->service(ProfileAdministration::class);
+        $this->service(ProfileAdministration::class, true);
         $this->identity->assertCurrent($this->identity->current($request));
 
         return $this->response(['password_change_available' => true]);
@@ -92,7 +92,7 @@ final class AdministrationController extends Controller
     public function password(Request $request)
     {
         $actor = $this->identity->current($request);
-        $result = $this->service(ProfileAdministration::class)->changePassword($actor, $request->all());
+        $result = $this->service(ProfileAdministration::class, true)->changePassword($actor, $request->all());
         $user = User::on(config('integration.connection'))->with('appointment')->findOrFail($actor->id);
         Auth::guard('web')->setUser($user);
         $request->session()->regenerate();

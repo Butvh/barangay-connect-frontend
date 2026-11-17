@@ -11,7 +11,9 @@ const identity = auth => { const a = auth.current(); return a ? `${a.id}:${a.bar
 
 // The same self-only component serves both profiles; no contact field grants consent.
 export function mountConsentPreferences(host, { api = Api, auth = Auth } = {}) {
-  if (Runtime.mode !== 'backend' || Runtime.operationalTest !== true || Runtime.consentTest !== true) return () => {};
+  const release = Runtime.releaseProfile === 'p0-v1' &&
+    ['operationalTest', 'administrationTest', 'photoTest', 'consentTest', 'generalFeedbackTest'].every(key => Runtime[key] === false);
+  if (Runtime.mode !== 'backend' || (!release && (Runtime.operationalTest !== true || Runtime.consentTest !== true))) return () => {};
   const observed = identity(auth), role = auth.roleOf(auth.current());
   let disposed = false;
   const section = document.createElement('section'); section.className = 'card card-plain stack';

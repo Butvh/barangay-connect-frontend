@@ -1,0 +1,15 @@
+{
+  "kind": "pr51-p0-release-admission-v1",
+  "profile": "p0-v1",
+  "baseCommit": "b60c0dddeff1a765c08cdec73ce45e4afdf26b43",
+  "requiredSources": {
+    "backend/app/Providers/IntegrationServiceProvider.php": "57a675ca5835a0817a14761a4250450745c36cfea2db792b0589ec275bcfd301",
+    "backend/config/integration.php": "6049b33c740fd8c07d21bcb71d0c2f045a87a6e97e652ca47690e2e7f69a7180",
+    "backend/app/Http/Controllers/Identity/AdministrationController.php": "98c135e450fe093170f3d03f264bbf94670b0924b8b69c0accfd0e97b59f2416",
+    "assets/js/adapters/administrative-registration.js": "841be43dfb4bce678a7eda1ae9a71b3c1a976458d6e5600f874cfe3f71d22344",
+    "assets/js/adapters/domains.js": "b84779a5707eba5b3e4375111a0aa5d5359db2ce55c8399da1cb0913a5c48f75",
+    "assets/js/core/notification-preferences.js": "e5a59afe9ed6493a9a7e04b66560ee81084b79f631985495ecfb63d8be87f814",
+    "scripts/stage-backend-frontend.mjs": "344905d10880b48eed35ab159f58b0b482d5c57ccc9102fe6231719a87b89a10",
+    "backend/routes/api.php": "56d275bc1ff247e4a9719cfd75e5c8b8df7cff2b22df1c8f5b44076b106781d8"
+  }
+}

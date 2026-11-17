@@ -5,8 +5,23 @@ import { buildFrontendArtifact } from './stage-frontend.mjs';
 import { verifyIntegratedCandidate } from './integrated-candidate.mjs';
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-export async function stageBackendFrontend({ root = projectRoot, operationalTest = false, administrationTest = false, photoTest = false, consentTest = false, generalFeedbackTest = false } = {}) {
+export async function stageBackendFrontend({ root = projectRoot, operationalTest = false, administrationTest = false, photoTest = false, consentTest = false, generalFeedbackTest = false, releaseProfile = null } = {}) {
   root = await realpath(root);
+  if (releaseProfile !== null) {
+    if (releaseProfile !== 'p0-v1' || operationalTest || administrationTest || photoTest || consentTest || generalFeedbackTest) throw new Error('Use a distinct reviewed release profile without test capabilities.');
+    const manifest = JSON.parse(await readFile(resolve(root, 'integration-manifest.json'), 'utf8'));
+    if (manifest.kind !== 'integrated-audit-candidate-v1' || manifest.dirty || !/^[a-f0-9]{40}$/.test(manifest.candidate || '')) throw new Error('Release requires a clean integrated candidate.');
+    await verifyIntegratedCandidate(root, manifest);
+    const admissionName = 'docs/backend/pr51-p0-release-admission.json';
+    if (!manifest.hashes[admissionName]) throw new Error('Release admission must be pinned in the candidate.');
+    const admission = JSON.parse(await readFile(resolve(root, admissionName), 'utf8'));
+    if (admission.kind !== 'pr51-p0-release-admission-v1' || admission.profile !== releaseProfile || admission.baseCommit !== 'b60c0dddeff1a765c08cdec73ce45e4afdf26b43') throw new Error('Invalid reviewed release admission.');
+    const required = ['backend/app/Providers/IntegrationServiceProvider.php', 'backend/config/integration.php',
+      'backend/app/Http/Controllers/Identity/AdministrationController.php', 'assets/js/adapters/administrative-registration.js',
+      'assets/js/adapters/domains.js', 'assets/js/core/notification-preferences.js', 'scripts/stage-backend-frontend.mjs', 'backend/routes/api.php'];
+    if (!required.every(name => Object.hasOwn(admission.requiredSources || {}, name))) throw new Error('Incomplete release dependency admission.');
+    for (const [name, expected] of Object.entries(admission.requiredSources)) if (!/^[a-f0-9]{64}$/.test(expected) || manifest.hashes[name] !== expected) throw new Error('Release dependency changed: ' + name);
+  }
   if ((administrationTest || photoTest || consentTest) && !operationalTest) throw new Error('Optional staging requires the isolated operational test composition.');
   if (generalFeedbackTest && (!operationalTest || !administrationTest)) throw new Error('General Feedback staging requires the isolated operational and administration composition.');
   if (operationalTest) {
@@ -44,7 +59,7 @@ export async function stageBackendFrontend({ root = projectRoot, operationalTest
     await mkdir(dirname(destination), { recursive: true });
     await copyFile(resolve(artifact.directory, name), destination);
   }
-  await writeFile(resolve(target, 'assets/js/core/runtime-config.js'), "export const Runtime = Object.freeze({ mode: 'backend', operationalTest: " + Boolean(operationalTest) + ", administrationTest: " + Boolean(administrationTest) + ", photoTest: " + Boolean(photoTest) + ", consentTest: " + Boolean(consentTest) + ", generalFeedbackTest: " + Boolean(generalFeedbackTest) + " });\n");
+  await writeFile(resolve(target, 'assets/js/core/runtime-config.js'), "export const Runtime = Object.freeze({ mode: 'backend', operationalTest: " + Boolean(operationalTest) + ", administrationTest: " + Boolean(administrationTest) + ", photoTest: " + Boolean(photoTest) + ", consentTest: " + Boolean(consentTest) + ", generalFeedbackTest: " + Boolean(generalFeedbackTest) + ", releaseProfile: " + JSON.stringify(releaseProfile) + " });\n");
   return { directory: target, files };
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

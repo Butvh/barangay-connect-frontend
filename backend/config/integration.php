@@ -2,6 +2,10 @@
 
 return [
     'connection' => 'mysql',
+    'release_enabled' => (bool) env('INTEGRATION_RELEASE_ENABLED', false),
+    'sms_intent_enabled' => (bool) env('INTEGRATION_SMS_INTENT_ENABLED', false),
+    // Derived only by reviewed provider admission; never an environment assertion.
+    'release_admitted' => false,
     'contract_version' => 1,
     // PHP interface version and persisted envelope version are different contracts.
     'event_envelope_version' => 2,

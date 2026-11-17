@@ -14,8 +14,8 @@ export function createConsentFactories() {
     set: (purpose, input) => http.request(path(purpose), { method: 'PUT', body: input }),
   }) });
 }
-export function createAdministrativeFactories() {
-  return Object.freeze({
+export function createAdministrativeFactories({ profileOnly = false } = {}) {
+  const factories = {
     barangays: ({ http }) => ({ list: () => http.request('barangays') }),
     users: ({ http, auth }) => ({
       register: (input, { intent } = {}) => submitAdministrative({ http, path: 'auth/register', input, intent }),
@@ -23,7 +23,7 @@ export function createAdministrativeFactories() {
         const actor = self(auth, value);
         const profile = await http.request('profile');
         const role = auth.roleOf?.(actor) || actor.role;
-        if (role !== 'resident' || profile.verification?.id == null) return profile;
+        if (profileOnly || role !== 'resident' || profile.verification?.id == null) return profile;
         const verification = await http.request('verifications/' + id(profile.verification.id));
         return { ...profile, verification };
       },
@@ -60,7 +60,8 @@ export function createAdministrativeFactories() {
       },
       ...Object.fromEntries(['appoint', 'reassign', 'remove'].map(action => [action, (value, body) => http.request('personnel/' + id(value) + '/' + action, { method: 'POST', body })])),
     }),
-  });
+  };
+  return Object.freeze(profileOnly ? Object.fromEntries(['users', 'barangays', 'account'].map(key => [key, factories[key]])) : factories);
 }
 
 // Read-only invalidation uses the same scoped API projections as the pages. No

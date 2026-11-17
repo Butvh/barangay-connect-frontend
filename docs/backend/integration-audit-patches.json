@@ -93,8 +93,8 @@
   },
   "scripts/run-tests.mjs": {
     "before": "f41c408fbbedc16f90c1abbb44117029f12ac12fbcabb706a1b6e8acf0eaaa96",
-    "after": "ef4253c049a59756d14488f3ca62fa3312ac6f57eb69cdb4b703c0162e34523f",
-    "reason": "Run audit regressions in the original frontend gate PR51: Append map-scope regressions without removing original suites or assertions."
+    "after": "3917d3f08d8838e76547b89a37ccf910bff3a7cf42364ca36c7f8354607c1d23",
+    "reason": "Approved November17 delegated-P1 P0 release/profile/consent registration; original owner baseline preserved."
   },
   "scripts/verify-integration.mjs": {
     "owner": "p1",
@@ -194,8 +194,8 @@
   },
   "assets/js/adapters/domains.js": {
     "before": "70a46a42dfb35146e8821534a1d929fa9a91e0c0657638856ebc433647ca01b3",
-    "after": "be6a42c487957609956de2d3ded2df6aac2bb1b441cb9064378e0135e9ee1b11",
-    "reason": "PR51: Select lifecycle capability only through the explicit isolated composition option."
+    "after": "b84779a5707eba5b3e4375111a0aa5d5359db2ce55c8399da1cb0913a5c48f75",
+    "reason": "Approved November17 delegated-P1 P0 release/profile/consent registration; original owner baseline preserved."
   },
   "assets/js/adapters/operational-registration.js": {
     "before": "1e9c2e4a0c94fb8663ed4c809965b3c26436424193494d64af035f5d032a0d80",
@@ -269,8 +269,8 @@
   },
   "backend/app/Http/Controllers/Identity/AdministrationController.php": {
     "before": "34af513dfa9ff9c78a3e12ce905e0c732bf59f4d4da89f54a3017cf310e19c95",
-    "after": "9296a16273de1c6058ff24a16a90e69da979a1d955a26a0a7477f9e92ee627e5",
-    "reason": "PR51: Publish declared map_scope and compute compatibility availability only for the recognized artwork."
+    "after": "98c135e450fe093170f3d03f264bbf94670b0924b8b69c0accfd0e97b59f2416",
+    "reason": "Approved November17 delegated-P1 P0 release/profile/consent registration; original owner baseline preserved."
   },
   "backend/tests/Support/prepare-browser-database.php": {
     "before": "f6ca01d4cfc686492ec02d9c37909ffd887456910ee25668574c0101c12b212b",
@@ -284,8 +284,8 @@
   },
   "scripts/stage-backend-frontend.mjs": {
     "before": "98ec13105031e902f73fbb5337d43df1590163d6440e604840f6b85ed3e34d93",
-    "after": "bf09401fc134c94aafd5d84a9600c868b0a34929de5bf0981b19b932074530b7",
-    "reason": "PR51: Gate opt-in lifecycle staging on exact reviewed schema/domain admission while preserving private-root and artifact isolation checks."
+    "after": "344905d10880b48eed35ab159f58b0b482d5c57ccc9102fe6231719a87b89a10",
+    "reason": "Approved November17 delegated-P1 P0 release/profile/consent registration; original owner baseline preserved."
   },
   "tests/browser/workflow-runtime.mjs": {
     "before": "7821ea60ef7e489157b0e917e4aa4190052abb1d61f6d5a9f7cac53e4879f51c",
@@ -351,5 +351,30 @@
     "before": "923e506a1a9768b339849df1ca0a020c737f6d53d1f14d4a446778870fb2fa91",
     "after": "de3a07eac35185c8c20250fb660d627f8de1f419b1d7db028c5a33d772e2bc12",
     "reason": "PR51 integration: P2 c919306: retain original assertions and add actual-page intent/cancellation regressions."
+  },
+  "assets/js/adapters/administrative-registration.js": {
+    "before": "b648383a6d8e987db9c0cf6d638e525b20f50031e18b2c92ebc00aa99a9a3b3e",
+    "after": "841be43dfb4bce678a7eda1ae9a71b3c1a976458d6e5600f874cfe3f71d22344",
+    "reason": "Approved November17 delegated-P1 P0 release/profile/consent registration; original owner baseline preserved."
+  },
+  "assets/js/core/notification-preferences.js": {
+    "before": "45bfe5fd8e8f84f66814f498080654fb3f0aa6090953875da4de4153e2f928e5",
+    "after": "e5a59afe9ed6493a9a7e04b66560ee81084b79f631985495ecfb63d8be87f814",
+    "reason": "Approved November17 delegated-P1 P0 release/profile/consent registration; original owner baseline preserved."
+  },
+  "backend/.env.example": {
+    "before": "3944b17aceb18c4c2a3cc70a7410ddbfe03efa259b371ccc0ca6af872d96d967",
+    "after": "dbc599c331a7102e8d32977e6e5e6bc5221f27555430b0a158b61090d907ba59",
+    "reason": "Approved November17 delegated-P1 P0 release/profile/consent registration; original owner baseline preserved."
+  },
+  "backend/app/Providers/IntegrationServiceProvider.php": {
+    "before": "e38180661cf44378ceea244f67ee6e72f69738fb8e859285d4ad28f761b0f0fa",
+    "after": "57a675ca5835a0817a14761a4250450745c36cfea2db792b0589ec275bcfd301",
+    "reason": "Approved November17 delegated-P1 P0 release/profile/consent registration; original owner baseline preserved."
+  },
+  "backend/config/integration.php": {
+    "before": "dc6583ae1b6eec1db91849198602fd0ba4b716aed9714de607984613e90ad64a",
+    "after": "6049b33c740fd8c07d21bcb71d0c2f045a87a6e97e652ca47690e2e7f69a7180",
+    "reason": "Approved November17 delegated-P1 P0 release/profile/consent registration; original owner baseline preserved."
   }
 }
